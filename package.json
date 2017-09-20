@@ -1,0 +1,26 @@
+{
+  "name": "homebridge-harmony-api",
+  "version": "0.0.1",
+  "description": "A homebridge plugin for controlling individual Harmony Hub connected devices via: https://github.com/maddox/harmony-api",
+  "license": "ISC",
+  "keywords": [
+    "homebridge-plugin",
+    "harmony-api",
+    "logitech harmony",
+    "harmony hub"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/edc1591/homebridge-harmony-api.git"
+  },
+  "bugs": {
+    "url": "http://github.com/edc1591/homebridge-harmony-api/issues"
+  },
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
+  },
+  "dependencies": {
+    "request": "^2.82.0"
+  }
+}
