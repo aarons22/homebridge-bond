@@ -2,7 +2,7 @@
   "name": "homebridge-harmony-api",
   "version": "0.0.1",
   "description": "A homebridge plugin for controlling individual Harmony Hub connected devices via: https://github.com/maddox/harmony-api",
-  "license": "ISC",
+  "license": "MIT",
   "keywords": [
     "homebridge-plugin",
     "harmony-api",

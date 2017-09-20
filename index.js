@@ -1,29 +1,30 @@
 var Service, Characteristic;
 var request = require("request");
-var pollingtoevent = require("polling-to-event");
 
 module.exports = function (homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
-  homebridge.registerAccessory("homebridge-http", "Http", HttpAccessory);
+  homebridge.registerAccessory("homebridge-harmony-api", "HarmonyAccessory", HarmonyAccessory);
 };
 
 
-function HttpAccessory(log, config) {
+function HarmonyAccessory(log, config) {
   this.log = log;
 
   // url info
   this.name = config["name"];
-  this.service = config["service"] || "Switch";
+  this.serviceType = config["service"] || "Switch";
   this.host = config["host"];
   this.port = config["port"];
   this.hubSlug = config["hub_slug"];
   this.deviceSlug = config["device_slug"];
+
   this.onSlug = config["on_slug"];
   this.offSlug = config["off_slug"];
+  this.muteSlug = config["mute_slug"];
 }
 
-HttpAccessory.prototype = {
+HarmonyAccessory.prototype = {
   httpRequest: function (method, url, callback) {
     request({
       url: url,
@@ -54,6 +55,26 @@ HttpAccessory.prototype = {
     callback(null, false);
   },
 
+  setMuteState: function (muteState, callback) {
+    console.log("Mute", muteState);
+
+    var url = "http://" + this.host + ":" + this.port + "/hubs/" + this.hubSlug + "/devices/" + this.deviceSlug + "/commands/" + this.muteSlug;
+
+    this.httpRequest("POST", url, function (error, response, responseBody) {
+      if (error) {
+        console.log("HTTP set power function failed: %s", error.message);
+        callback(error);
+      } else {
+        console.log("HTTP set power function succeeded!");
+        callback();
+      }
+    }.bind(this));
+  },
+
+  getMuteState: function (callback) {
+    callback(null, false);
+  },
+
   identify: function (callback) {
     this.log("Identify requested!");
     callback(); // success
@@ -71,15 +92,31 @@ HttpAccessory.prototype = {
       .setCharacteristic(Characteristic.Model, "HTTP Model")
       .setCharacteristic(Characteristic.SerialNumber, "HTTP Serial Number");
 
-    switch (this.service) {
+    switch (this.serviceType) {
     case "Switch":
-      this.switchService = new Service.Switch(this.name);
-      this.switchService
+      this.service = new Service.Switch(this.name);
+      this.service
         .getCharacteristic(Characteristic.On)
         .on("get", this.getPowerState.bind(this))
         .on("set", this.setPowerState.bind(this));
 
-      return [this.switchService];
+      return [this.service];
+    case "Fan":
+      this.service = new Service.Fan(this.name);
+      this.service
+        .getCharacteristic(Characteristic.On)
+        .on("get", this.getPowerState.bind(this))
+        .on("set", this.setPowerState.bind(this));
+
+      return [this.service];
+    case "Speaker":
+      this.service = new Service.Speaker(this.name);
+      this.service
+        .getCharacteristic(Characteristic.Mute)
+        .on("get", this.getMuteState.bind(this))
+        .on("set", this.setMuteState.bind(this));
+
+      return [this.service];
     }
   }
 };
