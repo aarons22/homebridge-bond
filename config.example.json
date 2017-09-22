@@ -1,0 +1,28 @@
+{
+  "bridge": {
+    "name": "Homebridge",
+    "username": "CC:22:3D:E3:CE:30",
+    "port": 51826,
+    "pin": "031-45-154"
+  },
+  "accessories": [
+    {
+      "accessory": "HarmonyDevice",
+      "name": "Living Room Air Conditioner",
+      "service": "Fan",
+      "host": "localhost",
+      "port": 8282,
+      "hub_slug": "living-room",
+      "device_slug": "air-conditioner",
+      "commands": {
+        "on": "power-toggle",
+        "off": "power-toggle",
+        "rotation_speed": {
+          "33": "low",
+          "67": "med",
+          "100": "high"
+        }
+      }
+    }
+  ]
+}
