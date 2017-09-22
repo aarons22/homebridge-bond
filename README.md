@@ -9,7 +9,7 @@
 
 ## Installation
 
-This guide assumes that you already have a running `[harmony-api](https://github.com/maddox/harmony-api)` server.
+This guide assumes that you already have a running [`harmony-api`](https://github.com/maddox/harmony-api) server.
 
 ```
 # Install homebridge
@@ -48,7 +48,7 @@ Configuration is as simple as adding a new `accessories` object for each device 
 
 ## Caveats
 
-`harmony-api` currently conflicts with the [homebridge-harmonyhub](https://github.com/KraigM/homebridge-harmonyhub) plugin. You won't be able to run them on the same host because they bind to the same port to discover harmony hubs on your network. My personal workaround for this is to link my Harmony Activities to HomeKit via my SmartThings hub and then using the `[homebridge-smartthings](https://github.com/pdlove/homebridge-smartthings)` plugin. In the future I'd like to add support for harmony activities to this plugin.
+`harmony-api` currently conflicts with the [`homebridge-harmonyhub`](https://github.com/KraigM/homebridge-harmonyhub) plugin. You won't be able to run them on the same host because they bind to the same port to discover harmony hubs on your network. My personal workaround for this is to link my Harmony Activities to HomeKit via my SmartThings hub and then using the [`homebridge-smartthings`](https://github.com/pdlove/homebridge-smartthings) plugin. In the future I'd like to add support for harmony activities to this plugin.
 
 ## TODO
 
