@@ -23,6 +23,31 @@
           "100": "high"
         }
       }
+    },
+    {
+      "accessory": "HarmonyDevice",
+      "name": "Living Room Speakers",
+      "service": "Speaker",
+      "host": "localhost",
+      "port": 8282,
+      "hub_slug": "living-room",
+      "device_slug": "air-conditioner",
+      "commands": {
+        "mute": "mute"
+      }
+    },
+    {
+      "accessory": "HarmonyDevice",
+      "name": "Bedroom TV",
+      "service": "Switch",
+      "host": "localhost",
+      "port": 8282,
+      "hub_slug": "bedroom",
+      "device_slug": "tv",
+      "commands": {
+        "on": "power-on",
+        "off": "power-off"
+      }
     }
   ]
 }
