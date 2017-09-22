@@ -38,6 +38,8 @@ Configuration is as simple as adding a new `accessories` object for each device 
     "on": "power-toggle",
     "off": "power-toggle",
     "rotation_speed": {
+      // the keys here correspond to the rotation speed percentage,
+      // the values are the corresponding command to send
       "33": "low",
       "67": "med",
       "100": "high"
