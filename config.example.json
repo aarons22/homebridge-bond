@@ -5,51 +5,11 @@
     "port": 51826,
     "pin": "031-45-154"
   },
-  "accessories": [
+  "platforms": [
     {
-      "accessory": "HarmonyDevice",
-      "name": "Living Room Air Conditioner",
-      "service": "Fan",
-      "host": "localhost",
-      "port": 8282,
-      "hub_slug": "living-room",
-      "device_slug": "air-conditioner",
-      "commands": {
-        "on": "power-toggle",
-        "off": "power-toggle",
-        "rotation_speed": {
-          // the keys here correspond to the rotation speed percentage,
-          // the values are the corresponding command to send
-          "33": "low",
-          "67": "med",
-          "100": "high"
-        }
-      }
-    },
-    {
-      "accessory": "HarmonyDevice",
-      "name": "Living Room Speakers",
-      "service": "Speaker",
-      "host": "localhost",
-      "port": 8282,
-      "hub_slug": "living-room",
-      "device_slug": "air-conditioner",
-      "commands": {
-        "mute": "mute"
-      }
-    },
-    {
-      "accessory": "HarmonyDevice",
-      "name": "Bedroom TV",
-      "service": "Switch",
-      "host": "localhost",
-      "port": 8282,
-      "hub_slug": "bedroom",
-      "device_slug": "tv",
-      "commands": {
-        "on": "power-on",
-        "off": "power-off"
-      }
+      "platform": "Bond",
+      "email": "<email>",
+      "password": "<password>"
     }
   ]
 }

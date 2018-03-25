@@ -1,26 +1,39 @@
 {
-  "name": "homebridge-harmony-api",
+  "name": "homebridge-bond",
   "version": "0.1.0",
-  "description": "A homebridge plugin for controlling individual Harmony Hub connected devices via: https://github.com/maddox/harmony-api",
+  "description": "A homebridge plugin to control your IR/RF devices via BOND.",
   "license": "MIT",
+  "main": "dist/index.js",
+  "scripts": {
+    "prepublish": "npm run build",
+    "build": "tsc",
+    "clean": "rimraf dist"
+  },
   "keywords": [
     "homebridge-plugin",
-    "harmony-api",
-    "logitech harmony",
-    "harmony hub"
+    "bond",
+    "rf",
+    "ir"
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/edc1591/homebridge-harmony-api.git"
+    "url": "git://github.com/edc1591/homebridge-bond.git"
   },
   "bugs": {
-    "url": "http://github.com/edc1591/homebridge-harmony-api/issues"
+    "url": "http://github.com/edc1591/homebridge-bond/issues"
   },
   "engines": {
     "node": ">=0.12.0",
     "homebridge": ">=0.2.0"
   },
+  "devDependencies": {
+    "@types/request-promise": "^4.1.41",
+    "rimraf": "^2.6.2",
+    "typescript": "^2.7.1"
+  },
   "dependencies": {
-    "request": "^2.82.0"
+    "bluebird": "^3.5.1",
+    "request": "^2.83.0",
+    "request-promise": "^4.2.2"
   }
 }
