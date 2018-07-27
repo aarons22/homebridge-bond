@@ -55,7 +55,7 @@ class BondPlatform {
         accessory
             .addService(Service.Switch, "Reverse " + device.room + " " + device.type);
         accessory
-            .addService(Service.Lightbulb, "Light " + device.room + " " + device.type);
+            .addService(Service.Lightbulb, device.room + " " + device.type + " Light");
         this.setupObservers(accessory);
         accessory
             .getService(Service.AccessoryInformation)
