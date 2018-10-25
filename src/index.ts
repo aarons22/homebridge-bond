@@ -1,7 +1,7 @@
 var Accessory, Service, Characteristic, UUIDGen;
 import * as request from 'request-promise';
 import * as Promise from 'bluebird';
-import { Bond, Device, Session, Fan, Command } from './bond';
+import { Bond, Device, Session, Fan, Command, Switch } from './bond';
 
 export = function(homebridge: any) {
   Service = homebridge.hap.Service;
@@ -123,9 +123,10 @@ class BondPlatform {
         .getCharacteristic(Characteristic.On)
         .on('set', function(value, callback) {
           let command = bond.commandForName(fan, "Reverse");
-
+          let sw = <Switch>device;
           bond.sendCommand(that.session, command, fan)
             .then(() => {
+              sw.state = !sw.state
               callback();
             })
             .catch(error => {
@@ -134,24 +135,28 @@ class BondPlatform {
             });
         })
         .on('get', function(callback) {
-          callback(null, false);
+          let sw = <Switch>device;
+          callback(null, sw.state);
         });
       accessory.getService(Service.Lightbulb)
           .getCharacteristic(Characteristic.On)
           .on('set', function (value, callback) {
-          let command = bond.commandForName(fan, "Light Toggle");
-          bond.sendCommand(that.session, command, fan)
+            let sw = <Switch>device;
+            let command = bond.commandForName(fan, "Light Toggle");
+            bond.sendCommand(that.session, command, fan)
               .then(() => {
+              sw.state = !sw.state
               callback();
-          })
-              .catch(error => {
+            })
+            .catch(error => {
               that.log(error);
               callback();
+            });
+          })
+          .on('get', function (callback) {
+            let sw = <Switch>device;
+            callback(null, sw.state);
           });
-        })
-            .on('get', function (callback) {
-            callback(null, false);
-        });
       accessory.getService(Service.Fan)
         .getCharacteristic(Characteristic.On)
         .on('set', function(value, callback) {
