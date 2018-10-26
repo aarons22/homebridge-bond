@@ -21,12 +21,10 @@ export interface Device {
   bondId: string;
 }
 
-export interface Switch extends Device {
-  state: boolean;
-}
-
 export interface Fan extends Device {
   speed: number;
+  reverse: boolean;
+  light: boolean;
 }
 
 export class Bond {

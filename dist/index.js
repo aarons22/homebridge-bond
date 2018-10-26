@@ -98,10 +98,9 @@ class BondPlatform {
                 .getCharacteristic(Characteristic.On)
                 .on('set', function (value, callback) {
                 let command = bond.commandForName(fan, "Reverse");
-                let sw = device;
                 bond.sendCommand(that.session, command, fan)
                     .then(() => {
-                    sw.state = !sw.state;
+                    fan.reverse = !fan.reverse;
                     callback();
                 })
                     .catch(error => {
@@ -110,17 +109,15 @@ class BondPlatform {
                 });
             })
                 .on('get', function (callback) {
-                let sw = device;
-                callback(null, sw.state);
+                callback(null, fan.reverse);
             });
             accessory.getService(Service.Lightbulb)
                 .getCharacteristic(Characteristic.On)
                 .on('set', function (value, callback) {
-                let sw = device;
                 let command = bond.commandForName(fan, "Light Toggle");
                 bond.sendCommand(that.session, command, fan)
                     .then(() => {
-                    sw.state = !sw.state;
+                    fan.light = !fan.light;
                     callback();
                 })
                     .catch(error => {
@@ -129,8 +126,7 @@ class BondPlatform {
                 });
             })
                 .on('get', function (callback) {
-                let sw = device;
-                callback(null, sw.state);
+                callback(null, fan.light);
             });
             accessory.getService(Service.Fan)
                 .getCharacteristic(Characteristic.On)

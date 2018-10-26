@@ -1,7 +1,7 @@
 var Accessory, Service, Characteristic, UUIDGen;
 import * as request from 'request-promise';
 import * as Promise from 'bluebird';
-import { Bond, Device, Session, Fan, Command, Switch } from './bond';
+import { Bond, Device, Session, Fan, Command } from './bond';
 
 export = function(homebridge: any) {
   Service = homebridge.hap.Service;
@@ -123,10 +123,9 @@ class BondPlatform {
         .getCharacteristic(Characteristic.On)
         .on('set', function(value, callback) {
           let command = bond.commandForName(fan, "Reverse");
-          let sw = <Switch>device;
           bond.sendCommand(that.session, command, fan)
             .then(() => {
-              sw.state = !sw.state
+              fan.reverse = !fan.reverse
               callback();
             })
             .catch(error => {
@@ -135,17 +134,15 @@ class BondPlatform {
             });
         })
         .on('get', function(callback) {
-          let sw = <Switch>device;
-          callback(null, sw.state);
+          callback(null, fan.reverse);
         });
       accessory.getService(Service.Lightbulb)
           .getCharacteristic(Characteristic.On)
           .on('set', function (value, callback) {
-            let sw = <Switch>device;
             let command = bond.commandForName(fan, "Light Toggle");
             bond.sendCommand(that.session, command, fan)
               .then(() => {
-              sw.state = !sw.state
+              fan.light = !fan.light
               callback();
             })
             .catch(error => {
@@ -154,8 +151,7 @@ class BondPlatform {
             });
           })
           .on('get', function (callback) {
-            let sw = <Switch>device;
-            callback(null, sw.state);
+            callback(null, fan.light);
           });
       accessory.getService(Service.Fan)
         .getCharacteristic(Characteristic.On)
