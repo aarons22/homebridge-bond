@@ -21,12 +21,6 @@ export interface Device {
   bondId: string;
 }
 
-export interface Fan extends Device {
-  speed: number;
-  reverse: boolean;
-  light: boolean;
-}
-
 export class Bond {
   public id: string;
   public devices: Device[];
