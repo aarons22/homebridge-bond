@@ -127,7 +127,6 @@ class BondPlatform {
             });
             theFan.getCharacteristic(Characteristic.On)
                 .on('set', function (value, callback) {
-                that.log("got on " + theFan.getCharacteristic(Characteristic.RotationSpeed).value);
                 //this gets called right after a rotation set so ignore if state isnt changing
                 if (value == theFan.getCharacteristic(Characteristic.On).value) {
                     callback();
@@ -135,10 +134,8 @@ class BondPlatform {
                 }
                 let speed = value ? theFan.getCharacteristic(Characteristic.RotationSpeed).value : 0;
                 let command = that.getSpeedCommand(bond, device, speed);
-                that.log(command);
                 bond.sendCommand(that.session, command, device)
                     .then(() => {
-                    theFan.getCharacteristic(Characteristic.On).updateValue(value);
                     callback();
                 })
                     .catch(error => {
@@ -154,18 +151,16 @@ class BondPlatform {
                 .on('set', function (value, callback) {
                 let stop = false;
                 var command = that.getSpeedCommand(bond, device, value);
-                let old = theFan.getCharacteristic(Characteristic.RotationSpeed).updateValue(value);
+                let old = theFan.getCharacteristic(Characteristic.RotationSpeed).value;
+                theFan.getCharacteristic(Characteristic.RotationSpeed).updateValue(value);
                 bond.sendCommand(that.session, command, device)
                     .then(() => {
-                    if (command == bond.powerOffCommand(device)) {
-                        theFan.getCharacteristic(Characteristic.On).updateValue(false);
-                    }
                     callback();
                 })
                     .catch(error => {
                     //because the on command comes in so quickly, we optimistically set our new value.
                     //if we fail roll it back
-                    theFan.getCharacteristic(Characteristic.RotationSpeed).updateValue(old);
+                    setTimeout(() => theFan.getCharacteristic(Characteristic.RotationSpeed).updateValue(old), 250);
                     that.log(error);
                     callback();
                 });
@@ -175,6 +170,7 @@ class BondPlatform {
                 theFan.getCharacteristic(Characteristic.On).updateValue(false);
                 reverse.getCharacteristic(Characteristic.On).updateValue(false);
                 bulb.getCharacteristic(Characteristic.On).updateValue(false);
+                setTimeout(() => reset.getCharacteristic(Characteristic.On).updateValue(false), 250);
                 callback();
             })
                 .on('get', function (callback) {
