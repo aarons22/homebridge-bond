@@ -9,6 +9,14 @@ Bond uses a technology to mimic the IR/RF signals of your existing remote contro
 
 # Installation
 
+Install Homebridge via npm 
+```
+npm i homebridge
+```
+Then type Homebridge
+
+After homebridge runs type (Ctrl C) to kill homebridge and then
+
 Install this plugin via npm: (May need sudo) 
 ~~~
 npm i homebridge-bond
@@ -16,6 +24,14 @@ npm i homebridge-bond
 
 After this fill in your Bond Email adress and password into the config
 
+To access config on a raspberry pi type 
+``` 
+cd .homebridge/
+```
+After running homebridge and changing directory type:
+```
+Nano config.json
+```
 ## Config
 ~~~
 {
