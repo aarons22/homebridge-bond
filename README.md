@@ -38,12 +38,13 @@ After this fill in your Bond Email adress and password into the config
 
 # Bug Reporting:
 If you encounter any bugs or have a suggestion use this format please!
+```
 #Node Version
 #Software
 #Plugin Version
 #Issue behaviour
 #Expected Behaviour
-
+```
 ## Meta
 
 Follow the creator on Twitter: https://twitter.com/edc1591
