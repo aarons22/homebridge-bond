@@ -13,7 +13,8 @@
     "homebridge-plugin",
     "bond",
     "rf",
-    "ir"
+    "ir",
+    "homekit-fan"
   ],
   "repository": {
     "type": "git",
