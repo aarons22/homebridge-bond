@@ -1,25 +1,31 @@
-# homebridge-bond
+# Homebridge-Bond
 
-A plugin that makes Bond Fan Hub's compatible with HomeKit!
-Adds the Fan and Light accessory into HomeKit.
+This plugin will make your Bond work with HomeKit
+Current Features:
+- Fan Speed
+- Fan Light
+- Reverse Fan
 
 # About Bond
 
-Bond uses a technology to mimic the IR/RF signals of your existing remote control fans and can be integrated with Google or Alexa. With this plugin you can use it with HomeKit.
+Bond is a product that will remember the IR/RF signals of your fan's remote to control them. 
 
 # Installation
 
-Install Homebridge via npm 
+1) Install Homebridge via npm 
 ```
-npm i homebridge
+sudo npm i -g homebridge
 ```
-Then type Homebridge
+2) Run Homebridge by typing 
+```
+Homebridge
+````
 
-After homebridge runs type (Ctrl C) to kill homebridge and then
+Exit homebridge by typing (Ctrl + C)
 
-Install this plugin via npm: (May need sudo) 
+Install this plugin via npm: 
 ~~~
-npm i homebridge-bond
+Sudo npm i -g homebridge-bond
 ~~~
 
 After this fill in your Bond Email adress and password into the config
@@ -55,11 +61,15 @@ Nano config.json
 # Bug Reporting:
 If you encounter any bugs or have a suggestion use this format please!
 ```
-#Node Version
-#Software
-#Plugin Version
-#Issue behaviour
-#Expected Behaviour
+Node Version:
+
+OS:
+
+Issue:
+
+Expcted behaviour:
+
+Config: (Please redact all personal info
 ```
 ## Meta
 
