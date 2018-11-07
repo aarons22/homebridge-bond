@@ -27,6 +27,10 @@ Install this plugin via npm:
 ~~~
 Sudo npm i -g homebridge-bond
 ~~~
+Or install this Fork using
+```
+sudo npm i -g iRayanKhan/homebridge-bond
+```
 
 After this fill in your Bond Email adress and password into the config
 
