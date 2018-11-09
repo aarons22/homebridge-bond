@@ -77,6 +77,11 @@ class BondPlatform {
         this.accessories.push(accessory);
         if (this.bonds) {
             this.log("Configure Accessory: " + accessory.displayName);
+            let device = accessory.context.device;
+            if (accessory.getService("Reset " + device.room + " " + device.type) == undefined) {
+                this.log("Upgrading Accessory: " + accessory.displayName);
+                accessory.addService(Service.Switch, "Reset " + device.room + " " + device.type, "reset");
+            }
             this.setupObservers(accessory);
         }
         else {
