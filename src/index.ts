@@ -70,8 +70,6 @@ class BondPlatform {
     accessory
       .addService(Service.Fan, device.room + " " + device.type);
     accessory
-      .addService(Service.Switch, "Reverse " + device.room + " " + device.type, "reverse");
-    accessory
       .addService(Service.Lightbulb, device.room + " " + device.type + " Light");
     accessory
       .addService(Service.Switch,  "Reset " + device.room + " " + device.type, "reset");
@@ -95,23 +93,32 @@ class BondPlatform {
 
     this.api.unregisterPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
   }
+  upgrade(accessory: any) {
+      let device: Device = accessory.context.device;
+      if(accessory.getService("Reset " + device.room + " " + device.type) == undefined) {
+        this.log("Upgrading Accessory: " + accessory.displayName);
+        accessory.addService(Service.Switch,  "Reset " + device.room + " " + device.type, "reset");
+      }
+      let reverse = accessory.getService("Reverse " + device.room + " " + device.type);
+      if(reverse !== undefined) {
+        this.log("removing reverse switch");
+        accessory.removeService(reverse);
+      }
+  }
 
   configureAccessory(accessory: any) {
     this.accessories.push(accessory);
 
     if (this.bonds) {
       this.log("Configure Accessory: " + accessory.displayName);
-      let device: Device = accessory.context.device;
-      if(accessory.getService("Reset " + device.room + " " + device.type) == undefined) {
-        this.log("Upgrading Accessory: " + accessory.displayName);
-        accessory.addService(Service.Switch,  "Reset " + device.room + " " + device.type, "reset");
-      }
+      this.upgrade(accessory)
       this.setupObservers(accessory);
     } else {
       let that = this;
       let timer = setInterval(() => {
         if (this.bonds) {
           that.log("Configure Accessory: " + accessory.displayName);
+          this.upgrade(accessory)
           that.setupObservers(accessory);
           clearInterval(timer);
         }
@@ -124,16 +131,15 @@ class BondPlatform {
     let device: Device = accessory.context.device;
     let bond = this.bondForIdentifier(device.bondId);
     let bulb = accessory.getService(Service.Lightbulb);
-    let reverse = accessory.getService("Reverse " + device.room + " " + device.type);
     let theFan = accessory.getService(Service.Fan)
     let reset = accessory.getService("Reset " + device.room + " " + device.type)
     if (device.type == "Fan" && accessory.getService(Service.Fan)) {
-      reverse.getCharacteristic(Characteristic.On)
+      theFan.getCharacteristic(Characteristic.RotationDirection)
         .on('set', function(value, callback) {
           let command = bond.commandForName(device, "Reverse");
           bond.sendCommand(that.session, command, device)
             .then(() => {
-              reverse.getCharacteristic(Characteristic.On).updateValue(value);
+              theFan.getCharacteristic(Characteristic.RotationDirection).updateValue(value);
               callback();
             })
             .catch(error => {
@@ -197,7 +203,7 @@ class BondPlatform {
         reset.getCharacteristic(Characteristic.On)
           .on('set', function (value, callback) {
             theFan.getCharacteristic(Characteristic.On).updateValue(false);
-            reverse.getCharacteristic(Characteristic.On).updateValue(false);
+            theFan.getCharacteristic(Characteristic.RotationDirection).updateValue(false);
             bulb.getCharacteristic(Characteristic.On).updateValue(false);
             setTimeout(()=> reset.getCharacteristic(Characteristic.On).updateValue(false), 250)
             callback();
