@@ -32,7 +32,7 @@ class Bond {
                 room: objs[0].location_type,
                 propertyId: objs[0].device_property_id,
                 commands: commands,
-                bondId: this.id,
+                bondId: this.id
             });
         }
         this.devices = devices;

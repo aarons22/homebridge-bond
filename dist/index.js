@@ -53,9 +53,9 @@ class BondPlatform {
         accessory
             .addService(Service.Fan, device.room + " " + device.type);
         accessory
-            .addService(Service.Switch, "Reverse " + device.room + " " + device.type);
-        accessory
             .addService(Service.Lightbulb, device.room + " " + device.type + " Light");
+        accessory
+            .addService(Service.Switch, "Reset " + device.room + " " + device.type, "reset");
         this.setupObservers(accessory);
         accessory
             .getService(Service.AccessoryInformation)
@@ -71,10 +71,23 @@ class BondPlatform {
         }
         this.api.unregisterPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
     }
+    upgrade(accessory) {
+        let device = accessory.context.device;
+        if (accessory.getService("Reset " + device.room + " " + device.type) == undefined) {
+            this.log("Upgrading Accessory: " + accessory.displayName);
+            accessory.addService(Service.Switch, "Reset " + device.room + " " + device.type, "reset");
+        }
+        let reverse = accessory.getService("Reverse " + device.room + " " + device.type);
+        if (reverse !== undefined) {
+            this.log("removing reverse switch");
+            accessory.removeService(reverse);
+        }
+    }
     configureAccessory(accessory) {
         this.accessories.push(accessory);
         if (this.bonds) {
             this.log("Configure Accessory: " + accessory.displayName);
+            this.upgrade(accessory);
             this.setupObservers(accessory);
         }
         else {
@@ -82,6 +95,7 @@ class BondPlatform {
             let timer = setInterval(() => {
                 if (this.bonds) {
                     that.log("Configure Accessory: " + accessory.displayName);
+                    this.upgrade(accessory);
                     that.setupObservers(accessory);
                     clearInterval(timer);
                 }
@@ -92,13 +106,46 @@ class BondPlatform {
         let that = this;
         let device = accessory.context.device;
         let bond = this.bondForIdentifier(device.bondId);
+        let bulb = accessory.getService(Service.Lightbulb);
+        let theFan = accessory.getService(Service.Fan);
+        let reset = accessory.getService("Reset " + device.room + " " + device.type);
         if (device.type == "Fan" && accessory.getService(Service.Fan)) {
-            let fan = device;
-            accessory.getService(Service.Switch)
-                .getCharacteristic(Characteristic.On)
+            theFan.getCharacteristic(Characteristic.RotationDirection)
                 .on('set', function (value, callback) {
-                let command = bond.commandForName(fan, "Reverse");
-                bond.sendCommand(that.session, command, fan)
+                let command = bond.commandForName(device, "Reverse");
+                bond.sendCommand(that.session, command, device)
+                    .then(() => {
+                    theFan.getCharacteristic(Characteristic.RotationDirection).updateValue(value);
+                    callback();
+                })
+                    .catch(error => {
+                    that.log(error);
+                    callback();
+                });
+            });
+            bulb.getCharacteristic(Characteristic.On)
+                .on('set', function (value, callback) {
+                let command = bond.commandForName(device, "Light Toggle");
+                bond.sendCommand(that.session, command, device)
+                    .then(() => {
+                    bulb.getCharacteristic(Characteristic.On).updateValue(value);
+                    callback();
+                })
+                    .catch(error => {
+                    that.log(error);
+                    callback();
+                });
+            });
+            theFan.getCharacteristic(Characteristic.On)
+                .on('set', function (value, callback) {
+                //this gets called right after a rotation set so ignore if state isnt changing
+                if (value == theFan.getCharacteristic(Characteristic.On).value) {
+                    callback();
+                    return;
+                }
+                let speed = value ? theFan.getCharacteristic(Characteristic.RotationSpeed).value : 0;
+                let command = that.getSpeedCommand(bond, device, speed);
+                bond.sendCommand(that.session, command, device)
                     .then(() => {
                     callback();
                 })
@@ -106,79 +153,53 @@ class BondPlatform {
                     that.log(error);
                     callback();
                 });
-            })
-                .on('get', function (callback) {
-                callback(null, false);
             });
-            accessory.getService(Service.Lightbulb)
-                .getCharacteristic(Characteristic.On)
-                .on('set', function (value, callback) {
-                let command = bond.commandForName(fan, "Light Toggle");
-                bond.sendCommand(that.session, command, fan)
-                    .then(() => {
-                    callback();
-                })
-                    .catch(error => {
-                    that.log(error);
-                    callback();
-                });
-            })
-                .on('get', function (callback) {
-                callback(null, false);
-            });
-            accessory.getService(Service.Fan)
-                .getCharacteristic(Characteristic.On)
-                .on('set', function (value, callback) {
-                let command = value ? bond.powerOnCommand(fan) : bond.powerOffCommand(fan);
-                bond.sendCommand(that.session, command, fan)
-                    .then(() => {
-                    callback();
-                })
-                    .catch(error => {
-                    that.log(error);
-                    callback();
-                });
-            })
-                .on('get', function (callback) {
-                callback(null, fan.speed > 0);
-            });
-            accessory.getService(Service.Fan)
-                .getCharacteristic(Characteristic.RotationSpeed)
+            theFan.getCharacteristic(Characteristic.RotationSpeed)
                 .setProps({
                 minStep: 33,
                 maxValue: 99
             })
                 .on('set', function (value, callback) {
-                let commands = bond.sortedSpeedCommands(fan);
-                var command = null;
-                if (value == 0) {
-                    command = bond.powerOffCommand(fan);
-                    accessory.context.device.speed = 0;
-                }
-                else if (value == 33) {
-                    command = commands[0];
-                    accessory.context.device.speed = 1;
-                }
-                else if (value == 66) {
-                    command = commands[1];
-                    accessory.context.device.speed = 2;
-                }
-                else if (value == 99) {
-                    command = commands[2];
-                    accessory.context.device.speed = 3;
-                }
-                bond.sendCommand(that.session, command, fan)
+                let stop = false;
+                var command = that.getSpeedCommand(bond, device, value);
+                let old = theFan.getCharacteristic(Characteristic.RotationSpeed).value;
+                theFan.getCharacteristic(Characteristic.RotationSpeed).updateValue(value);
+                bond.sendCommand(that.session, command, device)
                     .then(() => {
                     callback();
                 })
                     .catch(error => {
+                    //because the on command comes in so quickly, we optimistically set our new value.
+                    //if we fail roll it back
+                    setTimeout(() => theFan.getCharacteristic(Characteristic.RotationSpeed).updateValue(old), 250);
                     that.log(error);
                     callback();
                 });
+            });
+            reset.getCharacteristic(Characteristic.On)
+                .on('set', function (value, callback) {
+                theFan.getCharacteristic(Characteristic.On).updateValue(false);
+                theFan.getCharacteristic(Characteristic.RotationDirection).updateValue(false);
+                bulb.getCharacteristic(Characteristic.On).updateValue(false);
+                setTimeout(() => reset.getCharacteristic(Characteristic.On).updateValue(false), 250);
+                callback();
             })
                 .on('get', function (callback) {
-                callback(null, fan.speed * 33);
+                callback(null, false);
             });
+        }
+    }
+    getSpeedCommand(bond, device, speed) {
+        let commands = bond.sortedSpeedCommands(device);
+        switch (speed) {
+            case 33:
+                return commands[0];
+            case 66:
+                return commands[1];
+            case 99:
+                return commands[2];
+            default:
+                return bond.powerOffCommand(device);
         }
     }
     deviceAdded(id) {
