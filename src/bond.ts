@@ -49,7 +49,7 @@ export class Bond {
         });
       }
       devices.push(<Device>{
-        id: objs[0].id,
+        id: objs[0].device,
         type: objs[0].device_type,
         room: objs[0].location_type,
         propertyId: objs[0].device_property_id,
