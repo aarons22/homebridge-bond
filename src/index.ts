@@ -17,6 +17,7 @@ class BondPlatform {
   private bonds: Bond[];
 
   constructor(private log: (string) => void, config: {}, private api: any) {
+    if(config === null) return
     let email = config['email'];
     let password = config['password'];
 

@@ -7,6 +7,8 @@ class BondPlatform {
         this.log = log;
         this.api = api;
         this.accessories = [];
+        if (config === null)
+            return;
         let email = config['email'];
         let password = config['password'];
         let that = this;
