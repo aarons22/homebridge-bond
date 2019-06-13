@@ -90,7 +90,7 @@ export class Bond {
 
   public sendCommand(session: Session, command: Command, device: Device): Promise<void> {
     this.sequence++;
-    let url = "https://" + this.id + ".local:4433/api/v1/device/" + (parseInt(device.propertyId) - 1) + "/device_property/" + device.propertyId + "/device_property_command/" + command.propertyId + "/run";
+    let url = "https://" + this.id + ":4433/api/v1/device/" + (parseInt(device.propertyId) - 1) + "/device_property/" + device.propertyId + "/device_property_command/" + command.propertyId + "/run";
 
     return request({
         method: 'GET',

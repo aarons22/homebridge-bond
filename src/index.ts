@@ -150,6 +150,11 @@ class BondPlatform {
         bulb.getCharacteristic(Characteristic.On)
           .on('set', function (value, callback) {
             let command = bond.commandForName(device, "Light Toggle");
+            // Called to avoid toggling when the light is already in the requested state. (Workaround for Siri)
+            if (value == bulb.getCharacteristic(Characteristic.On).value) {
+               callback();
+               return;
+            }
             bond.sendCommand(that.session, command, device)
               .then(() => {
               bulb.getCharacteristic(Characteristic.On).updateValue(value);
