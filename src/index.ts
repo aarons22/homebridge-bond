@@ -14,7 +14,7 @@ export default function(homebridge: any) {
   Accessory = homebridge.platformAccessory;
   UUIDGen = homebridge.hap.uuid;
 
-  homebridge.registerPlatform('homebridge-bond-v2', 'BondHome', BondPlatform, true);
+  homebridge.registerPlatform('homebridge-bond', 'Bond', BondPlatform, true);
 }
 
 export class BondPlatform {
@@ -83,7 +83,7 @@ export class BondPlatform {
 
     this.setupObservers(accessory);
 
-    this.api.registerPlatformAccessories('homebridge-bond-v2', 'BondHome', [accessory]);
+    this.api.registerPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
     this.accessories.push(accessory);
     this.log('Adding accessory ' + accessory.displayName);
   }
@@ -96,7 +96,7 @@ export class BondPlatform {
       this.accessories.splice(index, 1);
     }
 
-    this.api.unregisterPlatformAccessories('homebridge-bond-v2', 'BondHome', [accessory]);
+    this.api.unregisterPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
   }
 
   public configureAccessory(accessory: any) {
@@ -129,7 +129,7 @@ export class BondPlatform {
 
   private validateConfig(): boolean {
     if (this.config === null) {
-      this.log('ERR: BondHome platform not defined in config.json');
+      this.log('ERR: Bond platform not defined in config.json');
       return false;
     }
     if (this.config.bond_ip_address === undefined) {
