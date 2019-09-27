@@ -25,7 +25,7 @@ Configuration sample (edit `~/.homebridge/config.json`):
 ],
 ```
 
-To get your Bond IP Address, follow the instructions [here](https://github.com/aarons22/homebridge-bonds/wiki/Get-Bond-IP-Address).
+To get your Bond IP Address, follow the instructions [here](https://github.com/aarons22/homebridge-bond/wiki/Get-Bond-IP-Address).
 
 `BOND_ID` and `BOND_TOKEN` (Local token) can be found in the app. Go to your Bond settings:
 
