@@ -83,7 +83,7 @@ export class BondApi {
     });
   }
 
-  public setFanSpeed(id: string, speed: FanSpeed): Promise<void> {
+  public setFanSpeed(id: string, speed: number): Promise<void> {
     const action = speed === FanSpeed.off ? Action.TurnOff : Action.SetSpeed;
     let body = {};
     if (action === Action.SetSpeed) {
