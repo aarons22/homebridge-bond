@@ -38,16 +38,19 @@ export namespace Device {
   }
 
   export function fanSpeeds(device: Device): number[] {
-    const values = device.commands.filter(cmd => {
-      // Find all of the commands associated with speed
-      return cmd.action === Action.SetSpeed
-    }).sort((a, b) => { 
-      // sort them
-      return a.argument! < b.argument! ? 0 : 1;
-    }).map(cmd => {
-      // map down to the raw argument values from that command
-      return cmd.argument || 0
-    });
+    const values = device.commands
+      .filter(cmd => {
+        // Find all of the commands associated with speed
+        return cmd.action === Action.SetSpeed;
+      })
+      .sort((a, b) => {
+        // sort them
+        return a.argument! < b.argument! ? 0 : 1;
+      })
+      .map(cmd => {
+        // map down to the raw argument values from that command
+        return cmd.argument || 0;
+      });
 
     if (values.length === 0) {
       return [];

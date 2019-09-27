@@ -230,8 +230,9 @@ export class BondPlatform {
           });
       })
       .on('get', (callback: (arg0: null, arg1: number) => void) => {
-        that.getFanSpeedValue(device, speed => {
-          callback(null, speed);
+        that.getFanSpeedValue(device, index => {
+          speedChar.updateValue(index);
+          callback(null, index);
         });
       });
 
@@ -284,7 +285,7 @@ export class BondPlatform {
 
     this.bondApi!.getState(device.id)
       .then(state => {
-        if (state.speed !== undefined) {
+        if (state.speed !== undefined && state.power === 1) {
           const index = values.indexOf(state.speed!);
           callback(index);
         } else {
