@@ -1,26 +1,29 @@
 {
   "name": "homebridge-bond",
-  "version": "0.2.0",
-  "description": "A homebridge plugin to control your IR/RF devices via BOND.",
+  "version": "2.0.0",
+  "description": "A homebridge plugin to control your Bond devices over the v2 API.",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
-    "prepublish": "npm run build",
+    "prepublishOnly": "npm run build",
     "build": "tsc",
-    "clean": "rimraf dist"
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json",
+    "dev": "tsc --watch & nodemon dist"
   },
   "keywords": [
     "homebridge-plugin",
     "bond",
+    "bond-home",
     "rf",
     "ir"
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/edc1591/homebridge-bond.git"
+    "url": "git://github.com/aarons22/homebridge-bond.git"
   },
   "bugs": {
-    "url": "http://github.com/edc1591/homebridge-bond/issues"
+    "url": "http://github.com/aarons22/homebridge-bond/issues"
   },
   "engines": {
     "node": ">=0.12.0",
@@ -28,12 +31,17 @@
   },
   "devDependencies": {
     "@types/request-promise": "^4.1.41",
+    "prettier": "^1.18.2",
     "rimraf": "^2.6.2",
-    "typescript": "^2.7.1"
+    "tslint": "^5.20.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^2.9.2"
   },
   "dependencies": {
     "bluebird": "^3.5.1",
     "request": "^2.87.0",
     "request-promise": "^4.2.2"
-  }
+  },
+  "homepage": "https://github.com/aarons22/homebridge-bond#readme",
+  "author": "Aaron Sapp"
 }
