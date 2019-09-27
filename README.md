@@ -5,6 +5,15 @@ Bond plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the [
 
 Note: Some Bond's may not be able to update to v2 firmware. If so, you can use the [v1 homebrige plugin](https://www.npmjs.com/package/homebridge-bond-v1).
 
+## Features
+
+This plugin currently supports the following devices and features:
+- Ceiling Fan
+   - Light on/off
+   - Fan Speeds 1-3 (including off)
+   
+You can view the backlog of features [here](https://github.com/aarons22/homebridge-bond/). Feel free to add a feature request in the Issues tab!
+
 ## Installation
 
 1. Install homebridge using: `npm install -g homebridge`
