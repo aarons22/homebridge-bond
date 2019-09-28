@@ -1,9 +1,13 @@
 [![npm version](https://badge.fury.io/js/homebridge-bond.svg)](https://badge.fury.io/js/homebridge-bond)
 # homebridge-bond
 
-Bond plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the [Bond V2 API](http://docs-local.appbond.com). In oder to use this plugin, you'll need to make sure your Bond has been updated to firmware v2. If you are still on v1 (using the Bond Bridge app), you'll need to down the new [Bond Home](https://apps.apple.com/us/app/bond-home/id1447691811) app and update your firmware.
+Bond plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the [Bond V2 API](http://docs-local.appbond.com). In oder to use this plugin, you'll need to make sure your Bond has been updated to firmware v2. 
 
-Note: Some Bond's may not be able to update to v2 firmware. If so, you can use the [v1 homebrige plugin](https://www.npmjs.com/package/homebridge-bond-v1).
+**NOTE: If you are still on v1 (using the Bond Bridge app)**:
+- You need to download the new [Bond Home](https://apps.apple.com/us/app/bond-home/id1447691811) app and update your firmware.
+- After that, follow the [migration guide](https://github.com/aarons22/homebridge-bond/wiki/Migrating-from-v1-to-v2).
+
+Some Bond's may not be able to update to v2 firmware. If so, you can use the [v1 homebrige plugin](https://www.npmjs.com/package/homebridge-bond-v1).
 
 ## Features
 
