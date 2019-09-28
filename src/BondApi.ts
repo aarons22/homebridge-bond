@@ -110,8 +110,29 @@ export class BondApi {
       },
       body,
       json: true,
-    }).then(json => {
-      return json;
-    });
+      timeout: 10000,
+    })
+      .then(json => {
+        return json;
+      })
+      .catch((error: HTTPError) => {
+        if (error.name === 'StatusCodeError') {
+          switch (error.statusCode) {
+            case 401:
+              this.log('ERR: Unauthorized. Please check your `bond_token` to see if it is correct.');
+              return;
+            default:
+              this.log(`ERR: statusCode ${error.statusCode}`);
+          }
+        } else {
+          this.log(`ERR: A request error occurred: ${error.error}`);
+        }
+      });
   }
+}
+
+interface HTTPError {
+  name: string;
+  statusCode: number | null;
+  error: string | undefined;
 }
