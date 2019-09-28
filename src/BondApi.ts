@@ -5,6 +5,11 @@ import { Action } from './enum/Action';
 import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 
+enum HTTPMethod {
+  GET = 'GET',
+  PUT = 'PUT',
+}
+
 export class BondApi {
   private bondToken: string;
   private uri: BondUri;
@@ -17,27 +22,12 @@ export class BondApi {
   // tslint:disable: object-literal-sort-keys
 
   public getState(id: string): Promise<BondState> {
-    return rp({
-      method: 'GET',
-      uri: this.uri.state(id),
-      headers: {
-        'BOND-Token': this.bondToken,
-      },
-      json: true,
-    }).then(json => {
-      return json;
-    });
+    return this.request(HTTPMethod.GET, this.uri.state(id));
   }
 
   public getDeviceIds(): Promise<string[]> {
-    return rp({
-      method: 'GET',
-      uri: this.uri.deviceIds(),
-      headers: {
-        'BOND-Token': this.bondToken,
-      },
-      json: true,
-    }).then((json: {}) =>
+    const req = this.request(HTTPMethod.GET, this.uri.deviceIds());
+    return req.then((json: {}) =>
       Object.keys(json).filter(x => {
         return x.length > 1;
       }),
@@ -54,74 +44,29 @@ export class BondApi {
 
   // tslint:disable: object-literal-sort-keys
   public toggleLight(id: string): Promise<void> {
-    return rp({
-      method: 'PUT',
-      uri: this.uri.action(id, Action.ToggleLight),
-      headers: {
-        'BOND-Token': this.bondToken,
-      },
-      body: {},
-      json: true,
-    }).then(() => {
-      return;
-    });
+    return this.request(HTTPMethod.PUT, this.uri.action(id, Action.ToggleLight));
   }
 
   public toggleFan(device: Device, on: boolean): Promise<void> {
     const action = on ? Action.TurnOn : Action.TurnOff;
-    return rp({
-      method: 'PUT',
-      uri: this.uri.action(device.id, action),
-      headers: {
-        'BOND-Token': this.bondToken,
-      },
-      body: {},
-      json: true,
-    }).then(() => {
-      return;
-    });
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, action));
   }
 
   public setFanSpeed(id: string, speed: number): Promise<void> {
-    return rp({
-      method: 'PUT',
-      uri: this.uri.action(id, Action.SetSpeed),
-      headers: {
-        'BOND-Token': this.bondToken,
-      },
-      body: {
-        argument: speed,
-      },
-      json: true,
-    }).then(() => {
-      return;
-    });
+    const body = {
+      argument: speed,
+    };
+    return this.request(HTTPMethod.PUT, this.uri.action(id, Action.SetSpeed), body);
   }
 
   public toggleDirection(id: string): Promise<void> {
-    return rp({
-      method: 'PUT',
-      uri: this.uri.action(id, Action.ToggleDirection),
-      headers: {
-        'BOND-Token': this.bondToken,
-      },
-      body: {},
-      json: true,
-    }).then(() => {
-      return;
-    });
+    return this.request(HTTPMethod.PUT, this.uri.action(id, Action.ToggleDirection));
   }
 
   private getDevice(id: string): Promise<Device> {
     return this.getCommands(id).then(commands => {
-      return rp({
-        method: 'GET',
-        uri: this.uri.device(id),
-        headers: {
-          'BOND-Token': this.bondToken,
-        },
-        json: true,
-      }).then(json => {
+      const req = this.request(HTTPMethod.GET, this.uri.device(id));
+      return req.then(json => {
         json.id = id;
         json.commands = commands;
         return json;
@@ -142,14 +87,8 @@ export class BondApi {
   }
 
   private getCommandIds(id: string): Promise<string[]> {
-    return rp({
-      method: 'GET',
-      uri: this.uri.commands(id),
-      headers: {
-        'BOND-Token': this.bondToken,
-      },
-      json: true,
-    }).then((json: {}) =>
+    const req = this.request(HTTPMethod.GET, this.uri.commands(id));
+    return req.then((json: {}) =>
       Object.keys(json).filter(x => {
         return x.length > 1;
       }),
@@ -157,12 +96,19 @@ export class BondApi {
   }
 
   private getCommand(deviceId: string, commandId: string): Promise<Command> {
+    return this.request(HTTPMethod.GET, this.uri.command(deviceId, commandId));
+  }
+
+  // Helpers
+
+  private request(method: HTTPMethod, uri: string, body: {} = {}): Promise<any> {
     return rp({
-      method: 'GET',
-      uri: this.uri.command(deviceId, commandId),
+      method,
+      uri,
       headers: {
         'BOND-Token': this.bondToken,
       },
+      body,
       json: true,
     }).then(json => {
       return json;
