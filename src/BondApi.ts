@@ -68,6 +68,21 @@ export class BondApi {
     });
   }
 
+  public toggleFan(device: Device, on: boolean): Promise<void> {
+    const action = on ? Action.TurnOn : Action.TurnOff;
+    return rp({
+      method: 'PUT',
+      uri: this.uri.action(device.id, action),
+      headers: {
+        'BOND-Token': this.bondToken,
+      },
+      body: {},
+      json: true,
+    }).then(() => {
+      return;
+    });
+  }
+
   public setFanSpeed(id: string, speed: FanSpeed): Promise<void> {
     const action = speed === FanSpeed.off ? Action.TurnOff : Action.SetSpeed;
     let body = {};

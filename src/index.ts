@@ -230,6 +230,49 @@ export class BondPlatform {
           callback(null, speed);
         });
       });
+
+    const onChar = fan.getCharacteristic(Characteristic.On);
+
+    // Capture current state of device and apply characteristics
+    this.getFanPower(device, isOn => {
+      onChar.updateValue(isOn);
+    });
+
+    onChar
+      .on('set', (value: boolean, callback: { (): void; (): void }) => {
+        // Avoid toggling when the fan is already in the requested state. (Workaround for Siri)
+        if (value === onChar.value) {
+          callback();
+          return;
+        }
+        that
+          .bondApi!.toggleFan(device, value)
+          .then(() => {
+            const val = value ? 'ON' : 'OFF';
+            that.log('fan toggled: ' + val);
+            onChar.updateValue(value);
+            callback();
+          })
+          .catch((error: string) => {
+            that.log(error);
+            callback();
+          });
+      })
+      .on('get', (callback: (arg0: null, arg1: boolean) => void) => {
+        that.getFanPower(device, isOn => {
+          callback(null, isOn);
+        });
+      });
+  }
+
+  private getFanPower(device: Device, callback: (isOn: boolean) => void) {
+    this.bondApi!.getState(device.id)
+      .then(state => {
+        callback(state.power === 1);
+      })
+      .catch((error: string) => {
+        this.log(error);
+      });
   }
 
   private getFanSpeedValue(device: Device, callback: (speed: number) => void) {
