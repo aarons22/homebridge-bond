@@ -1,8 +1,6 @@
 import { BondApi } from './BondApi';
 import { DeviceType } from './enum/DeviceType';
-import { FanSpeed } from './enum/FanSpeed';
 import { Device } from './interface/Device';
-import { Action } from './enum/Action';
 
 let Accessory: any;
 let Service: any;
@@ -217,6 +215,12 @@ export class BondPlatform {
       })
       .on('set', (index: number, callback: { (): void; (): void }) => {
         const speed = values[index];
+
+        if (speed === 0) {
+          callback();
+          return;
+        }
+
         that
           .bondApi!.setFanSpeed(device.id, speed)
           .then(() => {
