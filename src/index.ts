@@ -1,6 +1,5 @@
 import { BondApi } from './BondApi';
 import { DeviceType } from './enum/DeviceType';
-import { FanSpeed } from './enum/FanSpeed';
 import { Device } from './interface/Device';
 
 let Accessory: any;
@@ -202,22 +201,31 @@ export class BondPlatform {
     const speedChar = fan.getCharacteristic(Characteristic.RotationSpeed);
 
     // Capture current state of device and apply characteristics
-    this.getFanSpeedValue(device, speed => {
-      speedChar.updateValue(speed);
+    this.getFanSpeedValue(device, index => {
+      speedChar.updateValue(index);
     });
+
+    const values = Device.fanSpeeds(device);
 
     speedChar
       .setProps({
-        maxValue: 99,
-        minStep: 33,
+        maxValue: values.length - 1,
+        minStep: 1,
+        minValue: 0,
       })
-      .on('set', (value: any, callback: { (): void; (): void }) => {
-        const speed = FanSpeed.getFanSpeed(value);
+      .on('set', (index: number, callback: { (): void; (): void }) => {
+        const speed = values[index];
+
+        if (speed === 0) {
+          callback();
+          return;
+        }
+
         that
           .bondApi!.setFanSpeed(device.id, speed)
           .then(() => {
             that.log('set speed value: ' + speed);
-            speedChar.updateValue(value);
+            speedChar.updateValue(index);
             callback();
           })
           .catch((error: string) => {
@@ -226,8 +234,9 @@ export class BondPlatform {
           });
       })
       .on('get', (callback: (arg0: null, arg1: number) => void) => {
-        that.getFanSpeedValue(device, speed => {
-          callback(null, speed);
+        that.getFanSpeedValue(device, index => {
+          speedChar.updateValue(index);
+          callback(null, index);
         });
       });
 
@@ -276,11 +285,13 @@ export class BondPlatform {
   }
 
   private getFanSpeedValue(device: Device, callback: (speed: number) => void) {
+    const values = Device.fanSpeeds(device);
+
     this.bondApi!.getState(device.id)
       .then(state => {
-        if (state.speed !== undefined) {
-          const speed = FanSpeed.getHKSpeed(state.speed!);
-          callback(speed);
+        if (state.speed !== undefined && state.power === 1) {
+          const index = values.indexOf(state.speed!);
+          callback(index);
         } else {
           callback(0);
         }

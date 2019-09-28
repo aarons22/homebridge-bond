@@ -2,7 +2,6 @@ import Promise from 'bluebird';
 import rp from 'request-promise';
 import { BondUri } from './BondUri';
 import { Action } from './enum/Action';
-import { FanSpeed } from './enum/FanSpeed';
 import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 
@@ -83,22 +82,16 @@ export class BondApi {
     });
   }
 
-  public setFanSpeed(id: string, speed: FanSpeed): Promise<void> {
-    const action = speed === FanSpeed.off ? Action.TurnOff : Action.SetSpeed;
-    let body = {};
-    if (action === Action.SetSpeed) {
-      body = {
-        argument: speed,
-      };
-    }
+  public setFanSpeed(id: string, speed: number): Promise<void> {
     return rp({
       method: 'PUT',
-      uri: this.uri.action(id, action),
-
+      uri: this.uri.action(id, Action.SetSpeed),
       headers: {
         'BOND-Token': this.bondToken,
       },
-      body,
+      body: {
+        argument: speed,
+      },
       json: true,
     }).then(() => {
       return;
