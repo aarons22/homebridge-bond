@@ -13,10 +13,12 @@ enum HTTPMethod {
 export class BondApi {
   private bondToken: string;
   private uri: BondUri;
+  private isDebug: boolean;
 
-  constructor(private log: (arg0: string) => void, config: { [key: string]: string }) {
+  constructor(private log: (arg0: string) => void, config: { [key: string]: any }) {
     this.bondToken = config.bond_token;
     this.uri = new BondUri(config.bond_ip_address);
+    this.isDebug = config.debug;
   }
 
   // tslint:disable: object-literal-sort-keys
@@ -102,6 +104,11 @@ export class BondApi {
   // Helpers
 
   private request(method: HTTPMethod, uri: string, body: {} = {}): Promise<any> {
+    if (body !== {}) {
+      this.debug(`Request [${method} ${uri}] - body: ${JSON.stringify(body)}`);
+    } else {
+      this.debug(`Request [${method} ${uri}]`);
+    }
     return rp({
       method,
       uri,
@@ -110,13 +117,20 @@ export class BondApi {
       },
       body,
       json: true,
+      simple: false,
       timeout: 10000,
     })
       .then(json => {
+        if (json !== undefined) {
+          this.debug(`Response [${method} ${uri}] - ${JSON.stringify(json)}`);
+        } else {
+          this.debug(`Response [${method} ${uri}]`);
+        }
         return json;
       })
-      .catch((error: HTTPError) => {
-        if (error.name === 'StatusCodeError') {
+      .catch((error: any) => {
+        this.debug(`Error [${method} ${uri}] - ${JSON.stringify(error)}`);
+        if (error.name !== undefined && error.name === 'StatusCodeError') {
           switch (error.statusCode) {
             case 401:
               this.log('ERR: Unauthorized. Please check your `bond_token` to see if it is correct.');
@@ -128,6 +142,12 @@ export class BondApi {
           this.log(`ERR: A request error occurred: ${error.error}`);
         }
       });
+  }
+
+  private debug(message: string) {
+    if (this.isDebug) {
+      this.log(`DEBUG: ${message}`);
+    }
   }
 }
 
