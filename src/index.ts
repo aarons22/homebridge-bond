@@ -1,3 +1,4 @@
+import Promise from 'bluebird';
 import { BondApi } from './BondApi';
 import { DeviceType } from './enum/DeviceType';
 import { Device } from './interface/Device';
@@ -32,7 +33,7 @@ export class BondPlatform {
 
     const that = this;
     api.on('didFinishLaunching', () => {
-      that.log(that.accessories.length + ' cached accessories were loaded');
+      that.log(`${that.accessories.length} cached accessories were loaded`);
       that.getDevices();
     });
   }
@@ -41,12 +42,12 @@ export class BondPlatform {
     this.log('Getting devices...');
     this.bondApi!.getDeviceIds()
       .then(ids => {
-        this.log(ids.length + ' devices were found on this Bond.');
+        this.log(`{$ids.length} devices were found on this Bond.`);
         const filtered = ids.filter(id => {
           return !this.deviceAdded(id);
         });
 
-        this.log('Attempting to add ' + filtered.length + ' devices that were not previously added.');
+        this.log(`Attempting to add ${filtered.length} devices that were not previously added.`);
         this.bondApi!.getDevices(filtered)
           .then(devices => {
             devices.forEach(device => {
@@ -64,12 +65,12 @@ export class BondPlatform {
 
   public addAccessory(device: Device) {
     if (this.deviceAdded(device.id)) {
-      this.log(device.id + ' has already been added.');
+      this.log(`${device.id} has already been added.`);
       return;
     }
 
     if (!Device.isSupported(device)) {
-      this.log(device.name + ' has no supported actions.');
+      this.log(`${device.name} has no supported actions.`);
       return;
     }
 
@@ -80,11 +81,11 @@ export class BondPlatform {
 
     if (device.type === DeviceType.CeilingFan) {
       if (Device.CFhasFan(device)) {
-        accessory.addService(Service.Fan, device.location + ' Fan');
+        accessory.addService(Service.Fan, `${device.location} Fan`);
       }
 
       if (Device.CFhasLightbulb(device)) {
-        accessory.addService(Service.Lightbulb, device.location + ' Light');
+        accessory.addService(Service.Lightbulb, `${device.location} Light`);
       }
     }
 
@@ -92,11 +93,11 @@ export class BondPlatform {
 
     this.api.registerPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
     this.accessories.push(accessory);
-    this.log('Adding accessory ' + accessory.displayName);
+    this.log(`Adding accessory ${accessory.displayName}`);
   }
 
   public removeAccessory(accessory: any) {
-    this.log('Removing accessory ' + accessory.displayName);
+    this.log(`Removing accessory ${accessory.displayName}`);
 
     const index = this.accessories.indexOf(accessory);
     if (index > -1) {
@@ -110,7 +111,7 @@ export class BondPlatform {
     if (!this.validateConfig()) {
       return;
     }
-    this.log('Configuring Accessory: ' + accessory.displayName);
+    this.log(`Configuring Accessory: ${accessory.displayName}`);
     this.accessories.push(accessory);
     this.setupObservers(accessory);
   }
@@ -172,7 +173,7 @@ export class BondPlatform {
           .bondApi!.toggleLight(device.id)
           .then(() => {
             const val = value ? 'ON' : 'OFF';
-            that.log('light toggled: ' + val);
+            that.log(`light toggled: ${val}`);
             onChar.updateValue(value);
             callback();
           })
@@ -234,7 +235,7 @@ export class BondPlatform {
         that
           .bondApi!.setFanSpeed(device.id, speed)
           .then(() => {
-            that.log('set speed value: ' + speed);
+            that.log(`set speed value: ${speed}`);
             speedChar.updateValue(index);
             callback();
           })
@@ -274,7 +275,7 @@ export class BondPlatform {
           .bondApi!.toggleFan(device, value)
           .then(() => {
             const val = value ? 'ON' : 'OFF';
-            that.log('fan toggled: ' + val);
+            that.log(`fan toggled: ${val}`);
             onChar.updateValue(value);
             callback();
           })
@@ -336,7 +337,7 @@ export class BondPlatform {
           .bondApi!.toggleDirection(device.id)
           .then(() => {
             const val = value === 1 ? 'Clockwise' : 'Counter-Clockwise';
-            that.log('direction changed: ' + val);
+            that.log(`direction changed: ${val}`);
             directionChar.updateValue(value);
             callback();
           })
