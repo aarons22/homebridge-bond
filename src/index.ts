@@ -42,7 +42,7 @@ export class BondPlatform {
     this.log('Getting devices...');
     this.bondApi!.getDeviceIds()
       .then(ids => {
-        this.log(`{$ids.length} devices were found on this Bond.`);
+        this.log(`${ids.length} devices were found on this Bond.`);
         const filtered = ids.filter(id => {
           return !this.deviceAdded(id);
         });
