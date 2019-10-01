@@ -39,19 +39,27 @@ export class BondPlatform {
 
   public getDevices() {
     this.log('Getting devices...');
-    this.bondApi!.getDeviceIds().then(ids => {
-      this.log(ids.length + ' devices were found on this Bond.');
-      const filtered = ids.filter(id => {
-        return !this.deviceAdded(id);
-      });
-
-      this.log('Attempting to add ' + filtered.length + ' devices that were not previously added.');
-      this.bondApi!.getDevices(filtered).then(devices => {
-        devices.forEach(device => {
-          this.addAccessory(device);
+    this.bondApi!.getDeviceIds()
+      .then(ids => {
+        this.log(ids.length + ' devices were found on this Bond.');
+        const filtered = ids.filter(id => {
+          return !this.deviceAdded(id);
         });
+
+        this.log('Attempting to add ' + filtered.length + ' devices that were not previously added.');
+        this.bondApi!.getDevices(filtered)
+          .then(devices => {
+            devices.forEach(device => {
+              this.addAccessory(device);
+            });
+          })
+          .catch(error => {
+            this.log(`Error getting devices: ${error}`);
+          });
+      })
+      .catch(error => {
+        this.log(`Error getting device ids: ${error}`);
       });
-    });
   }
 
   public addAccessory(device: Device) {
@@ -149,7 +157,7 @@ export class BondPlatform {
     const onChar = bulb.getCharacteristic(Characteristic.On);
 
     // Capture current state of device and apply characteristics
-    this.getLightValue(device, isOn => {
+    this.getLightValue(device).then(isOn => {
       onChar.updateValue(isOn);
     });
 
@@ -169,29 +177,31 @@ export class BondPlatform {
             callback();
           })
           .catch((error: string) => {
-            that.log(error);
+            that.log(`Error toggling ${device.name} fan light: ${error}`);
             callback();
           });
       })
       .on('get', (callback: (arg0: null, arg1: boolean) => void) => {
-        that.getLightValue(device, isOn => {
-          callback(null, isOn);
-        });
+        that
+          .getLightValue(device)
+          .then(isOn => {
+            callback(null, isOn);
+          })
+          .catch(error => {
+            that.log(`Error getting ${device.name} fan light value: ${error}`);
+            callback(null, false);
+          });
       });
   }
 
-  private getLightValue(device: Device, callback: (isOn: boolean) => void) {
-    this.bondApi!.getState(device.id)
-      .then(state => {
-        if (state.light !== undefined) {
-          callback(state.light === 1 ? true : false);
-        } else {
-          callback(false);
-        }
-      })
-      .catch((error: string) => {
-        this.log(error);
-      });
+  private getLightValue(device: Device): Promise<boolean> {
+    return this.bondApi!.getState(device.id).then(state => {
+      if (state.light !== undefined) {
+        return state.light === 1 ? true : false;
+      } else {
+        return false;
+      }
+    });
   }
 
   // Fan
@@ -201,7 +211,7 @@ export class BondPlatform {
     const speedChar = fan.getCharacteristic(Characteristic.RotationSpeed);
 
     // Capture current state of device and apply characteristics
-    this.getFanSpeedValue(device, index => {
+    this.getFanSpeedValue(device).then(index => {
       speedChar.updateValue(index);
     });
 
@@ -229,21 +239,27 @@ export class BondPlatform {
             callback();
           })
           .catch((error: string) => {
-            that.log(error);
+            that.log(`Error setting ${device.name} fan speed: ${error}`);
             callback();
           });
       })
       .on('get', (callback: (arg0: null, arg1: number) => void) => {
-        that.getFanSpeedValue(device, index => {
-          speedChar.updateValue(index);
-          callback(null, index);
-        });
+        that
+          .getFanSpeedValue(device)
+          .then(index => {
+            speedChar.updateValue(index);
+            callback(null, index);
+          })
+          .catch((error: string) => {
+            that.log(`Error getting ${device.name} fan speed: ${error}`);
+            callback(null, 0);
+          });
       });
 
     const onChar = fan.getCharacteristic(Characteristic.On);
 
     // Capture current state of device and apply characteristics
-    this.getFanPower(device, isOn => {
+    this.getFanPower(device).then(isOn => {
       onChar.updateValue(isOn);
     });
 
@@ -263,42 +279,39 @@ export class BondPlatform {
             callback();
           })
           .catch((error: string) => {
-            that.log(error);
+            that.log(`Error setting ${device.name} fan power: ${error}`);
             callback();
           });
       })
       .on('get', (callback: (arg0: null, arg1: boolean) => void) => {
-        that.getFanPower(device, isOn => {
-          callback(null, isOn);
-        });
+        that
+          .getFanPower(device)
+          .then(isOn => {
+            callback(null, isOn);
+          })
+          .catch(error => {
+            that.log(`Error getting ${device.name} fan power: ${error}`);
+            callback(null, false);
+          });
       });
   }
 
-  private getFanPower(device: Device, callback: (isOn: boolean) => void) {
-    this.bondApi!.getState(device.id)
-      .then(state => {
-        callback(state.power === 1);
-      })
-      .catch((error: string) => {
-        this.log(error);
-      });
+  private getFanPower(device: Device): Promise<boolean> {
+    return this.bondApi!.getState(device.id).then(state => {
+      return state.power === 1;
+    });
   }
 
-  private getFanSpeedValue(device: Device, callback: (speed: number) => void) {
+  private getFanSpeedValue(device: Device): Promise<number> {
     const values = Device.fanSpeeds(device);
 
-    this.bondApi!.getState(device.id)
-      .then(state => {
-        if (state.speed !== undefined && state.power === 1) {
-          const index = values.indexOf(state.speed!);
-          callback(index);
-        } else {
-          callback(0);
-        }
-      })
-      .catch((error: string) => {
-        this.log(error);
-      });
+    return this.bondApi!.getState(device.id).then(state => {
+      if (state.speed !== undefined && state.power === 1) {
+        return values.indexOf(state.speed!);
+      } else {
+        return 0;
+      }
+    });
   }
 
   // Fan Rotation Direction
@@ -308,7 +321,7 @@ export class BondPlatform {
     const directionChar = fan.getCharacteristic(Characteristic.RotationDirection);
 
     // Capture current state of device and apply characteristics
-    this.getDirectionValue(device, direction => {
+    this.getDirectionValue(device).then(direction => {
       directionChar.updateValue(direction);
     });
 
@@ -328,29 +341,31 @@ export class BondPlatform {
             callback();
           })
           .catch((error: string) => {
-            that.log(error);
+            that.log(`Error setting ${device.name} fan direction: ${error}`);
             callback();
           });
       })
       .on('get', (callback: (arg0: null, arg1: number) => void) => {
-        that.getDirectionValue(device, direction => {
-          callback(null, direction);
-        });
+        that
+          .getDirectionValue(device)
+          .then(direction => {
+            callback(null, direction);
+          })
+          .catch(error => {
+            that.log(`Error getting ${device.name} fan direction: ${error}`);
+            callback(null, 0);
+          });
       });
   }
 
-  private getDirectionValue(device: Device, callback: (direction: number) => void) {
-    this.bondApi!.getState(device.id)
-      .then(state => {
-        if (state.direction !== undefined) {
-          callback(state.direction!);
-        } else {
-          callback(0);
-        }
-      })
-      .catch((error: string) => {
-        this.log(error);
-      });
+  private getDirectionValue(device: Device): Promise<number> {
+    return this.bondApi!.getState(device.id).then(state => {
+      if (state.direction !== undefined) {
+        return state.direction!;
+      } else {
+        return 0;
+      }
+    });
   }
 
   // Helper Methods
