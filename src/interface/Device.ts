@@ -52,13 +52,6 @@ export namespace Device {
         return cmd.argument || 0;
       });
 
-    if (values.length === 0) {
-      return [];
-    }
-
-    // insert 0 for power off command
-    values.splice(0, 0, 0);
-
     return values;
   }
 }

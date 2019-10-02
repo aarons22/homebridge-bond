@@ -212,31 +212,38 @@ export class BondPlatform {
     const speedChar = fan.getCharacteristic(Characteristic.RotationSpeed);
 
     // Capture current state of device and apply characteristics
-    this.getFanSpeedValue(device).then(index => {
-      speedChar.updateValue(index);
+    this.getFanSpeedValue(device).then(speed => {
+      this.log(`got speed value: ${speed}`);
+      speedChar.updateValue(speed);
     });
 
     const values = Device.fanSpeeds(device);
 
+    const minStep = Math.floor(100 / values.length);
+    const maxValue = minStep * values.length;
+    this.debug(`[${device.name}] min step: ${minStep}, max value: ${maxValue}`);
+
     speedChar
       .setProps({
-        maxValue: values.length - 1,
-        minStep: 1,
-        minValue: 0,
+        maxValue,
+        minStep,
       })
-      .on('set', (index: number, callback: { (): void; (): void }) => {
-        const speed = values[index];
-
-        if (speed === 0) {
+      .on('set', (step: number, callback: { (): void; (): void }) => {
+        that.debug(`[${device.name}] new step value: ${step}`);
+        if (step === 0) {
           callback();
           return;
         }
+        const index = step / minStep - 1;
+        that.debug(`[${device.name}] new index value: ${index}`);
+        const speed = values[index];
+        that.debug(`[${device.name}] new speed value: ${speed}`);
 
         that
           .bondApi!.setFanSpeed(device.id, speed)
           .then(() => {
             that.log(`set speed value: ${speed}`);
-            speedChar.updateValue(index);
+            speedChar.updateValue(step);
             callback();
           })
           .catch((error: string) => {
@@ -247,9 +254,10 @@ export class BondPlatform {
       .on('get', (callback: (arg0: null, arg1: number) => void) => {
         that
           .getFanSpeedValue(device)
-          .then(index => {
-            speedChar.updateValue(index);
-            callback(null, index);
+          .then(speed => {
+            this.log(`got speed value: ${speed}`);
+            speedChar.updateValue(speed);
+            callback(null, speed);
           })
           .catch((error: string) => {
             that.log(`Error getting ${device.name} fan speed: ${error}`);
@@ -305,10 +313,16 @@ export class BondPlatform {
 
   private getFanSpeedValue(device: Device): Promise<number> {
     const values = Device.fanSpeeds(device);
+    const minStep = Math.floor(100 / values.length);
 
     return this.bondApi!.getState(device.id).then(state => {
       if (state.speed !== undefined && state.power === 1) {
-        return values.indexOf(state.speed!);
+        this.debug(`[${device.name}] speed value: ${state.speed}`);
+        const index = values.indexOf(state.speed!);
+        this.debug(`[${device.name}] index value: ${index}`);
+        const step = index * minStep;
+        this.debug(`[${device.name}] step value: ${step}`);
+        return step;
       } else {
         return 0;
       }
@@ -381,5 +395,11 @@ export class BondPlatform {
       return device.id === id;
     });
     return accessories.length > 0 ? accessories[0] : null;
+  }
+
+  private debug(message: string) {
+    if (this.config.debug) {
+      this.log(`DEBUG: ${message}`);
+    }
   }
 }
