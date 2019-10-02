@@ -31,7 +31,8 @@ export class BondApi {
     const req = this.request(HTTPMethod.GET, this.uri.deviceIds());
     return req.then((json: {}) =>
       Object.keys(json).filter(x => {
-        return x.length > 1;
+        // Ignore anything that is an empty string or '_'
+        return x.length > 0 && x !== '_';
       }),
     );
   }
@@ -92,7 +93,8 @@ export class BondApi {
     const req = this.request(HTTPMethod.GET, this.uri.commands(id));
     return req.then((json: {}) =>
       Object.keys(json).filter(x => {
-        return x.length > 1;
+        // Ignore anything that is an empty string or '_'
+        return x.length > 0 && x !== '_';
       }),
     );
   }
