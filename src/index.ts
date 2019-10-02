@@ -173,12 +173,12 @@ export class BondPlatform {
           .bondApi!.toggleLight(device.id)
           .then(() => {
             const val = value ? 'ON' : 'OFF';
-            that.log(`light toggled: ${val}`);
+            that.verbose(device, `light toggled: ${val}`);
             onChar.updateValue(value);
             callback();
           })
           .catch((error: string) => {
-            that.log(`Error toggling ${device.name} fan light: ${error}`);
+            that.error(device, `Error toggling ${device.name} fan light: ${error}`);
             callback();
           });
       })
@@ -189,7 +189,7 @@ export class BondPlatform {
             callback(null, isOn);
           })
           .catch(error => {
-            that.log(`Error getting ${device.name} fan light value: ${error}`);
+            that.error(device, `Error getting fan light value: ${error}`);
             callback(null, false);
           });
       });
@@ -213,7 +213,7 @@ export class BondPlatform {
 
     // Capture current state of device and apply characteristics
     this.getFanSpeedValue(device).then(speed => {
-      this.log(`got speed value: ${speed}`);
+      this.debug(device, `got speed value: ${speed}`);
       speedChar.updateValue(speed);
     });
 
@@ -221,7 +221,7 @@ export class BondPlatform {
 
     const minStep = Math.floor(100 / values.length);
     const maxValue = minStep * values.length;
-    this.debug(`[${device.name}] min step: ${minStep}, max value: ${maxValue}`);
+    this.debug(device, `min step: ${minStep}, max value: ${maxValue}`);
 
     speedChar
       .setProps({
@@ -229,25 +229,25 @@ export class BondPlatform {
         minStep,
       })
       .on('set', (step: number, callback: { (): void; (): void }) => {
-        that.debug(`[${device.name}] new step value: ${step}`);
+        that.debug(device, `new step value: ${step}`);
         if (step === 0) {
           callback();
           return;
         }
         const index = step / minStep - 1;
-        that.debug(`[${device.name}] new index value: ${index}`);
+        that.debug(device, `new index value: ${index}`);
         const speed = values[index];
-        that.debug(`[${device.name}] new speed value: ${speed}`);
+        that.debug(device, `new speed value: ${speed}`);
 
         that
           .bondApi!.setFanSpeed(device.id, speed)
           .then(() => {
-            that.log(`set speed value: ${speed}`);
+            that.verbose(device, `set speed value: ${speed}`);
             speedChar.updateValue(step);
             callback();
           })
           .catch((error: string) => {
-            that.log(`Error setting ${device.name} fan speed: ${error}`);
+            that.error(device, `Error setting fan speed: ${error}`);
             callback();
           });
       })
@@ -255,12 +255,12 @@ export class BondPlatform {
         that
           .getFanSpeedValue(device)
           .then(speed => {
-            this.log(`got speed value: ${speed}`);
+            that.verbose(device, `got speed value: ${speed}`);
             speedChar.updateValue(speed);
             callback(null, speed);
           })
           .catch((error: string) => {
-            that.log(`Error getting ${device.name} fan speed: ${error}`);
+            that.error(device, `Error getting fan speed: ${error}`);
             callback(null, 0);
           });
       });
@@ -283,12 +283,12 @@ export class BondPlatform {
           .bondApi!.toggleFan(device, value)
           .then(() => {
             const val = value ? 'ON' : 'OFF';
-            that.log(`fan toggled: ${val}`);
+            that.verbose(device, `fan toggled: ${val}`);
             onChar.updateValue(value);
             callback();
           })
           .catch((error: string) => {
-            that.log(`Error setting ${device.name} fan power: ${error}`);
+            that.error(device, `Error setting fan power: ${error}`);
             callback();
           });
       })
@@ -299,7 +299,7 @@ export class BondPlatform {
             callback(null, isOn);
           })
           .catch(error => {
-            that.log(`Error getting ${device.name} fan power: ${error}`);
+            that.error(device, `Error getting fan power: ${error}`);
             callback(null, false);
           });
       });
@@ -317,11 +317,11 @@ export class BondPlatform {
 
     return this.bondApi!.getState(device.id).then(state => {
       if (state.speed !== undefined && state.power === 1) {
-        this.debug(`[${device.name}] speed value: ${state.speed}`);
+        this.debug(device, `speed value: ${state.speed}`);
         const index = values.indexOf(state.speed!);
-        this.debug(`[${device.name}] index value: ${index}`);
+        this.debug(device, `index value: ${index}`);
         const step = index * minStep;
-        this.debug(`[${device.name}] step value: ${step}`);
+        this.debug(device, `step value: ${step}`);
         return step;
       } else {
         return 0;
@@ -397,9 +397,17 @@ export class BondPlatform {
     return accessories.length > 0 ? accessories[0] : null;
   }
 
-  private debug(message: string) {
+  private debug(device: Device, message: string) {
     if (this.config.debug) {
-      this.log(`DEBUG: ${message}`);
+      this.log(`DEBUG: [${device.name}] ${message}`);
     }
+  }
+
+  private verbose(device: Device, message: string) {
+    this.log(`[${device.name}] ${message}`);
+  }
+
+  private error(device: Device, message: string) {
+    this.log(`ERR: [${device.name}] ${message}`);
   }
 }
