@@ -49,6 +49,15 @@ To get your Bond IP Address, follow the instructions [here](https://github.com/a
 
 You can tap on each row to copy the contents to the clipboard.
 
+## Development
+
+I'm more than happy to take PRs if you want to fix a bug you are having or take a shot at adding a new feature you're interested in. To compile the code in realtime, run:
+```
+npm run dev
+```
+
+To use the local version of the plugin in homebridge, I run `npm link` in the directory of the cloned repo.
+
 ## Contact
 
 You can find me on Twitter [@aaronsapp](https://twitter.com/aaronsapp)
