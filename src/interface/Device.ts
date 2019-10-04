@@ -1,12 +1,15 @@
 import { Action } from '../enum/Action';
 import { DeviceType } from '../enum/DeviceType';
+import { Properties } from './Properties';
+
 export interface Device {
   id: string;
   name: string;
   type: DeviceType;
   location: string;
   actions: Action[];
-  commands: Command[];
+  properties: Properties;
+  commands: Command[] | null;
 }
 
 export interface Command {
@@ -38,6 +41,19 @@ export namespace Device {
   }
 
   export function fanSpeeds(device: Device): number[] {
+    if (device.commands == null) {
+      if (device.properties.max_speed == null) {
+        return [];
+      } else {
+        // Assume speeds 1 - max_speed
+        const max_speed = device.properties.max_speed;
+        const vals = Array(max_speed)
+          .fill(1)
+          .map((x, y) => x + y);
+        return vals;
+      }
+    }
+
     const values = device.commands
       .filter(cmd => {
         // Find all of the commands associated with speed
