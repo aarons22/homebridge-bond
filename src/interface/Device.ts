@@ -1,12 +1,15 @@
 import { Action } from '../enum/Action';
 import { DeviceType } from '../enum/DeviceType';
+import { Properties } from './Properties';
+
 export interface Device {
   id: string;
   name: string;
   type: DeviceType;
   location: string;
   actions: Action[];
-  commands: Command[];
+  properties: Properties;
+  commands: Command[] | null;
 }
 
 export interface Command {

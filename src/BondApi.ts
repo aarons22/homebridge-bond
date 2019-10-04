@@ -4,6 +4,7 @@ import { BondUri } from './BondUri';
 import { Action } from './enum/Action';
 import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
+import { Properties } from './interface/Properties';
 
 enum HTTPMethod {
   GET = 'GET',
@@ -67,12 +68,22 @@ export class BondApi {
   }
 
   private getDevice(id: string): Promise<Device> {
-    return this.getCommands(id).then(commands => {
-      const req = this.request(HTTPMethod.GET, this.uri.device(id));
-      return req.then(json => {
-        json.id = id;
-        json.commands = commands;
-        return json;
+    const req = this.request(HTTPMethod.GET, this.uri.device(id));
+    return req.then(json => {
+      // Set the id since it's not included in the response
+      json.id = id;
+      // get the properties of the device
+      return this.getProperties(id).then(properties => {
+        json.properties = properties;
+        if (json.commands === undefined) {
+          return json;
+        } else {
+          // commands are only present on Bridge devices.
+          return this.getCommands(id).then(commands => {
+            json.commands = commands;
+            return json;
+          });
+        }
       });
     });
   }
@@ -101,6 +112,15 @@ export class BondApi {
 
   private getCommand(deviceId: string, commandId: string): Promise<Command> {
     return this.request(HTTPMethod.GET, this.uri.command(deviceId, commandId));
+  }
+
+  // Properties
+
+  private getProperties(id: string): Promise<Properties> {
+    const req = this.request(HTTPMethod.GET, this.uri.properties(id));
+    return req.then(json => {
+      return json;
+    });
   }
 
   // Helpers

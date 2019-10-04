@@ -24,4 +24,8 @@ export class BondUri {
   public command(deviceId: string, commandId: string): string {
     return `http://${this.bondIP}/v2/devices/${deviceId}/commands/${commandId}`;
   }
+
+  public properties(id: string): string {
+    return `http://${this.bondIP}/v2/devices/${id}/properties`;
+  }
 }
