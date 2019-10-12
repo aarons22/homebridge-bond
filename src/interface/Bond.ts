@@ -6,7 +6,7 @@ export class Bond {
   public static objects(log: (arg0: string) => void, config: { [key: string]: any }): Bond[] {
     const bondData: Array<{ [key: string]: any }> = config.bonds;
     const bondObjs = bondData.map(val => {
-      return new Bond(log, val.ip_address, val.token);
+      return new Bond(log, val.ip_address, val.token, config.debug);
     });
 
     return bondObjs;
@@ -27,10 +27,10 @@ export class Bond {
   public api: BondApi;
   public deviceIds: string[];
 
-  constructor(private log: (arg0: string) => void, ipAddress: string, token: string) {
+  constructor(private log: (arg0: string) => void, ipAddress: string, token: string, debug: boolean) {
     // this.ipAddress = ipAddress;
     // this.token = token;
-    this.api = new BondApi(log, token, ipAddress, false);
+    this.api = new BondApi(log, token, ipAddress, debug);
     this.deviceIds = [];
   }
 
