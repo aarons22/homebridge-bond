@@ -16,10 +16,10 @@ export class BondApi {
   private uri: BondUri;
   private isDebug: boolean;
 
-  constructor(private log: (arg0: string) => void, config: { [key: string]: any }) {
-    this.bondToken = config.bond_token;
-    this.uri = new BondUri(config.bond_ip_address);
-    this.isDebug = config.debug;
+  constructor(private log: (arg0: string) => void, bondToken: string, ipAddress: string, debug: boolean) {
+    this.bondToken = bondToken;
+    this.uri = new BondUri(ipAddress);
+    this.isDebug = debug;
   }
 
   // tslint:disable: object-literal-sort-keys
