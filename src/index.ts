@@ -19,11 +19,15 @@ export default function(homebridge: any) {
 
 export class BondPlatform {
   private accessories: any[] = [];
-  private bonds: Bond[] = [];
+  private bonds: Bond[] | undefined;
   private config: { [key: string]: string };
 
   constructor(private log: (arg0: string) => void, config: { [key: string]: any }, private api: any) {
     this.config = config;
+    if (config.bonds === undefined) {
+      this.log('ERR: bonds array is required but missing from config.json');
+      return;
+    }
     const bonds = Bond.objects(log, config);
 
     const that = this;
@@ -109,11 +113,14 @@ export class BondPlatform {
   }
 
   public configureAccessory(accessory: any) {
+    if (this.config.bonds === undefined) {
+      return;
+    }
     this.accessories.push(accessory);
 
     // If bonds hasn't been initilized, attempt to configure the accessory
     // after a delay
-    if (this.bonds.length !== 0) {
+    if (this.bonds) {
       this.log('Configure Accessory: ' + accessory.displayName);
       this.setupObservers(accessory);
     } else {
@@ -149,11 +156,15 @@ export class BondPlatform {
   }
 
   private bondForDevice(device: Device): Bond {
-    const bond = this.bonds.find(x => x.deviceIds.includes(device.id));
-    if (bond === undefined) {
-      throw new Error(`No Bond found for device ${device.name}`);
+    if (this.bonds) {
+      const bond = this.bonds.find(x => x.deviceIds.includes(device.id));
+      if (bond === undefined) {
+        throw new Error(`No Bond found for device ${device.name}`);
+      }
+      return bond;
+    } else {
+      throw new Error(`config.bonds is not defined`);
     }
-    return bond;
   }
 
   // Lightbulb
