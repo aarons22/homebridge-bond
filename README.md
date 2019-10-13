@@ -15,6 +15,7 @@ Some Bond's may not be able to update to v2 firmware. If so, you can use the [v1
 
 This plugin currently supports the following devices and features:
 
+- Multiple Bonds
 - Ceiling Fan
   - Light on/off
   - Fan Speeds 1-8 (dynamic based on bond configuration)
@@ -35,8 +36,12 @@ Configuration sample (edit `~/.homebridge/config.json`):
 "platforms": [
     {
         "platform": "Bond",
-        "bond_ip_address": "<BOND_IP_ADDRESS>",
-        "bond_token": "<BOND_TOKEN>"
+        "bonds": [
+            {
+                "ip_address": "<BOND_IP_ADDRESS>",
+                "token": "<BOND_TOKEN>"
+            }
+        ],
     }
 ],
 ```
@@ -52,6 +57,7 @@ You can tap on each row to copy the contents to the clipboard.
 ## Development
 
 I'm more than happy to take PRs if you want to fix a bug you are having or take a shot at adding a new feature you're interested in. To compile the code in realtime, run:
+
 ```
 npm run dev
 ```
