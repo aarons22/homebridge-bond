@@ -1,18 +1,17 @@
 import Promise from 'bluebird';
 import { DeviceType } from './enum/DeviceType';
+import { HAP, hap } from './homebridge/hap';
 import { Bond } from './interface/Bond';
+import { BondPlatformConfig } from './interface/config';
 import { Device } from './interface/Device';
 
 let Accessory: any;
-let Service: any;
-let Characteristic: any;
-let UUIDGen: any;
 
 export default function(homebridge: any) {
-  Service = homebridge.hap.Service;
-  Characteristic = homebridge.hap.Characteristic;
+  hap.Service = homebridge.hap.Service;
+  hap.Characteristic = homebridge.hap.Characteristic;
   Accessory = homebridge.platformAccessory;
-  UUIDGen = homebridge.hap.uuid;
+  hap.UUIDGen = homebridge.hap.uuid;
 
   homebridge.registerPlatform('homebridge-bond', 'Bond', BondPlatform, true);
 }
@@ -20,9 +19,9 @@ export default function(homebridge: any) {
 export class BondPlatform {
   private accessories: any[] = [];
   private bonds: Bond[] | undefined;
-  private config: { [key: string]: string };
+  private config: BondPlatformConfig;
 
-  constructor(private log: (arg0: string) => void, config: { [key: string]: any }, private api: any) {
+  constructor(private log: HAP.Log, config: BondPlatformConfig, private api: HAP.Platform) {
     this.config = config;
 
     if (config === null) {
@@ -85,18 +84,20 @@ export class BondPlatform {
       return;
     }
 
-    const accessory = new Accessory(device.location + ' ' + device.type, UUIDGen.generate(device.id.toString()));
+    const accessory = new Accessory(device.location + ' ' + device.type, hap.UUIDGen.generate(device.id.toString()));
     accessory.context.device = device;
     accessory.reachable = true;
-    accessory.getService(Service.AccessoryInformation).setCharacteristic(Characteristic.SerialNumber, device.id);
+    accessory
+      .getService(hap.Service.AccessoryInformation)
+      .setCharacteristic(hap.Characteristic.SerialNumber, device.id);
 
     if (device.type === DeviceType.CeilingFan) {
       if (Device.CFhasFan(device)) {
-        accessory.addService(Service.Fan, `${device.location} Fan`);
+        accessory.addService(hap.Service.Fan, `${device.location} Fan`);
       }
 
       if (Device.CFhasLightbulb(device)) {
-        accessory.addService(Service.Lightbulb, `${device.location} Light`);
+        accessory.addService(hap.Service.Lightbulb, `${device.location} Light`);
       }
     }
 
@@ -107,7 +108,7 @@ export class BondPlatform {
     this.log(`Adding accessory ${accessory.displayName}`);
   }
 
-  public removeAccessory(accessory: any) {
+  public removeAccessory(accessory: HAP.Accessory) {
     this.log(`Removing accessory ${accessory.displayName}`);
 
     const index = this.accessories.indexOf(accessory);
@@ -118,7 +119,7 @@ export class BondPlatform {
     this.api.unregisterPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
   }
 
-  public configureAccessory(accessory: any) {
+  public configureAccessory(accessory: HAP.Accessory) {
     if (this.config === null || this.config.bonds === undefined) {
       return;
     }
@@ -141,12 +142,12 @@ export class BondPlatform {
     }
   }
 
-  private setupObservers(accessory: any) {
+  private setupObservers(accessory: HAP.Accessory) {
     const device: Device = accessory.context.device;
     const bond = this.bondForDevice(device);
 
     if (Device.CFhasFan(device)) {
-      const fan = accessory.getService(Service.Fan);
+      const fan = accessory.getService(hap.Service.Fan);
       this.setupFanObservers(bond, device, fan);
 
       // RotationDirection button will appear based on characteristic observations
@@ -156,7 +157,7 @@ export class BondPlatform {
     }
 
     if (Device.CFhasLightbulb(device)) {
-      const bulb = accessory.getService(Service.Lightbulb);
+      const bulb = accessory.getService(hap.Service.Lightbulb);
       this.setupLightbulbObservers(bond, device, bulb);
     }
   }
@@ -175,9 +176,9 @@ export class BondPlatform {
 
   // Lightbulb
 
-  private setupLightbulbObservers(bond: Bond, device: Device, bulb: any) {
+  private setupLightbulbObservers(bond: Bond, device: Device, bulb: HAP.Service) {
     const that = this;
-    const onChar = bulb.getCharacteristic(Characteristic.On);
+    const onChar = bulb.getCharacteristic(hap.Characteristic.On);
 
     // Capture current state of device and apply characteristics
     this.getLightValue(bond, device).then(isOn => {
@@ -229,9 +230,9 @@ export class BondPlatform {
 
   // Fan
 
-  private setupFanObservers(bond: Bond, device: Device, fan: any) {
+  private setupFanObservers(bond: Bond, device: Device, fan: HAP.Service) {
     const that = this;
-    const speedChar = fan.getCharacteristic(Characteristic.RotationSpeed);
+    const speedChar = fan.getCharacteristic(hap.Characteristic.RotationSpeed);
 
     // Capture current state of device and apply characteristics
     this.getFanSpeedValue(bond, device).then(speed => {
@@ -287,7 +288,7 @@ export class BondPlatform {
           });
       });
 
-    const onChar = fan.getCharacteristic(Characteristic.On);
+    const onChar = fan.getCharacteristic(hap.Characteristic.On);
 
     // Capture current state of device and apply characteristics
     this.getFanPower(bond, device).then(isOn => {
@@ -353,9 +354,9 @@ export class BondPlatform {
 
   // Fan Rotation Direction
 
-  private setupFanDirectionObservers(bond: Bond, device: Device, fan: any) {
+  private setupFanDirectionObservers(bond: Bond, device: Device, fan: HAP.Service) {
     const that = this;
-    const directionChar = fan.getCharacteristic(Characteristic.RotationDirection);
+    const directionChar = fan.getCharacteristic(hap.Characteristic.RotationDirection);
 
     // Capture current state of device and apply characteristics
     this.getDirectionValue(bond, device).then(direction => {
@@ -411,7 +412,7 @@ export class BondPlatform {
     return this.accessoryForIdentifier(id) != null;
   }
 
-  private accessoryForIdentifier(id: string): any {
+  private accessoryForIdentifier(id: string): HAP.Accessory {
     const accessories = this.accessories.filter(acc => {
       const device: Device = acc.context.device;
       return device.id === id;
@@ -421,7 +422,7 @@ export class BondPlatform {
 
   private debug(device: Device, message: string) {
     if (this.config.debug) {
-      this.log(`DEBUG: [${device.name}] ${message}`);
+      this.log.debug(`DEBUG: [${device.name}] ${message}`);
     }
   }
 
@@ -430,6 +431,6 @@ export class BondPlatform {
   }
 
   private error(device: Device, message: string) {
-    this.log(`ERR: [${device.name}] ${message}`);
+    this.log.error(`ERR: [${device.name}] ${message}`);
   }
 }

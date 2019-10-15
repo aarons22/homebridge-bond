@@ -2,6 +2,7 @@ import Promise from 'bluebird';
 import rp from 'request-promise';
 import { BondUri } from './BondUri';
 import { Action } from './enum/Action';
+import { HAP, hap } from './homebridge/hap';
 import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
@@ -16,7 +17,7 @@ export class BondApi {
   private uri: BondUri;
   private isDebug: boolean;
 
-  constructor(private log: (arg0: string) => void, bondToken: string, ipAddress: string, debug: boolean) {
+  constructor(private log: HAP.Log, bondToken: string, ipAddress: string, debug: boolean) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
     this.isDebug = debug;
