@@ -24,6 +24,12 @@ export class BondPlatform {
 
   constructor(private log: (arg0: string) => void, config: { [key: string]: any }, private api: any) {
     this.config = config;
+
+    if (config === null) {
+      this.log('No config defined.');
+      return;
+    }
+
     if (config.bonds === undefined) {
       this.log('ERR: bonds array is required but missing from config.json');
       return;
@@ -113,7 +119,7 @@ export class BondPlatform {
   }
 
   public configureAccessory(accessory: any) {
-    if (this.config.bonds === undefined) {
+    if (this.config === null || this.config.bonds === undefined) {
       return;
     }
     this.accessories.push(accessory);
