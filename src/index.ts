@@ -4,6 +4,7 @@ import { HAP, hap } from './homebridge/hap';
 import { Bond } from './interface/Bond';
 import { BondPlatformConfig } from './interface/config';
 import { Device } from './interface/Device';
+import { Observer } from './Observer';
 
 let Accessory: any;
 
@@ -177,60 +178,38 @@ export class BondPlatform {
   // Lightbulb
 
   private setupLightbulbObservers(bond: Bond, device: Device, bulb: HAP.Service) {
-    const that = this;
-    const onChar = bulb.getCharacteristic(hap.Characteristic.On);
-
-    // Capture current state of device and apply characteristics
-    this.getLightValue(bond, device).then(isOn => {
-      onChar.updateValue(isOn);
-    });
-
-    onChar
-      .on('set', (value: any, callback: { (): void; (): void }) => {
-        // Avoid toggling when the light is already in the requested state. (Workaround for Siri)
-        if (value === onChar.value) {
-          callback();
-          return;
+    function get(): Promise<any> {
+      return bond.api.getState(device.id).then(state => {
+        if (state.light !== undefined) {
+          return state.light === 1 ? true : false;
+        } else {
+          return false;
         }
-        bond.api
-          .toggleLight(device.id)
-          .then(() => {
-            const val = value ? 'ON' : 'OFF';
-            that.verbose(device, `light toggled: ${val}`);
-            onChar.updateValue(value);
-            callback();
-          })
-          .catch((error: string) => {
-            that.error(device, `Error toggling ${device.name} fan light: ${error}`);
-            callback();
-          });
-      })
-      .on('get', (callback: (arg0: null, arg1: boolean) => void) => {
-        that
-          .getLightValue(bond, device)
-          .then(isOn => {
-            callback(null, isOn);
-          })
-          .catch(error => {
-            that.error(device, `Error getting fan light value: ${error}`);
-            callback(null, false);
-          });
       });
-  }
+    }
 
-  private getLightValue(bond: Bond, device: Device): Promise<boolean> {
-    return bond.api.getState(device.id).then(state => {
-      if (state.light !== undefined) {
-        return state.light === 1 ? true : false;
-      } else {
-        return false;
-      }
-    });
+    function set(): Promise<void> {
+      return bond.api.toggleLight(device.id);
+    }
+
+    Observer.add(this.log, bulb, hap.Characteristic.On, get, set);
   }
 
   // Fan
 
   private setupFanObservers(bond: Bond, device: Device, fan: HAP.Service) {
+    function get(): Promise<any> {
+      return bond.api.getState(device.id).then(state => {
+        return state.power === 1;
+      });
+    }
+
+    function set(value: any): Promise<void> {
+      return bond.api.setFanSpeed(device.id, value);
+    }
+
+    Observer.add(this.log, fan, hap.Characteristic.RotationSpeed, get, set);
+
     const that = this;
     const speedChar = fan.getCharacteristic(hap.Characteristic.RotationSpeed);
 
