@@ -1,18 +1,18 @@
 import Promise from 'bluebird';
 import { DeviceType } from './enum/DeviceType';
+import { HAP, hap } from './homebridge/hap';
 import { Bond } from './interface/Bond';
+import { BondPlatformConfig } from './interface/config';
 import { Device } from './interface/Device';
+import { Observer } from './Observer';
 
 let Accessory: any;
-let Service: any;
-let Characteristic: any;
-let UUIDGen: any;
 
 export default function(homebridge: any) {
-  Service = homebridge.hap.Service;
-  Characteristic = homebridge.hap.Characteristic;
+  hap.Service = homebridge.hap.Service;
+  hap.Characteristic = homebridge.hap.Characteristic;
   Accessory = homebridge.platformAccessory;
-  UUIDGen = homebridge.hap.uuid;
+  hap.UUIDGen = homebridge.hap.uuid;
 
   homebridge.registerPlatform('homebridge-bond', 'Bond', BondPlatform, true);
 }
@@ -20,9 +20,9 @@ export default function(homebridge: any) {
 export class BondPlatform {
   private accessories: any[] = [];
   private bonds: Bond[] | undefined;
-  private config: { [key: string]: string };
+  private config: BondPlatformConfig;
 
-  constructor(private log: (arg0: string) => void, config: { [key: string]: any }, private api: any) {
+  constructor(private log: HAP.Log, config: BondPlatformConfig, private api: HAP.Platform) {
     this.config = config;
 
     if (config === null) {
@@ -85,18 +85,20 @@ export class BondPlatform {
       return;
     }
 
-    const accessory = new Accessory(device.location + ' ' + device.type, UUIDGen.generate(device.id.toString()));
+    const accessory = new Accessory(device.location + ' ' + device.type, hap.UUIDGen.generate(device.id.toString()));
     accessory.context.device = device;
     accessory.reachable = true;
-    accessory.getService(Service.AccessoryInformation).setCharacteristic(Characteristic.SerialNumber, device.id);
+    accessory
+      .getService(hap.Service.AccessoryInformation)
+      .setCharacteristic(hap.Characteristic.SerialNumber, device.id);
 
     if (device.type === DeviceType.CeilingFan) {
       if (Device.CFhasFan(device)) {
-        accessory.addService(Service.Fan, `${device.location} Fan`);
+        accessory.addService(hap.Service.Fan, `${device.location} Fan`);
       }
 
       if (Device.CFhasLightbulb(device)) {
-        accessory.addService(Service.Lightbulb, `${device.location} Light`);
+        accessory.addService(hap.Service.Lightbulb, `${device.location} Light`);
       }
     }
 
@@ -107,7 +109,7 @@ export class BondPlatform {
     this.log(`Adding accessory ${accessory.displayName}`);
   }
 
-  public removeAccessory(accessory: any) {
+  public removeAccessory(accessory: HAP.Accessory) {
     this.log(`Removing accessory ${accessory.displayName}`);
 
     const index = this.accessories.indexOf(accessory);
@@ -118,7 +120,7 @@ export class BondPlatform {
     this.api.unregisterPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
   }
 
-  public configureAccessory(accessory: any) {
+  public configureAccessory(accessory: HAP.Accessory) {
     if (this.config === null || this.config.bonds === undefined) {
       return;
     }
@@ -141,13 +143,14 @@ export class BondPlatform {
     }
   }
 
-  private setupObservers(accessory: any) {
+  private setupObservers(accessory: HAP.Accessory) {
     const device: Device = accessory.context.device;
     const bond = this.bondForDevice(device);
 
     if (Device.CFhasFan(device)) {
-      const fan = accessory.getService(Service.Fan);
+      const fan = accessory.getService(hap.Service.Fan);
       this.setupFanObservers(bond, device, fan);
+      this.setupFanPowerObservers(bond, device, fan);
 
       // RotationDirection button will appear based on characteristic observations
       if (Device.CFhasReverseSwitch(device)) {
@@ -156,7 +159,7 @@ export class BondPlatform {
     }
 
     if (Device.CFhasLightbulb(device)) {
-      const bulb = accessory.getService(Service.Lightbulb);
+      const bulb = accessory.getService(hap.Service.Lightbulb);
       this.setupLightbulbObservers(bond, device, bulb);
     }
   }
@@ -175,234 +178,102 @@ export class BondPlatform {
 
   // Lightbulb
 
-  private setupLightbulbObservers(bond: Bond, device: Device, bulb: any) {
-    const that = this;
-    const onChar = bulb.getCharacteristic(Characteristic.On);
-
-    // Capture current state of device and apply characteristics
-    this.getLightValue(bond, device).then(isOn => {
-      onChar.updateValue(isOn);
-    });
-
-    onChar
-      .on('set', (value: any, callback: { (): void; (): void }) => {
-        // Avoid toggling when the light is already in the requested state. (Workaround for Siri)
-        if (value === onChar.value) {
-          callback();
-          return;
+  private setupLightbulbObservers(bond: Bond, device: Device, bulb: HAP.Service) {
+    function get(): Promise<any> {
+      return bond.api.getState(device.id).then(state => {
+        if (state.light !== undefined) {
+          return state.light === 1 ? true : false;
+        } else {
+          return false;
         }
-        bond.api
-          .toggleLight(device.id)
-          .then(() => {
-            const val = value ? 'ON' : 'OFF';
-            that.verbose(device, `light toggled: ${val}`);
-            onChar.updateValue(value);
-            callback();
-          })
-          .catch((error: string) => {
-            that.error(device, `Error toggling ${device.name} fan light: ${error}`);
-            callback();
-          });
-      })
-      .on('get', (callback: (arg0: null, arg1: boolean) => void) => {
-        that
-          .getLightValue(bond, device)
-          .then(isOn => {
-            callback(null, isOn);
-          })
-          .catch(error => {
-            that.error(device, `Error getting fan light value: ${error}`);
-            callback(null, false);
-          });
       });
+    }
+
+    function set(): Promise<void> {
+      return bond.api.toggleLight(device.id);
+    }
+
+    Observer.add(this.log, bulb, hap.Characteristic.On, get, set);
   }
 
-  private getLightValue(bond: Bond, device: Device): Promise<boolean> {
-    return bond.api.getState(device.id).then(state => {
-      if (state.light !== undefined) {
-        return state.light === 1 ? true : false;
-      } else {
-        return false;
-      }
-    });
-  }
+  // Fan - Speed
 
-  // Fan
-
-  private setupFanObservers(bond: Bond, device: Device, fan: any) {
+  private setupFanObservers(bond: Bond, device: Device, fan: HAP.Service) {
     const that = this;
-    const speedChar = fan.getCharacteristic(Characteristic.RotationSpeed);
-
-    // Capture current state of device and apply characteristics
-    this.getFanSpeedValue(bond, device).then(speed => {
-      this.debug(device, `got speed value: ${speed}`);
-      speedChar.updateValue(speed);
-    });
-
     const values = Device.fanSpeeds(device);
 
     const minStep = Math.floor(100 / values.length);
     const maxValue = minStep * values.length;
     this.debug(device, `min step: ${minStep}, max value: ${maxValue}`);
 
-    speedChar
-      .setProps({
-        maxValue,
-        minStep,
-      })
-      .on('set', (step: number, callback: { (): void; (): void }) => {
-        that.debug(device, `new step value: ${step}`);
-        if (step === 0) {
-          callback();
-          return;
+    function get(): Promise<any> {
+      return bond.api.getState(device.id).then(state => {
+        if (state.speed !== undefined && state.power === 1) {
+          that.debug(device, `speed value: ${state.speed}`);
+          const index = values.indexOf(state.speed!) + 1;
+          that.debug(device, `index value: ${index}`);
+          const step = index * minStep;
+          that.debug(device, `step value: ${step}`);
+          return step;
+        } else {
+          return 0;
         }
-        const index = step / minStep - 1;
-        that.debug(device, `new index value: ${index}`);
-        const speed = values[index];
-        that.debug(device, `new speed value: ${speed}`);
-
-        bond.api
-          .setFanSpeed(device.id, speed)
-          .then(() => {
-            that.verbose(device, `set speed value: ${speed}`);
-            speedChar.updateValue(step);
-            callback();
-          })
-          .catch((error: string) => {
-            that.error(device, `Error setting fan speed: ${error}`);
-            callback();
-          });
-      })
-      .on('get', (callback: (arg0: null, arg1: number) => void) => {
-        that
-          .getFanSpeedValue(bond, device)
-          .then(speed => {
-            that.verbose(device, `got speed value: ${speed}`);
-            speedChar.updateValue(speed);
-            callback(null, speed);
-          })
-          .catch((error: string) => {
-            that.error(device, `Error getting fan speed: ${error}`);
-            callback(null, 0);
-          });
       });
+    }
 
-    const onChar = fan.getCharacteristic(Characteristic.On);
-
-    // Capture current state of device and apply characteristics
-    this.getFanPower(bond, device).then(isOn => {
-      onChar.updateValue(isOn);
-    });
-
-    onChar
-      .on('set', (value: boolean, callback: { (): void; (): void }) => {
-        // Avoid toggling when the fan is already in the requested state. (Workaround for Siri)
-        if (value === onChar.value) {
-          callback();
-          return;
-        }
-        bond.api
-          .toggleFan(device, value)
-          .then(() => {
-            const val = value ? 'ON' : 'OFF';
-            that.verbose(device, `fan toggled: ${val}`);
-            onChar.updateValue(value);
-            callback();
-          })
-          .catch((error: string) => {
-            that.error(device, `Error setting fan power: ${error}`);
-            callback();
-          });
-      })
-      .on('get', (callback: (arg0: null, arg1: boolean) => void) => {
-        that
-          .getFanPower(bond, device)
-          .then(isOn => {
-            callback(null, isOn);
-          })
-          .catch(error => {
-            that.error(device, `Error getting fan power: ${error}`);
-            callback(null, false);
-          });
-      });
-  }
-
-  private getFanPower(bond: Bond, device: Device): Promise<boolean> {
-    return bond.api.getState(device.id).then(state => {
-      return state.power === 1;
-    });
-  }
-
-  private getFanSpeedValue(bond: Bond, device: Device): Promise<number> {
-    const values = Device.fanSpeeds(device);
-    const minStep = Math.floor(100 / values.length);
-
-    return bond.api.getState(device.id).then(state => {
-      if (state.speed !== undefined && state.power === 1) {
-        this.debug(device, `speed value: ${state.speed}`);
-        const index = values.indexOf(state.speed!) + 1;
-        this.debug(device, `index value: ${index}`);
-        const step = index * minStep;
-        this.debug(device, `step value: ${step}`);
-        return step;
-      } else {
-        return 0;
+    function set(step: any): Promise<void> | undefined {
+      if (step === 0) {
+        return undefined;
       }
-    });
+      const index = step / minStep - 1;
+      that.debug(device, `new index value: ${index}`);
+      const speed = values[index];
+      that.debug(device, `new speed value: ${speed}`);
+
+      return bond.api.setFanSpeed(device.id, speed);
+    }
+
+    const props = {
+      maxValue,
+      minStep,
+    };
+    Observer.add(this.log, fan, hap.Characteristic.RotationSpeed, get, set, props);
   }
 
-  // Fan Rotation Direction
+  // Fan - Power
 
-  private setupFanDirectionObservers(bond: Bond, device: Device, fan: any) {
-    const that = this;
-    const directionChar = fan.getCharacteristic(Characteristic.RotationDirection);
-
-    // Capture current state of device and apply characteristics
-    this.getDirectionValue(bond, device).then(direction => {
-      directionChar.updateValue(direction);
-    });
-
-    directionChar
-      .on('set', (value: any, callback: { (): void; (): void }) => {
-        // Avoid toggling when the switch is already in the requested state. (Workaround for Siri)
-        if (value === directionChar.value) {
-          callback();
-          return;
-        }
-        bond.api
-          .toggleDirection(device.id)
-          .then(() => {
-            const val = value === 1 ? 'Clockwise' : 'Counter-Clockwise';
-            that.log(`direction changed: ${val}`);
-            directionChar.updateValue(value);
-            callback();
-          })
-          .catch((error: string) => {
-            that.log(`Error setting ${device.name} fan direction: ${error}`);
-            callback();
-          });
-      })
-      .on('get', (callback: (arg0: null, arg1: number) => void) => {
-        that
-          .getDirectionValue(bond, device)
-          .then(direction => {
-            callback(null, direction);
-          })
-          .catch(error => {
-            that.log(`Error getting ${device.name} fan direction: ${error}`);
-            callback(null, 0);
-          });
+  private setupFanPowerObservers(bond: Bond, device: Device, fan: HAP.Service) {
+    function get(): Promise<any> {
+      return bond.api.getState(device.id).then(state => {
+        return state.power === 1;
       });
+    }
+
+    function set(value: any): Promise<void> {
+      return bond.api.toggleFan(device, value);
+    }
+
+    Observer.add(this.log, fan, hap.Characteristic.On, get, set);
   }
 
-  private getDirectionValue(bond: Bond, device: Device): Promise<number> {
-    return bond.api.getState(device.id).then(state => {
-      if (state.direction !== undefined) {
-        return state.direction!;
-      } else {
-        return 0;
-      }
-    });
+  // Fan -  Rotation Direction
+
+  private setupFanDirectionObservers(bond: Bond, device: Device, fan: HAP.Service) {
+    function get(): Promise<any> {
+      return bond.api.getState(device.id).then(state => {
+        if (state.direction !== undefined) {
+          return state.direction!;
+        } else {
+          return 0;
+        }
+      });
+    }
+
+    function set(value: any): Promise<void> {
+      return bond.api.toggleDirection(device.id);
+    }
+
+    Observer.add(this.log, fan, hap.Characteristic.RotationDirection, get, set);
   }
 
   // Helper Methods
@@ -411,7 +282,7 @@ export class BondPlatform {
     return this.accessoryForIdentifier(id) != null;
   }
 
-  private accessoryForIdentifier(id: string): any {
+  private accessoryForIdentifier(id: string): HAP.Accessory {
     const accessories = this.accessories.filter(acc => {
       const device: Device = acc.context.device;
       return device.id === id;

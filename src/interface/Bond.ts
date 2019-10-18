@@ -1,9 +1,11 @@
 import Promise from 'bluebird';
 import { BondApi } from '../BondApi';
+import { HAP } from '../homebridge/hap';
+import { BondPlatformConfig } from '../interface/config';
 
 export class Bond {
   // Helper to sanitze the config object into bond objects
-  public static objects(log: (arg0: string) => void, config: { [key: string]: any }): Bond[] {
+  public static objects(log: HAP.Log, config: BondPlatformConfig): Bond[] {
     const bondData: Array<{ [key: string]: any }> = config.bonds;
     const bondObjs = bondData.map(val => {
       return new Bond(log, val.ip_address, val.token, config.debug);
@@ -27,7 +29,7 @@ export class Bond {
   public api: BondApi;
   public deviceIds: string[];
 
-  constructor(private log: (arg0: string) => void, ipAddress: string, token: string, debug: boolean) {
+  constructor(private log: HAP.Log, ipAddress: string, token: string, debug: boolean) {
     // this.ipAddress = ipAddress;
     // this.token = token;
     this.api = new BondApi(log, token, ipAddress, debug);
@@ -41,7 +43,7 @@ export class Bond {
         this.deviceIds = ids;
       })
       .catch(error => {
-        this.log(`Error getting device ids: ${error}`);
+        this.log.error(`Error getting device ids: ${error}`);
       });
   }
 }
