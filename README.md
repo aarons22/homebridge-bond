@@ -20,6 +20,7 @@ This plugin currently supports the following devices and features:
   - Light on/off
   - Fan Speeds 1-8 (dynamic based on bond configuration)
   - Light Dimming (`off` by default; see config below)
+    - When using this feature, turn the switch on to start dimming. When you reach the brightness level you would like, turn the switch off.
 
 You can view the backlog of features [here](https://github.com/aarons22/homebridge-bond/). Feel free to add a feature request in the Issues tab!
 
