@@ -340,7 +340,7 @@ export class BondPlatform {
     return bond.api.getState(device.id).then(state => {
       if (state.speed !== undefined && state.power === 1) {
         this.debug(device, `speed value: ${state.speed}`);
-        const index = values.indexOf(state.speed!);
+        const index = values.indexOf(state.speed!) + 1;
         this.debug(device, `index value: ${index}`);
         const step = index * minStep;
         this.debug(device, `step value: ${step}`);
