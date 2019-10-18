@@ -3,6 +3,7 @@ export enum Action {
   TurnOff = 'TurnOff',
   TurnOn = 'TurnOn',
   StartDimmer = 'StartDimmer',
+  Stop = 'Stop',
   SetSpeed = 'SetSpeed',
   ToggleDirection = 'ToggleDirection',
 }

@@ -52,6 +52,14 @@ export class BondApi {
     return this.request(HTTPMethod.PUT, this.uri.action(id, Action.ToggleLight));
   }
 
+  public startDimmer(device: Device): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDimmer));
+  }
+
+  public stop(device: Device): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Stop));
+  }
+
   public toggleFan(device: Device, on: boolean): Promise<void> {
     const action = on ? Action.TurnOn : Action.TurnOff;
     return this.request(HTTPMethod.PUT, this.uri.action(device.id, action));
