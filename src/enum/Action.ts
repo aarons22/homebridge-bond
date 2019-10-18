@@ -6,4 +6,5 @@ export enum Action {
   Stop = 'Stop',
   SetSpeed = 'SetSpeed',
   ToggleDirection = 'ToggleDirection',
+  TogglePower = 'TogglePower',
 }
