@@ -150,6 +150,7 @@ export class BondPlatform {
     if (Device.CFhasFan(device)) {
       const fan = accessory.getService(hap.Service.Fan);
       this.setupFanObservers(bond, device, fan);
+      this.setupFanPowerObservers(bond, device, fan);
 
       // RotationDirection button will appear based on characteristic observations
       if (Device.CFhasReverseSwitch(device)) {
@@ -198,6 +199,48 @@ export class BondPlatform {
   // Fan
 
   private setupFanObservers(bond: Bond, device: Device, fan: HAP.Service) {
+    const that = this;
+    const values = Device.fanSpeeds(device);
+
+    const minStep = Math.floor(100 / values.length);
+    const maxValue = minStep * values.length;
+    this.debug(device, `min step: ${minStep}, max value: ${maxValue}`);
+
+    function get(): Promise<any> {
+      return bond.api.getState(device.id).then(state => {
+        if (state.speed !== undefined && state.power === 1) {
+          that.debug(device, `speed value: ${state.speed}`);
+          const index = values.indexOf(state.speed!) + 1;
+          that.debug(device, `index value: ${index}`);
+          const step = index * minStep;
+          that.debug(device, `step value: ${step}`);
+          return step;
+        } else {
+          return 0;
+        }
+      });
+    }
+
+    function set(step: any): Promise<void> | undefined {
+      if (step === 0) {
+        return undefined;
+      }
+      const index = step / minStep - 1;
+      that.debug(device, `new index value: ${index}`);
+      const speed = values[index];
+      that.debug(device, `new speed value: ${speed}`);
+
+      return bond.api.setFanSpeed(device.id, speed);
+    }
+
+    const props = {
+      maxValue,
+      minStep,
+    };
+    Observer.add(this.log, fan, hap.Characteristic.RotationSpeed, get, set, props);
+  }
+
+  private setupFanPowerObservers(bond: Bond, device: Device, fan: HAP.Service) {
     function get(): Promise<any> {
       return bond.api.getState(device.id).then(state => {
         return state.power === 1;
@@ -205,130 +248,10 @@ export class BondPlatform {
     }
 
     function set(value: any): Promise<void> {
-      return bond.api.setFanSpeed(device.id, value);
+      return bond.api.toggleFan(device, value);
     }
 
-    Observer.add(this.log, fan, hap.Characteristic.RotationSpeed, get, set);
-
-    const that = this;
-    const speedChar = fan.getCharacteristic(hap.Characteristic.RotationSpeed);
-
-    // Capture current state of device and apply characteristics
-    this.getFanSpeedValue(bond, device).then(speed => {
-      this.debug(device, `got speed value: ${speed}`);
-      speedChar.updateValue(speed);
-    });
-
-    const values = Device.fanSpeeds(device);
-
-    const minStep = Math.floor(100 / values.length);
-    const maxValue = minStep * values.length;
-    this.debug(device, `min step: ${minStep}, max value: ${maxValue}`);
-
-    speedChar
-      .setProps({
-        maxValue,
-        minStep,
-      })
-      .on('set', (step: number, callback: { (): void; (): void }) => {
-        that.debug(device, `new step value: ${step}`);
-        if (step === 0) {
-          callback();
-          return;
-        }
-        const index = step / minStep - 1;
-        that.debug(device, `new index value: ${index}`);
-        const speed = values[index];
-        that.debug(device, `new speed value: ${speed}`);
-
-        bond.api
-          .setFanSpeed(device.id, speed)
-          .then(() => {
-            that.verbose(device, `set speed value: ${speed}`);
-            speedChar.updateValue(step);
-            callback();
-          })
-          .catch((error: string) => {
-            that.error(device, `Error setting fan speed: ${error}`);
-            callback();
-          });
-      })
-      .on('get', (callback: (arg0: null, arg1: number) => void) => {
-        that
-          .getFanSpeedValue(bond, device)
-          .then(speed => {
-            that.verbose(device, `got speed value: ${speed}`);
-            speedChar.updateValue(speed);
-            callback(null, speed);
-          })
-          .catch((error: string) => {
-            that.error(device, `Error getting fan speed: ${error}`);
-            callback(null, 0);
-          });
-      });
-
-    const onChar = fan.getCharacteristic(hap.Characteristic.On);
-
-    // Capture current state of device and apply characteristics
-    this.getFanPower(bond, device).then(isOn => {
-      onChar.updateValue(isOn);
-    });
-
-    onChar
-      .on('set', (value: boolean, callback: { (): void; (): void }) => {
-        // Avoid toggling when the fan is already in the requested state. (Workaround for Siri)
-        if (value === onChar.value) {
-          callback();
-          return;
-        }
-        bond.api
-          .toggleFan(device, value)
-          .then(() => {
-            const val = value ? 'ON' : 'OFF';
-            that.verbose(device, `fan toggled: ${val}`);
-            onChar.updateValue(value);
-            callback();
-          })
-          .catch((error: string) => {
-            that.error(device, `Error setting fan power: ${error}`);
-            callback();
-          });
-      })
-      .on('get', (callback: (arg0: null, arg1: boolean) => void) => {
-        that
-          .getFanPower(bond, device)
-          .then(isOn => {
-            callback(null, isOn);
-          })
-          .catch(error => {
-            that.error(device, `Error getting fan power: ${error}`);
-            callback(null, false);
-          });
-      });
-  }
-
-  private getFanPower(bond: Bond, device: Device): Promise<boolean> {
-    return bond.api.getState(device.id).then(state => {
-      return state.power === 1;
-    });
-  }
-
-  private getFanSpeedValue(bond: Bond, device: Device): Promise<number> {
-    const values = Device.fanSpeeds(device);
-    const minStep = Math.floor(100 / values.length);
-
-    return bond.api.getState(device.id).then(state => {
-      if (state.speed !== undefined && state.power === 1) {
-        this.debug(device, `speed value: ${state.speed}`);
-        const index = values.indexOf(state.speed!) + 1;
-        this.debug(device, `index value: ${index}`);
-        const step = index * minStep;
-        this.debug(device, `step value: ${step}`);
-        return step;
-      } else {
-        return 0;
-      }
-    });
+    Observer.add(this.log, fan, hap.Characteristic.On, get, set);
   }
 
   // Fan Rotation Direction
@@ -401,7 +324,7 @@ export class BondPlatform {
 
   private debug(device: Device, message: string) {
     if (this.config.debug) {
-      this.log.debug(`DEBUG: [${device.name}] ${message}`);
+      this.log(`DEBUG: [${device.name}] ${message}`);
     }
   }
 
@@ -410,6 +333,6 @@ export class BondPlatform {
   }
 
   private error(device: Device, message: string) {
-    this.log.error(`ERR: [${device.name}] ${message}`);
+    this.log(`ERR: [${device.name}] ${message}`);
   }
 }

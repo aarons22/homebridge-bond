@@ -1,3 +1,4 @@
+import Promise from 'bluebird';
 import { HAP, hap } from './homebridge/hap';
 import { Bond } from './interface/Bond';
 
@@ -7,7 +8,7 @@ export class Observer {
     bulb: HAP.Service,
     characteristic: HAP.Characteristic,
     get: () => Promise<any>,
-    set: (value: any) => Promise<void>,
+    set: (value: any) => Promise<void> | undefined,
     props: {} = {},
   ) {
     const char = bulb.getCharacteristic(characteristic);
@@ -24,7 +25,13 @@ export class Observer {
           return;
         }
 
-        set(value)
+        const res = set(value);
+        if (res === undefined) {
+          callback();
+          return;
+        }
+
+        res
           .then(() => {
             log(`value changed: ${value}`);
             char.updateValue(value);
