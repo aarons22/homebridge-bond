@@ -6,4 +6,5 @@ export interface BondConfig {
 export interface BondPlatformConfig {
   bonds: BondConfig[];
   debug: boolean;
+  include_dimmer: boolean;
 }

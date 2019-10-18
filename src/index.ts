@@ -94,11 +94,15 @@ export class BondPlatform {
 
     if (device.type === DeviceType.CeilingFan) {
       if (Device.CFhasFan(device)) {
-        accessory.addService(hap.Service.Fan, `${device.location} Fan`);
+        accessory.addService(hap.Service.Fan, `${device.location} ${device.name} Fan`);
       }
 
       if (Device.CFhasLightbulb(device)) {
-        accessory.addService(hap.Service.Lightbulb, `${device.location} Light`);
+        accessory.addService(hap.Service.Lightbulb, `${device.location} ${device.name} Light`);
+      }
+
+      if (this.config.include_dimmer && Device.HasDimmer(device)) {
+        accessory.addService(hap.Service.Switch, `${device.location} ${device.name} Dimmer`);
       }
     }
 
@@ -162,6 +166,20 @@ export class BondPlatform {
       const bulb = accessory.getService(hap.Service.Lightbulb);
       this.setupLightbulbObservers(bond, device, bulb);
     }
+
+    let dimmer = accessory.getService(`${device.location} ${device.name} Dimmer`);
+    if (this.config.include_dimmer) {
+      // Add service if previously undefined
+      if (dimmer === undefined) {
+        dimmer = accessory.addService(hap.Service.Switch, `${device.location} ${device.name} Dimmer`);
+      }
+      this.setupLightbulbDimmerObserver(bond, device, dimmer);
+    } else {
+      // Remove service if previously added
+      if (dimmer !== undefined) {
+        accessory.removeService(dimmer);
+      }
+    }
   }
 
   private bondForDevice(device: Device): Bond {
@@ -194,6 +212,22 @@ export class BondPlatform {
     }
 
     Observer.add(this.log, bulb, hap.Characteristic.On, get, set);
+  }
+
+  private setupLightbulbDimmerObserver(bond: Bond, device: Device, dimmer: HAP.Service) {
+    function get(): Promise<any> {
+      return Promise.resolve(false);
+    }
+
+    function set(value: any): Promise<void> {
+      if (value === true) {
+        return bond.api.startDimmer(device);
+      } else {
+        return bond.api.stop(device);
+      }
+    }
+
+    Observer.add(this.log, dimmer, hap.Characteristic.On, get, set);
   }
 
   // Fan - Speed

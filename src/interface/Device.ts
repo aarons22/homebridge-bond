@@ -25,6 +25,11 @@ export namespace Device {
     return supported.includes(device.type);
   }
 
+  export function HasDimmer(device: Device): boolean {
+    const dimmer = [Action.StartDimmer];
+    return device.actions.some(r => dimmer.includes(r));
+  }
+
   export function CFhasLightbulb(device: Device): boolean {
     const lightbulb = [Action.ToggleLight];
     return device.actions.some(r => lightbulb.includes(r));
