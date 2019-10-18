@@ -19,6 +19,7 @@ This plugin currently supports the following devices and features:
 - Ceiling Fan
   - Light on/off
   - Fan Speeds 1-8 (dynamic based on bond configuration)
+  - Light Dimming (`off` by default; see config below)
 
 You can view the backlog of features [here](https://github.com/aarons22/homebridge-bond/). Feel free to add a feature request in the Issues tab!
 
@@ -56,10 +57,10 @@ You can tap on each row to copy the contents to the clipboard.
 
 ## Optional Parameters
 
-| Option           | Default | Explanation                                                                                          |
-| ---------------- | ------- | ---------------------------------------------------------------------------------------------------- |
-| `include_dimmer` | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. |
-| `debug`          | false   | Turns on additional logging.                                                                         |
+| Option           | Default | Explanation                                                                                                                                                         |
+| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `include_dimmer` | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. Since this is an odd solution to dimming, it's off by default. |
+| `debug`          | false   | Turns on additional logging.                                                                                                                                        |
 
 ## Development
 
