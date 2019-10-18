@@ -54,6 +54,13 @@ To get your Bond IP Address, follow the instructions [here](https://github.com/a
 
 You can tap on each row to copy the contents to the clipboard.
 
+## Optional Parameters
+
+| Option           | Default | Explanation                                                                                          |
+| ---------------- | ------- | ---------------------------------------------------------------------------------------------------- |
+| `include_dimmer` | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. |
+| `debug`          | false   | Turns on additional logging.                                                                         |
+
 ## Development
 
 I'm more than happy to take PRs if you want to fix a bug you are having or take a shot at adding a new feature you're interested in. To compile the code in realtime, run:
