@@ -49,7 +49,7 @@ export class Observer {
             callback(null, value);
           })
           .catch(error => {
-            log.error(`error getting value: ${error}`);
+            log(`error getting value: ${error}`);
             callback(null, false);
           });
       });

@@ -196,7 +196,7 @@ export class BondPlatform {
     Observer.add(this.log, bulb, hap.Characteristic.On, get, set);
   }
 
-  // Fan
+  // Fan - Speed
 
   private setupFanObservers(bond: Bond, device: Device, fan: HAP.Service) {
     const that = this;
@@ -240,6 +240,8 @@ export class BondPlatform {
     Observer.add(this.log, fan, hap.Characteristic.RotationSpeed, get, set, props);
   }
 
+  // Fan - Power
+
   private setupFanPowerObservers(bond: Bond, device: Device, fan: HAP.Service) {
     function get(): Promise<any> {
       return bond.api.getState(device.id).then(state => {
@@ -254,58 +256,24 @@ export class BondPlatform {
     Observer.add(this.log, fan, hap.Characteristic.On, get, set);
   }
 
-  // Fan Rotation Direction
+  // Fan -  Rotation Direction
 
   private setupFanDirectionObservers(bond: Bond, device: Device, fan: HAP.Service) {
-    const that = this;
-    const directionChar = fan.getCharacteristic(hap.Characteristic.RotationDirection);
-
-    // Capture current state of device and apply characteristics
-    this.getDirectionValue(bond, device).then(direction => {
-      directionChar.updateValue(direction);
-    });
-
-    directionChar
-      .on('set', (value: any, callback: { (): void; (): void }) => {
-        // Avoid toggling when the switch is already in the requested state. (Workaround for Siri)
-        if (value === directionChar.value) {
-          callback();
-          return;
+    function get(): Promise<any> {
+      return bond.api.getState(device.id).then(state => {
+        if (state.direction !== undefined) {
+          return state.direction!;
+        } else {
+          return 0;
         }
-        bond.api
-          .toggleDirection(device.id)
-          .then(() => {
-            const val = value === 1 ? 'Clockwise' : 'Counter-Clockwise';
-            that.log(`direction changed: ${val}`);
-            directionChar.updateValue(value);
-            callback();
-          })
-          .catch((error: string) => {
-            that.log(`Error setting ${device.name} fan direction: ${error}`);
-            callback();
-          });
-      })
-      .on('get', (callback: (arg0: null, arg1: number) => void) => {
-        that
-          .getDirectionValue(bond, device)
-          .then(direction => {
-            callback(null, direction);
-          })
-          .catch(error => {
-            that.log(`Error getting ${device.name} fan direction: ${error}`);
-            callback(null, 0);
-          });
       });
-  }
+    }
 
-  private getDirectionValue(bond: Bond, device: Device): Promise<number> {
-    return bond.api.getState(device.id).then(state => {
-      if (state.direction !== undefined) {
-        return state.direction!;
-      } else {
-        return 0;
-      }
-    });
+    function set(value: any): Promise<void> {
+      return bond.api.toggleDirection(device.id);
+    }
+
+    Observer.add(this.log, fan, hap.Characteristic.RotationDirection, get, set);
   }
 
   // Helper Methods
