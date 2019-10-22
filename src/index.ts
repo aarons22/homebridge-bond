@@ -158,44 +158,47 @@ export class BondPlatform {
     const bond = this.bondForDevice(device);
 
     switch (device.type) {
-      case DeviceType.CeilingFan: {
-        if (Device.CFhasFan(device)) {
-          const fan = accessory.getService(hap.Service.Fan);
-          this.setupFanObservers(bond, device, fan);
-          this.setupFanPowerObservers(bond, device, fan);
+      case DeviceType.CeilingFan:
+        {
+          if (Device.CFhasFan(device)) {
+            const fan = accessory.getService(hap.Service.Fan);
+            this.setupFanObservers(bond, device, fan);
+            this.setupFanPowerObservers(bond, device, fan);
 
-          // RotationDirection button will appear based on characteristic observations
-          if (Device.CFhasReverseSwitch(device)) {
-            this.setupFanDirectionObservers(bond, device, fan);
-          }
-        }
-
-        if (Device.CFhasLightbulb(device)) {
-          const bulb = accessory.getService(hap.Service.Lightbulb);
-          this.setupLightbulbObservers(bond, device, bulb);
-
-          let dimmer = accessory.getService(`${device.location} ${device.name} Dimmer`);
-          if (this.config.include_dimmer) {
-            // Add service if previously undefined
-            if (dimmer === undefined) {
-              dimmer = accessory.addService(hap.Service.Switch, `${device.location} ${device.name} Dimmer`);
+            // RotationDirection button will appear based on characteristic observations
+            if (Device.CFhasReverseSwitch(device)) {
+              this.setupFanDirectionObservers(bond, device, fan);
             }
-            this.setupLightbulbDimmerObserver(bond, device, dimmer);
-          } else {
-            // Remove service if previously added
-            if (dimmer !== undefined) {
-              accessory.removeService(dimmer);
+          }
+
+          if (Device.CFhasLightbulb(device)) {
+            const bulb = accessory.getService(hap.Service.Lightbulb);
+            this.setupLightbulbObservers(bond, device, bulb);
+
+            let dimmer = accessory.getService(`${device.location} ${device.name} Dimmer`);
+            if (this.config.include_dimmer) {
+              // Add service if previously undefined
+              if (dimmer === undefined) {
+                dimmer = accessory.addService(hap.Service.Switch, `${device.location} ${device.name} Dimmer`);
+              }
+              this.setupLightbulbDimmerObserver(bond, device, dimmer);
+            } else {
+              // Remove service if previously added
+              if (dimmer !== undefined) {
+                accessory.removeService(dimmer);
+              }
             }
           }
         }
         break;
-      }
-      case DeviceType.Generic: {
-        if (Device.GXhasToggle(device)) {
-          const generic = accessory.getService(hap.Service.Switch);
-          this.setupGenericObserver(bond, device, generic);
+      case DeviceType.Generic:
+        {
+          if (Device.GXhasToggle(device)) {
+            const generic = accessory.getService(hap.Service.Switch);
+            this.setupGenericObserver(bond, device, generic);
+          }
         }
-      }
+        break;
       default: {
         break;
       }
