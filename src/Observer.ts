@@ -18,6 +18,7 @@ export class Observer {
     });
 
     char
+      .setProps(props)
       .on('set', (value: any, callback: { (): void; (): void }) => {
         // Avoid doing anything when the device is in the requested state
         if (value === char.value) {
