@@ -337,7 +337,9 @@ export class BondPlatform {
 
   private setupGenericObserver(bond: Bond, device: Device, generic: HAP.Service) {
     function get(): Promise<any> {
-      return Promise.resolve(false);
+      return bond.api.getState(device.id).then(state => {
+        return state.power === 1;
+      });
     }
 
     function set(value: any): Promise<void> {
