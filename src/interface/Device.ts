@@ -37,7 +37,9 @@ export namespace Device {
 
   export function CFhasFan(device: Device): boolean {
     const fan = [Action.SetSpeed];
-    return device.actions.some(r => fan.includes(r));
+    const hasSetSpeed = device.actions.some(r => fan.includes(r));
+    const hasMaxSpeed = device.properties.max_speed !== null;
+    return hasSetSpeed && hasMaxSpeed;
   }
 
   export function CFhasReverseSwitch(device: Device): boolean {
