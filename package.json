@@ -1,6 +1,6 @@
 {
   "name": "homebridge-bond",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "A homebridge plugin to control your Bond devices over the v2 API.",
   "license": "MIT",
   "main": "dist/index.js",
