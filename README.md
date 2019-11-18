@@ -64,6 +64,25 @@ You can tap on each row to copy the contents to the clipboard.
 | `include_dimmer` | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. Since this is an odd solution to dimming, it's off by default. |
 | `debug`          | false   | Turns on additional logging.                                                                                                                                        |
 
+## Debug Mode
+
+To enable debug mode, add `"debug": true` to your platform config:
+
+```
+"platforms": [
+    {
+        "platform": "Bond",
+        "debug": true,
+        "bonds": [
+            {
+                "ip_address": "<BOND_IP_ADDRESS>",
+                "token": "<BOND_TOKEN>"
+            }
+        ],
+    }
+],
+```
+
 ## Development
 
 I'm more than happy to take PRs if you want to fix a bug you are having or take a shot at adding a new feature you're interested in. To compile the code in realtime, run:
