@@ -93,7 +93,7 @@ export class BondPlatform {
       .setCharacteristic(hap.Characteristic.SerialNumber, device.id);
 
     if (device.type === DeviceType.CeilingFan) {
-      if (device.properties.max_speed === null) {
+      if (device.properties.max_speed === undefined) {
         this.log(`${accessory.displayName} Fan is not supported (missing max_speed property).`);
       }
       if (Device.CFhasFan(device)) {

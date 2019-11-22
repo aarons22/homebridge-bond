@@ -38,7 +38,7 @@ export namespace Device {
   export function CFhasFan(device: Device): boolean {
     const fan = [Action.SetSpeed];
     const hasSetSpeed = device.actions.some(r => fan.includes(r));
-    const hasMaxSpeed = device.properties.max_speed !== null;
+    const hasMaxSpeed = device.properties.max_speed !== undefined;
     return hasSetSpeed && hasMaxSpeed;
   }
 
@@ -49,7 +49,7 @@ export namespace Device {
 
   export function fanSpeeds(device: Device): number[] {
     if (device.commands == null) {
-      if (device.properties.max_speed == null) {
+      if (device.properties.max_speed === undefined || device.properties.max_speed === null) {
         return [];
       } else {
         // Assume speeds 1 - max_speed
