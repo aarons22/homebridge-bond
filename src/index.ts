@@ -8,7 +8,7 @@ import { Observer } from './Observer';
 
 let Accessory: any;
 
-export default function(homebridge: any) {
+export default (homebridge: any) => {
   hap.Service = homebridge.hap.Service;
   hap.Characteristic = homebridge.hap.Characteristic;
   Accessory = homebridge.platformAccessory;
@@ -85,7 +85,7 @@ export class BondPlatform {
       return;
     }
 
-    const accessory = new Accessory(device.location + ' ' + device.type, hap.UUIDGen.generate(device.id.toString()));
+    const accessory = new Accessory(`${device.location} ${device.name}`, hap.UUIDGen.generate(device.id.toString()));
     accessory.context.device = device;
     accessory.reachable = true;
     accessory
