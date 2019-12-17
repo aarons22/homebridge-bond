@@ -57,7 +57,7 @@ export namespace Device {
         const vals = Array(max_speed)
           .fill(1)
           .map((x, y) => x + y);
-        return vals;
+        return vals.sort();
       }
     }
 
@@ -75,7 +75,7 @@ export namespace Device {
         return cmd.argument || 0;
       });
 
-    return values;
+    return values.sort();
   }
 
   export function GXhasToggle(device: Device): boolean {
