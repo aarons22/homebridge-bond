@@ -22,6 +22,9 @@ This plugin currently supports the following devices and features:
   - Light Dimming (`off` by default; see config below)
     - When using this feature, turn the switch on to start dimming. When you reach the brightness level you would like, turn the switch off.
 - Generic Device
+  - On / Off (appears as switch in HomeKit)
+- Fireplace
+  - Flame On / Off (appears as switch in HomeKit)
 
 You can view the backlog of features [here](https://github.com/aarons22/homebridge-bond/). Feel free to add a feature request in the Issues tab!
 

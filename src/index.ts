@@ -15,7 +15,7 @@ export default (homebridge: any) => {
   hap.UUIDGen = homebridge.hap.uuid;
 
   homebridge.registerPlatform('homebridge-bond', 'Bond', BondPlatform, true);
-}
+};
 
 export class BondPlatform {
   private accessories: any[] = [];
@@ -115,6 +115,12 @@ export class BondPlatform {
       }
     }
 
+    if (device.type === DeviceType.Fireplace) {
+      if (Device.FPhasToggle(device)) {
+        accessory.addService(hap.Service.Switch, `${device.location} ${device.name}`);
+      }
+    }
+
     this.setupObservers(accessory);
 
     this.api.registerPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
@@ -199,6 +205,14 @@ export class BondPlatform {
           if (Device.GXhasToggle(device)) {
             const generic = accessory.getService(hap.Service.Switch);
             this.setupGenericObserver(bond, device, generic);
+          }
+        }
+        break;
+      case DeviceType.Fireplace:
+        {
+          if (Device.FPhasToggle(device)) {
+            const fireplace = accessory.getService(hap.Service.Switch);
+            this.setupFireplaceObserver(bond, device, fireplace);
           }
         }
         break;
@@ -350,6 +364,22 @@ export class BondPlatform {
     }
 
     Observer.add(this.log, generic, hap.Characteristic.On, get, set);
+  }
+
+  // Fireplace
+
+  private setupFireplaceObserver(bond: Bond, device: Device, fireplace: HAP.Service) {
+    function get(): Promise<any> {
+      return bond.api.getState(device.id).then(state => {
+        return state.power === 1;
+      });
+    }
+
+    function set(value: any): Promise<void> {
+      return bond.api.togglePower(device);
+    }
+
+    Observer.add(this.log, fireplace, hap.Characteristic.On, get, set);
   }
 
   // Helper Methods

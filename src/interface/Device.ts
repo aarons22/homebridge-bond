@@ -21,7 +21,7 @@ export interface Command {
 // tslint:disable-next-line: no-namespace
 export namespace Device {
   export function isSupported(device: Device): boolean {
-    const supported = [DeviceType.CeilingFan, DeviceType.Generic];
+    const supported = [DeviceType.CeilingFan, DeviceType.Generic, DeviceType.Fireplace];
     return supported.includes(device.type);
   }
 
@@ -79,6 +79,11 @@ export namespace Device {
   }
 
   export function GXhasToggle(device: Device): boolean {
+    const fan = [Action.TogglePower];
+    return device.actions.some(r => fan.includes(r));
+  }
+
+  export function FPhasToggle(device: Device): boolean {
     const fan = [Action.TogglePower];
     return device.actions.some(r => fan.includes(r));
   }
