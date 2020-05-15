@@ -297,7 +297,6 @@ export class BondPlatform {
 
     function set(value: any): Promise<void> {
       if (value === true) {
-        //return bond.api.startDimmer(device);
         return startCallback(device);
       } else {
         return bond.api.stop(device);
