@@ -56,6 +56,14 @@ export class BondApi {
     return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDimmer));
   }
 
+  public startIncreasingBrightness(device: Device): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartIncreasingBrightness));
+  }
+
+  public startDecreasingBrightness(device: Device): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDecreasingBrightness));
+  }
+
   public stop(device: Device): Promise<void> {
     return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Stop));
   }

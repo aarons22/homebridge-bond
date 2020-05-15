@@ -30,6 +30,14 @@ export namespace Device {
     return device.actions.some(r => dimmer.includes(r));
   }
 
+  export function HasSeparateDimmers(device: Device): boolean {
+    const increase = [Action.StartIncreasingBrightness];
+    const decrease = [Action.StartDecreasingBrightness];
+    const hasIncrease = device.actions.some(r => increase.includes(r));
+    const hasDecrease = device.actions.some(r => decrease.includes(r));
+    return hasIncrease && hasDecrease;
+  }
+
   export function CFhasLightbulb(device: Device): boolean {
     const lightbulb = [Action.ToggleLight];
     return device.actions.some(r => lightbulb.includes(r));
