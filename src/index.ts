@@ -204,6 +204,7 @@ export class BondPlatform {
                 if (dimmer === undefined) {
                   this.log(`${accessory.displayName} didn't have dimmer defined. define it now`);
                   dimmer = accessory.addService(hap.Service.Switch, `${accessory.displayName} Dimmer`);
+                  dimmer = accessory.addService(hap.Service.Switch, `${accessory.displayName} Dimmer`);
                 }
                 this.setupLightbulbDimmerObserver(bond, device, dimmer, d => bond.api.startDimmer(d));
               }
