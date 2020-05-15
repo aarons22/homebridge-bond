@@ -215,8 +215,8 @@ export class BondPlatform {
                 if (dimmerDown === undefined) {
                   dimmerDown = accessory.addService(new hap.Service.Switch(`${accessory.displayName} DimmerDown`, "down"));
                 }
-                this.setupLightbulbDimmerObserver(bond, device, dimmerUp, d => bond.api.startIncreasingBrightness(d));
-                this.setupLightbulbDimmerObserver(bond, device, dimmerDown, d => bond.api.startDecreasingBrightness(d));
+                this.setupLightbulbDimmerObserver(bond, device, dimmerUp, d => bond.api.startIncreasingBrightness(d), dimmerDown);
+                this.setupLightbulbDimmerObserver(bond, device, dimmerDown, d => bond.api.startDecreasingBrightness(d), dimmerUp);
               }
             } else {
               // Remove service if previously added
@@ -290,13 +290,17 @@ export class BondPlatform {
     Observer.add(this.log, bulb, hap.Characteristic.On, get, set);
   }
 
-  private setupLightbulbDimmerObserver(bond: Bond, device: Device, dimmer: HAP.Service, startCallback: (device: Device) => Promise<void>) {
+  private setupLightbulbDimmerObserver(bond: Bond, device: Device, dimmer: HAP.Service, startCallback: (device: Device) => Promise<void>, otherDimmer?: HAP.Service) {
     function get(): Promise<any> {
       return Promise.resolve(false);
     }
 
     function set(value: any): Promise<void> {
       if (value === true) {
+        if (otherDimmer) {
+          bond.api.stop(device);
+          otherDimmer.setCharacteristic(hap.Characteristic.On, false);
+        }
         return startCallback(device);
       } else {
         return bond.api.stop(device);
