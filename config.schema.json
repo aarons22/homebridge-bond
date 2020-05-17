@@ -1,0 +1,48 @@
+{
+  "pluginAlias": "Bond",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "bonds": {
+        "title": "Bonds",
+        "type": "array",
+        "required": true,
+        "uniqueItems": true,
+        "items": {
+          "title": "Bond",
+          "type": "object",
+          "properties": {
+            "ip_address": {
+              "title": "IP Address",
+              "type": "string",
+              "required": true,
+              "description": "IP Address of your Bond."
+            },
+            "token": {
+              "title": "Bond Token",
+              "type": "string",
+              "required": true,
+              "description": "Can be found in the bond app by tapping your Bond device and looking for 'Local Token'."
+            }
+          }
+        }
+      },
+      "debug": {
+        "title": "Debug mode",
+        "type": "boolean",
+        "default": false,
+        "required": false,
+        "description": "Turns on additional logging."
+      },
+      "include_dimmer": {
+        "title": "Include dimmer",
+        "type": "boolean",
+        "default": false,
+        "required": false,
+        "description": "If dimming is a valid action on a device, it will be included as additional switch on the accessory. Since this is an odd solution to dimming, it's off by default."
+      }
+    }
+  }
+}
