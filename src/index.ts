@@ -151,13 +151,13 @@ export class BondPlatform {
     // If bonds hasn't been initilized, attempt to configure the accessory
     // after a delay
     if (this.bonds) {
-      this.log('Configure Accessory: ' + accessory.displayName);
+      this.log(`Configuring Accessory: ${accessory.displayName}`);
       this.setupObservers(accessory);
     } else {
       const that = this;
       const timer = setInterval(() => {
         if (this.bonds) {
-          that.log('Configure Accessory: ' + accessory.displayName);
+          that.log(`Configuring Accessory: ${accessory.displayName}`);
           that.setupObservers(accessory);
           clearInterval(timer);
         }
@@ -167,7 +167,11 @@ export class BondPlatform {
 
   private setupObservers(accessory: HAP.Accessory) {
     const device: Device = accessory.context.device;
-    const bond = this.bondForDevice(device);
+    const bond = this.bondForAccessory(accessory);
+
+    if (bond === undefined) {
+      return;
+    }
 
     switch (device.type) {
       case DeviceType.CeilingFan:
@@ -225,15 +229,18 @@ export class BondPlatform {
     }
   }
 
-  private bondForDevice(device: Device): Bond {
+  private bondForAccessory(accessory: HAP.Accessory): Bond | undefined {
+    const device: Device = accessory.context.device;
     if (this.bonds) {
       const bond = this.bonds.find(x => x.deviceIds.includes(device.id));
       if (bond === undefined) {
-        throw new Error(`No Bond found for device ${device.name}`);
+        this.log.error(
+          `No Bond found for Accessory: ${accessory.displayName}. This Accessory may have been removed from your Bond but still exists in cachedAccessories.`,
+        );
       }
       return bond;
     } else {
-      throw new Error(`config.bonds is not defined`);
+      this.log.error(`config.bonds is not defined`);
     }
   }
 
