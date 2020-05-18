@@ -7,6 +7,8 @@ import { Device } from './interface/Device';
 import { Observer } from './Observer';
 
 let Accessory: any;
+const PLUGIN_NAME = 'homebridge-bond';
+const PLATFORM_NAME = 'Bond';
 
 export default (homebridge: any) => {
   hap.Service = homebridge.hap.Service;
@@ -14,7 +16,7 @@ export default (homebridge: any) => {
   Accessory = homebridge.platformAccessory;
   hap.UUIDGen = homebridge.hap.uuid;
 
-  homebridge.registerPlatform('homebridge-bond', 'Bond', BondPlatform, true);
+  homebridge.registerPlatform(PLUGIN_NAME, PLATFORM_NAME, BondPlatform, true);
 };
 
 export class BondPlatform {
@@ -31,7 +33,7 @@ export class BondPlatform {
     }
 
     if (config.bonds === undefined) {
-      this.log('ERR: bonds array is required but missing from config.json');
+      this.log.error('bonds array is required but missing from config.json');
       return;
     }
     const bonds = Bond.objects(log, config);
@@ -75,17 +77,18 @@ export class BondPlatform {
   // Accessory
 
   public addAccessory(device: Device) {
+    const displayName = Device.displayName(device);
     if (this.deviceAdded(device.id)) {
       this.log(`${device.id} has already been added.`);
       return;
     }
 
     if (!Device.isSupported(device)) {
-      this.log(`${device.name} has no supported actions.`);
+      this.log(`${displayName} has no supported actions.`);
       return;
     }
 
-    const accessory = new Accessory(`${device.location} ${device.name}`, hap.UUIDGen.generate(device.id.toString()));
+    const accessory = new Accessory(`${displayName}`, hap.UUIDGen.generate(device.id.toString()));
     accessory.context.device = device;
     accessory.reachable = true;
     accessory
@@ -97,33 +100,33 @@ export class BondPlatform {
         this.log(`${accessory.displayName} Fan is not supported (missing max_speed property).`);
       }
       if (Device.CFhasFan(device)) {
-        accessory.addService(hap.Service.Fan, `${device.location} ${device.name} Fan`);
+        accessory.addService(hap.Service.Fan, `${accessory.displayName}`);
       }
 
       if (Device.CFhasLightbulb(device)) {
-        accessory.addService(hap.Service.Lightbulb, `${device.location} ${device.name} Light`);
+        accessory.addService(hap.Service.Lightbulb, `${accessory.displayName} Light`);
       }
 
       if (this.config.include_dimmer && Device.HasDimmer(device)) {
-        accessory.addService(hap.Service.Switch, `${device.location} ${device.name} Dimmer`);
+        accessory.addService(hap.Service.Switch, `${accessory.displayName} Dimmer`);
       }
     }
 
     if (device.type === DeviceType.Generic) {
       if (Device.GXhasToggle(device)) {
-        accessory.addService(hap.Service.Switch, `${device.location} ${device.name}`);
+        accessory.addService(hap.Service.Switch, `${accessory.displayName}`);
       }
     }
 
     if (device.type === DeviceType.Fireplace) {
       if (Device.FPhasToggle(device)) {
-        accessory.addService(hap.Service.Switch, `${device.location} ${device.name}`);
+        accessory.addService(hap.Service.Switch, `${accessory.displayName}`);
       }
     }
 
     this.setupObservers(accessory);
 
-    this.api.registerPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
+    this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     this.accessories.push(accessory);
     this.log(`Adding accessory ${accessory.displayName}`);
   }
@@ -136,7 +139,7 @@ export class BondPlatform {
       this.accessories.splice(index, 1);
     }
 
-    this.api.unregisterPlatformAccessories('homebridge-bond', 'Bond', [accessory]);
+    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
   }
 
   public configureAccessory(accessory: HAP.Accessory) {
@@ -148,13 +151,13 @@ export class BondPlatform {
     // If bonds hasn't been initilized, attempt to configure the accessory
     // after a delay
     if (this.bonds) {
-      this.log('Configure Accessory: ' + accessory.displayName);
+      this.log(`Configuring Accessory: ${accessory.displayName}`);
       this.setupObservers(accessory);
     } else {
       const that = this;
       const timer = setInterval(() => {
         if (this.bonds) {
-          that.log('Configure Accessory: ' + accessory.displayName);
+          that.log(`Configuring Accessory: ${accessory.displayName}`);
           that.setupObservers(accessory);
           clearInterval(timer);
         }
@@ -164,7 +167,11 @@ export class BondPlatform {
 
   private setupObservers(accessory: HAP.Accessory) {
     const device: Device = accessory.context.device;
-    const bond = this.bondForDevice(device);
+    const bond = this.bondForAccessory(accessory);
+
+    if (bond === undefined) {
+      return;
+    }
 
     switch (device.type) {
       case DeviceType.CeilingFan:
@@ -184,11 +191,11 @@ export class BondPlatform {
             const bulb = accessory.getService(hap.Service.Lightbulb);
             this.setupLightbulbObservers(bond, device, bulb);
 
-            let dimmer = accessory.getService(`${device.location} ${device.name} Dimmer`);
+            let dimmer = accessory.getService(`${accessory.displayName} Dimmer`);
             if (this.config.include_dimmer) {
               // Add service if previously undefined
               if (dimmer === undefined) {
-                dimmer = accessory.addService(hap.Service.Switch, `${device.location} ${device.name} Dimmer`);
+                dimmer = accessory.addService(hap.Service.Switch, `${accessory.displayName} Dimmer`);
               }
               this.setupLightbulbDimmerObserver(bond, device, dimmer);
             } else {
@@ -222,15 +229,18 @@ export class BondPlatform {
     }
   }
 
-  private bondForDevice(device: Device): Bond {
+  private bondForAccessory(accessory: HAP.Accessory): Bond | undefined {
+    const device: Device = accessory.context.device;
     if (this.bonds) {
       const bond = this.bonds.find(x => x.deviceIds.includes(device.id));
       if (bond === undefined) {
-        throw new Error(`No Bond found for device ${device.name}`);
+        this.log.error(
+          `No Bond found for Accessory: ${accessory.displayName}. This Accessory may have been removed from your Bond but still exists in cachedAccessories.`,
+        );
       }
       return bond;
     } else {
-      throw new Error(`config.bonds is not defined`);
+      this.log.error(`config.bonds is not defined`);
     }
   }
 
@@ -407,6 +417,6 @@ export class BondPlatform {
   }
 
   private error(device: Device, message: string) {
-    this.log(`ERR: [${device.name}] ${message}`);
+    this.log.error(`[${device.name}] ${message}`);
   }
 }
