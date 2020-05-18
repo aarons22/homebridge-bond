@@ -18,13 +18,15 @@
               "title": "IP Address",
               "type": "string",
               "required": true,
-              "description": "IP Address of your Bond."
+              "description": "IP Address of your Bond.",
+              "placeholder": "e.g. 192.168.1.1"
             },
             "token": {
               "title": "Bond Token",
               "type": "string",
               "required": true,
-              "description": "Can be found in the bond app by tapping your Bond device and looking for 'Local Token'."
+              "description": "Can be found in the bond app by tapping your Bond device and looking for 'Local Token'.",
+              "placeholder": "e.g. fd3904894ff98f"
             }
           }
         }
