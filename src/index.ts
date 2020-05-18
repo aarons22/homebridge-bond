@@ -100,7 +100,7 @@ export class BondPlatform {
         this.log(`${accessory.displayName} Fan is not supported (missing max_speed property).`);
       }
       if (Device.CFhasFan(device)) {
-        accessory.addService(hap.Service.Fan, `${accessory.displayName} Fan`);
+        accessory.addService(hap.Service.Fan, `${accessory.displayName}`);
       }
 
       if (Device.CFhasLightbulb(device)) {
