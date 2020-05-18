@@ -33,7 +33,7 @@ export class BondPlatform {
     }
 
     if (config.bonds === undefined) {
-      this.log('ERR: bonds array is required but missing from config.json');
+      this.log.error('bonds array is required but missing from config.json');
       return;
     }
     const bonds = Bond.objects(log, config);
@@ -417,6 +417,6 @@ export class BondPlatform {
   }
 
   private error(device: Device, message: string) {
-    this.log(`ERR: [${device.name}] ${message}`);
+    this.log.error(`[${device.name}] ${message}`);
   }
 }

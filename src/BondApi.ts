@@ -168,13 +168,13 @@ export class BondApi {
         if (error.name !== undefined && error.name === 'StatusCodeError') {
           switch (error.statusCode) {
             case 401:
-              this.log('ERR: Unauthorized. Please check your `bond_token` to see if it is correct.');
+              this.log.error('Unauthorized. Please check your `bond_token` to see if it is correct.');
               return;
             default:
-              this.log(`ERR: statusCode ${error.statusCode}`);
+              this.log.error(`statusCode ${error.statusCode}`);
           }
         } else {
-          this.log(`ERR: A request error occurred: ${error.error}`);
+          this.log.error(`A request error occurred: ${error.error}`);
         }
       });
   }
