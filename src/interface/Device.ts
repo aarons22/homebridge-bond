@@ -20,6 +20,10 @@ export interface Command {
 
 // tslint:disable-next-line: no-namespace
 export namespace Device {
+  export function displayName(device: Device): string {
+    return `${device.location} ${device.name}`;
+  }
+
   export function isSupported(device: Device): boolean {
     const supported = [DeviceType.CeilingFan, DeviceType.Generic, DeviceType.Fireplace];
     return supported.includes(device.type);
