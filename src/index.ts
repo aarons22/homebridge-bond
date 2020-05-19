@@ -111,12 +111,8 @@ export class BondPlatform {
         accessory.addService(hap.Service.Switch, `${accessory.displayName} Dimmer`);
       }
       if (this.config.include_dimmer && Device.HasSeparateDimmers(device)) {
-        accessory.addService(new hap.Service.Switch(`${device.location} ${device.name} DimmerUp`, "up"));
-        accessory.addService(new hap.Service.Switch(`${device.location} ${device.name} DimmerDown`, "down"));
-      }
-      if (this.config.include_dimmer && Device.HasSeparateDimmers(device)) {
-        accessory.addService(new hap.Service.Switch(`${device.location} ${device.name} DimmerUp`, "up"));
-        accessory.addService(new hap.Service.Switch(`${device.location} ${device.name} DimmerDown`, "down"));
+        accessory.addService(new hap.Service.Switch(`${accessory.displayName} DimmerUp`, "up"));
+        accessory.addService(new hap.Service.Switch(`${accessory.displayName} DimmerDown`, "down"));
       }
     }
 
