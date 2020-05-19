@@ -110,6 +110,10 @@ export class BondPlatform {
       if (this.config.include_dimmer && Device.HasDimmer(device)) {
         accessory.addService(hap.Service.Switch, `${accessory.displayName} Dimmer`);
       }
+      if (this.config.include_dimmer && Device.HasSeparateDimmers(device)) {
+        accessory.addService(new hap.Service.Switch(`${accessory.displayName} DimmerUp`, "up"));
+        accessory.addService(new hap.Service.Switch(`${accessory.displayName} DimmerDown`, "down"));
+      }
     }
 
     if (device.type === DeviceType.Generic) {
@@ -192,16 +196,37 @@ export class BondPlatform {
             this.setupLightbulbObservers(bond, device, bulb);
 
             let dimmer = accessory.getService(`${accessory.displayName} Dimmer`);
+            let dimmerUp = accessory.getService(`${accessory.displayName} DimmerUp`);
+            let dimmerDown = accessory.getService(`${accessory.displayName} DimmerDown`);
             if (this.config.include_dimmer) {
               // Add service if previously undefined
-              if (dimmer === undefined) {
-                dimmer = accessory.addService(hap.Service.Switch, `${accessory.displayName} Dimmer`);
+              if (Device.HasDimmer(device)) {
+                if (dimmer === undefined) {
+                  this.log(`${accessory.displayName} didn't have dimmer defined. define it now`);
+                  dimmer = accessory.addService(hap.Service.Switch, `${accessory.displayName} Dimmer`);
+                }
+                this.setupLightbulbDimmerObserver(bond, device, dimmer, d => bond.api.startDimmer(d));
               }
-              this.setupLightbulbDimmerObserver(bond, device, dimmer);
+              if (Device.HasSeparateDimmers(device)) {
+                if (dimmerUp === undefined) {
+                  dimmerUp = accessory.addService(new hap.Service.Switch(`${accessory.displayName} DimmerUp`, "up"));
+                }
+                if (dimmerDown === undefined) {
+                  dimmerDown = accessory.addService(new hap.Service.Switch(`${accessory.displayName} DimmerDown`, "down"));
+                }
+                this.setupLightbulbDimmerObserver(bond, device, dimmerUp, d => bond.api.startIncreasingBrightness(d), dimmerDown);
+                this.setupLightbulbDimmerObserver(bond, device, dimmerDown, d => bond.api.startDecreasingBrightness(d), dimmerUp);
+              }
             } else {
               // Remove service if previously added
               if (dimmer !== undefined) {
                 accessory.removeService(dimmer);
+              }
+              if (dimmerUp !== undefined) {
+                accessory.removeService(dimmerUp);
+              }
+              if (dimmerDown !== undefined) {
+                accessory.removeService(dimmerDown);
               }
             }
           }
@@ -264,14 +289,18 @@ export class BondPlatform {
     Observer.add(this.log, bulb, hap.Characteristic.On, get, set);
   }
 
-  private setupLightbulbDimmerObserver(bond: Bond, device: Device, dimmer: HAP.Service) {
+  private setupLightbulbDimmerObserver(bond: Bond, device: Device, dimmer: HAP.Service, startCallback: (device: Device) => Promise<void>, otherDimmer?: HAP.Service) {
     function get(): Promise<any> {
       return Promise.resolve(false);
     }
 
     function set(value: any): Promise<void> {
       if (value === true) {
-        return bond.api.startDimmer(device);
+        if (otherDimmer) {
+          bond.api.stop(device);
+          otherDimmer.setCharacteristic(hap.Characteristic.On, false);
+        }
+        return startCallback(device);
       } else {
         return bond.api.stop(device);
       }
