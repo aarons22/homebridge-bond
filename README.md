@@ -30,15 +30,29 @@ You can view the backlog of features [here](https://github.com/aarons22/homebrid
 
 ## Installation
 
-1. Install homebridge using: `npm install -g homebridge`
-2. Install this plug-in using: `npm install -g homebridge-bond`
-3. Update your configuration file. See example `config.json` snippet below.
+Assuming a global installation of `homebridge`:
 
-## Configuration
+`npm i -g homebridge-bond`
 
-Configuration sample (edit `~/.homebridge/config.json`):
+## Homebridge Configuration
 
-```
+Add the `Bond` platform in your homebridge `config.json` file.
+
+### Easiest Configuration
+
+For the best experience setting up this plugin, please use [homebridge-config-ui-x](https://www.npmjs.com/package/homebridge-config-ui-x).
+
+### Basic Configuration
+
+To get your Bond IP Address, follow the instructions [here](https://github.com/aarons22/homebridge-bond/wiki/Get-Bond-IP-Address).
+
+`BOND_TOKEN` (Local token) can be found in the app. Go to your Bond settings:
+
+![alt text](./docs/bond-settings.jpeg 'Bond Settings')
+
+You can tap on each row to copy the contents to the clipboard.
+
+```json
 "platforms": [
     {
         "platform": "Bond",
@@ -51,14 +65,6 @@ Configuration sample (edit `~/.homebridge/config.json`):
     }
 ],
 ```
-
-To get your Bond IP Address, follow the instructions [here](https://github.com/aarons22/homebridge-bond/wiki/Get-Bond-IP-Address).
-
-`BOND_ID` and `BOND_TOKEN` (Local token) can be found in the app. Go to your Bond settings:
-
-![alt text](./docs/bond-settings.jpeg 'Bond Settings')
-
-You can tap on each row to copy the contents to the clipboard.
 
 ## Optional Parameters
 
