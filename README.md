@@ -62,10 +62,11 @@ You can tap on each row to copy the contents to the clipboard.
 
 ## Optional Parameters
 
-| Option           | Default | Explanation                                                                                                                                                         |
-| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `include_dimmer` | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. Since this is an odd solution to dimming, it's off by default. |
-| `debug`          | false   | Turns on additional logging.                                                                                                                                        |
+| Option             | Default | Explanation                                                                                                                                                         |
+| ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `include_dimmer`   | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. Since this is an odd solution to dimming, it's off by default. |
+| `debug`            | false   | Turns on additional logging.                                                                                                                                        |
+| `fan_speed_values` | false   | Use fan speed values instead of percentages (i.e. Hey Siri set the Office Fan to 2).                                                                                |
 
 ## Debug Mode
 

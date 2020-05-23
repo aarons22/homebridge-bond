@@ -335,8 +335,14 @@ export class BondPlatform {
     const that = this;
     const values = Device.fanSpeeds(device);
 
-    const minStep = Math.floor(100 / values.length);
-    const maxValue = minStep * values.length;
+    let minStep = Math.floor(100 / values.length);
+    let maxValue = minStep * values.length;
+
+    if (this.config.fan_speed_values) {
+      minStep = 1;
+      maxValue = values.length;
+    }
+
     this.debug(device, `min step: ${minStep}, max value: ${maxValue}`);
 
     function get(): Promise<any> {
