@@ -1,5 +1,4 @@
-import Promise from 'bluebird';
-import rp from 'request-promise';
+import axios from 'axios';
 import { BondUri } from './BondUri';
 import { Action } from './enum/Action';
 import { HAP, hap } from './homebridge/hap';
@@ -8,8 +7,8 @@ import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
 
 enum HTTPMethod {
-  GET = 'GET',
-  PUT = 'PUT',
+  GET = 'get',
+  PUT = 'put',
 }
 
 export class BondApi {
@@ -152,26 +151,20 @@ export class BondApi {
     } else {
       this.debug(`Request [${method} ${uri}]`);
     }
-    return rp({
-      method,
-      uri,
+    return axios({
+      method: method,
+      url: uri,
       headers: {
         'BOND-Token': this.bondToken,
       },
-      body,
-      json: true,
-      simple: false,
-      timeout: 10000,
+      data: body,
+      timeout: 10000
     })
-      .then(json => {
-        if (json !== undefined) {
-          this.debug(`Response [${method} ${uri}] - ${JSON.stringify(json)}`);
-        } else {
-          this.debug(`Response [${method} ${uri}]`);
-        }
-        return json;
+      .then(response => {
+        this.debug(`Response [${method} ${uri}] - ${JSON.stringify(response.data)}`);
+        return response.data
       })
-      .catch((error: any) => {
+      .catch(error => {
         this.debug(`Error [${method} ${uri}] - ${JSON.stringify(error)}`);
         if (error.name !== undefined && error.name === 'StatusCodeError') {
           switch (error.statusCode) {

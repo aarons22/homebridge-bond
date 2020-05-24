@@ -1,4 +1,3 @@
-import Promise from 'bluebird';
 import { DeviceType } from './enum/DeviceType';
 import { HAP, hap } from './homebridge/hap';
 import { Bond } from './interface/Bond';

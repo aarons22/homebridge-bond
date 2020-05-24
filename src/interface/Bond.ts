@@ -1,4 +1,3 @@
-import Promise from 'bluebird';
 import { BondApi } from '../BondApi';
 import { HAP } from '../homebridge/hap';
 import { BondPlatformConfig } from '../interface/config';

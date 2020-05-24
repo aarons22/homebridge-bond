@@ -38,9 +38,7 @@
     "typescript": "^2.9.2"
   },
   "dependencies": {
-    "bluebird": "^3.5.1",
-    "request": "^2.87.0",
-    "request-promise": "^4.2.2"
+    "axios": "^0.19.2"
   },
   "homepage": "https://github.com/aarons22/homebridge-bond#readme",
   "author": "Aaron Sapp"

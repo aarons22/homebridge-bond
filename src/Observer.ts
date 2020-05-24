@@ -1,6 +1,4 @@
-import Promise from 'bluebird';
-import { HAP, hap } from './homebridge/hap';
-import { Bond } from './interface/Bond';
+import { HAP } from './homebridge/hap';
 
 export class Observer {
   public static add(
