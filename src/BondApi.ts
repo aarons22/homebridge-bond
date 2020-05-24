@@ -1,6 +1,6 @@
 import { BondUri } from './BondUri';
 import { Action } from './enum/Action';
-import { HAP } from './homebridge/hap';
+import { BondPlatform } from './platform';
 import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
@@ -16,7 +16,11 @@ export class BondApi {
   private uri: BondUri;
   private isDebug: boolean;
 
-  constructor(private log: HAP.Log, bondToken: string, ipAddress: string, debug: boolean) {
+  constructor(
+    private readonly platform: BondPlatform,
+    bondToken: string,
+    ipAddress: string,
+    debug: boolean) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
     this.isDebug = debug;
@@ -169,20 +173,20 @@ export class BondApi {
         if (error.name !== undefined && error.name === 'StatusCodeError') {
           switch (error.statusCode) {
             case 401:
-              this.log.error('Unauthorized. Please check your `bond_token` to see if it is correct.');
+              this.platform.log.error('Unauthorized. Please check your `bond_token` to see if it is correct.');
               return;
             default:
-              this.log.error(`statusCode ${error.statusCode}`);
+              this.platform.log.error(`statusCode ${error.statusCode}`);
           }
         } else {
-          this.log.error(`A request error occurred: ${error.error}`);
+          this.platform.log.error(`A request error occurred: ${error.error}`);
         }
       });
   }
 
   private debug(message: string) {
     if (this.isDebug) {
-      this.log(`DEBUG: ${message}`);
+      this.platform.log(`DEBUG: ${message}`);
     }
   }
 }

@@ -1,13 +1,14 @@
 import { BondApi } from '../BondApi';
-import { HAP } from '../homebridge/hap';
+import { BondPlatform } from '../platform';
 import { BondPlatformConfig } from '../interface/config';
 
 export class Bond {
   // Helper to sanitze the config object into bond objects
-  public static objects(log: HAP.Log, config: BondPlatformConfig): Bond[] {
+  public static objects(platform: BondPlatform): Bond[] {
+    const config = platform.config as BondPlatformConfig;
     const bondData: Array<{ [key: string]: any }> = config.bonds;
     const bondObjs = bondData.map(val => {
-      return new Bond(log, val.ip_address, val.token, config.debug);
+      return new Bond(platform, val.ip_address, val.token, config.debug);
     });
 
     return bondObjs;
@@ -23,15 +24,15 @@ export class Bond {
     return Promise.all(ps);
   }
 
-  // public ipAddress: string;
-  // public token: string;
   public api: BondApi;
   public deviceIds: string[];
 
-  constructor(private log: HAP.Log, ipAddress: string, token: string, debug: boolean) {
-    // this.ipAddress = ipAddress;
-    // this.token = token;
-    this.api = new BondApi(log, token, ipAddress, debug);
+  constructor(
+    private readonly platform: BondPlatform,
+    ipAddress: string,
+    token: string,
+    debug: boolean) {
+    this.api = new BondApi(platform, token, ipAddress, debug);
     this.deviceIds = [];
   }
 
@@ -42,7 +43,7 @@ export class Bond {
         this.deviceIds = ids;
       })
       .catch(error => {
-        this.log.error(`Error getting device ids: ${error}`);
+        this.platform.log.error(`Error getting device ids: ${error}`);
       });
   }
 }
