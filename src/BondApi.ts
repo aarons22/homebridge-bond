@@ -1,10 +1,10 @@
-import axios from 'axios';
 import { BondUri } from './BondUri';
 import { Action } from './enum/Action';
-import { HAP, hap } from './homebridge/hap';
+import { HAP } from './homebridge/hap';
 import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
+import axios from 'axios';
 
 enum HTTPMethod {
   GET = 'get',
@@ -39,7 +39,7 @@ export class BondApi {
   }
 
   public getDevices(ids: string[]): Promise<Device[]> {
-    const ps: Array<Promise<Device>> = [];
+    const ps: Promise<Device>[] = [];
     ids.forEach(id => {
       ps.push(this.getDevice(id));
     });
@@ -112,7 +112,7 @@ export class BondApi {
 
   private getCommands(deviceId: string): Promise<Command[]> {
     return this.getCommandIds(deviceId).then(ids => {
-      const ps: Array<Promise<Command>> = [];
+      const ps: Promise<Command>[] = [];
       ids.forEach(id => {
         ps.push(this.getCommand(deviceId, id));
       });
@@ -152,7 +152,7 @@ export class BondApi {
       this.debug(`Request [${method} ${uri}]`);
     }
     return axios({
-      method: method,
+      method,
       url: uri,
       headers: {
         'BOND-Token': this.bondToken,
