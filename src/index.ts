@@ -6,9 +6,9 @@ import { BondPlatformConfig } from './interface/config';
 import { Device } from './interface/Device';
 import { Observer } from './Observer';
 
+import { PLUGIN_NAME, PLATFORM_NAME } from './settings'
+
 let Accessory: any;
-const PLUGIN_NAME = 'homebridge-bond';
-const PLATFORM_NAME = 'Bond';
 
 export default (homebridge: any) => {
   hap.Service = homebridge.hap.Service;
