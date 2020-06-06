@@ -1,4 +1,5 @@
 import { BondApi } from '../BondApi';
+import { BondConfig } from './config';
 import { BondPlatform } from '../platform';
 import { BondPlatformConfig } from '../interface/config';
 
@@ -6,7 +7,7 @@ export class Bond {
   // Helper to sanitze the config object into bond objects
   public static objects(platform: BondPlatform): Bond[] {
     const config = platform.config as BondPlatformConfig;
-    const bondData: Array<{ [key: string]: any }> = config.bonds;
+    const bondData: BondConfig[] = config.bonds;
     const bondObjs = bondData.map(val => {
       return new Bond(platform, val.ip_address, val.token, config.debug);
     });

@@ -3,8 +3,8 @@ import { Bond } from './interface/Bond';
 import { Device } from './interface/Device';
 import { Observer } from './Observer';
 import { API, DynamicPlatformPlugin, PlatformConfig, PlatformAccessory, Service, Characteristic, Logging } from 'homebridge';
-import { BondAccessory } from './platformAccessory'
-import { PLUGIN_NAME, PLATFORM_NAME } from './settings'
+import { BondAccessory } from './platformAccessory';
+import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
 
 export class BondPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
@@ -231,19 +231,20 @@ export class BondPlatform implements DynamicPlatformPlugin {
       const bond = this.bonds.find(x => x.deviceIds.includes(device.id));
       if (bond === undefined) {
         this.log.error(
-          `No Bond found for Accessory: ${accessory.displayName}. This Accessory may have been removed from your Bond but still exists in cachedAccessories.`,
+          `No Bond found for Accessory: ${accessory.displayName}. 
+          This Accessory may have been removed from your Bond but still exists in cachedAccessories.`,
         );
       }
       return bond;
     } else {
-      this.log.error(`config.bonds is not defined`);
+      this.log.error('config.bonds is not defined');
     }
   }
 
   // Lightbulb
 
   private setupLightbulbObservers(bond: Bond, device: Device, bulb?: Service) {
-    if (bulb == undefined) {
+    if (bulb === undefined) {
       return;
     }
     function get(): Promise<any> {
@@ -293,7 +294,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
   // Fan - Speed
 
   private setupFanObservers(bond: Bond, device: Device, fan?: Service) {
-    if (fan == undefined) {
+    if (fan === undefined) {
       return;
     }
     const that = this;
@@ -346,7 +347,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
   // Fan - Power
 
   private setupFanPowerObservers(bond: Bond, device: Device, fan?: Service) {
-    if (fan == undefined) {
+    if (fan === undefined) {
       return;
     }
     function get(): Promise<any> {
@@ -365,7 +366,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
   // Fan -  Rotation Direction
 
   private setupFanDirectionObservers(bond: Bond, device: Device, fan?: Service) {
-    if (fan == undefined) {
+    if (fan === undefined) {
       return;
     }
     function get(): Promise<any> {
@@ -378,7 +379,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
       });
     }
 
-    function set(value: any): Promise<void> {
+    function set(): Promise<void> {
       return bond.api.toggleDirection(device.id);
     }
 
@@ -388,7 +389,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
   // Generic
 
   private setupGenericObserver(bond: Bond, device: Device, generic?: Service) {
-    if (generic == undefined) {
+    if (generic === undefined) {
       return;
     }
     function get(): Promise<any> {
@@ -397,7 +398,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
       });
     }
 
-    function set(value: any): Promise<void> {
+    function set(): Promise<void> {
       return bond.api.togglePower(device);
     }
 
@@ -407,7 +408,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
   // Fireplace
 
   private setupFireplaceObserver(bond: Bond, device: Device, fireplace?: Service) {
-    if (fireplace == undefined) {
+    if (fireplace === undefined) {
       return;
     }
     function get(): Promise<any> {
@@ -416,7 +417,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
       });
     }
 
-    function set(value: any): Promise<void> {
+    function set(): Promise<void> {
       return bond.api.togglePower(device);
     }
 

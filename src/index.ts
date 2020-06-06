@@ -1,6 +1,6 @@
 import { API } from 'homebridge';
-import { PLUGIN_NAME, PLATFORM_NAME } from './settings'
-import { BondPlatform } from './platform'
+import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
+import { BondPlatform } from './platform';
 
 /**
  * This method registers the platform with Homebridge

@@ -7,7 +7,7 @@ export class BondAccessory {
   constructor(
     private readonly platform: BondPlatform,
     accessory: PlatformAccessory,
-    device: Device
+    device: Device,
   ) {
     // Set accessory information
     accessory

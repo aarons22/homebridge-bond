@@ -34,7 +34,7 @@ export class BondApi {
 
   public getDeviceIds(): Promise<string[]> {
     const req = this.request(HTTPMethod.GET, this.uri.deviceIds());
-    return req.then((json: {}) =>
+    return req.then((json: Record<string, unknown>) =>
       Object.keys(json).filter(x => {
         // Ignore anything that is an empty string or '_'
         return x.length > 0 && x !== '_';
@@ -126,7 +126,7 @@ export class BondApi {
 
   private getCommandIds(id: string): Promise<string[]> {
     const req = this.request(HTTPMethod.GET, this.uri.commands(id));
-    return req.then((json: {}) =>
+    return req.then((json: Record<string, unknown>) =>
       Object.keys(json).filter(x => {
         // Ignore anything that is an empty string or '_'
         return x.length > 0 && x !== '_';
@@ -149,7 +149,7 @@ export class BondApi {
 
   // Helpers
 
-  private request(method: HTTPMethod, uri: string, body: {} = {}): Promise<any> {
+  private request(method: HTTPMethod, uri: string, body: Record<string, unknown> = {}): Promise<any> {
     if (body !== {}) {
       this.debug(`Request [${method} ${uri}] - body: ${JSON.stringify(body)}`);
     } else {
@@ -162,11 +162,11 @@ export class BondApi {
         'BOND-Token': this.bondToken,
       },
       data: body,
-      timeout: 10000
+      timeout: 10000,
     })
       .then(response => {
         this.debug(`Response [${method} ${uri}] - ${JSON.stringify(response.data)}`);
-        return response.data
+        return response.data;
       })
       .catch(error => {
         this.debug(`Error [${method} ${uri}] - ${JSON.stringify(error)}`);

@@ -7,7 +7,7 @@ export class Observer {
     characteristic: Characteristic,
     get: () => Promise<any>,
     set: (value: any) => Promise<void> | undefined,
-    props: {} = {},
+    props: Record<string, unknown> = {},
   ) {
 
     get().then(val => {

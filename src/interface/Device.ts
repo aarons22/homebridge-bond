@@ -18,7 +18,7 @@ export interface Command {
   argument: number | null;
 }
 
-// tslint:disable-next-line: no-namespace
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Device {
   export function displayName(device: Device): string {
     return `${device.location} ${device.name}`;
@@ -60,7 +60,7 @@ export namespace Device {
   }
 
   export function fanSpeeds(device: Device): number[] {
-    if (device.commands == null) {
+    if (device.commands === null) {
       if (device.properties.max_speed === undefined || device.properties.max_speed === null) {
         return [];
       } else {

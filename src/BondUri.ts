@@ -4,15 +4,19 @@ export class BondUri {
   constructor(bondIP: string) {
     this.bondIP = bondIP;
   }
+
   public deviceIds(): string {
     return `http://${this.bondIP}/v2/devices`;
   }
+
   public device(id: string): string {
     return `http://${this.bondIP}/v2/devices/${id}`;
   }
+
   public state(id: string): string {
     return `http://${this.bondIP}/v2/devices/${id}/state`;
   }
+  
   public action(id: string, action: Action): string {
     return `http://${this.bondIP}/v2/devices/${id}/actions/${action}`;
   }
