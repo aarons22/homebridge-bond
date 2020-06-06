@@ -38,9 +38,7 @@
     "nodemon": "^2.0.4",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.1",
-    "typescript": "^3.9.3",
-    "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-jsdoc": "^25.4.2"
+    "typescript": "^3.9.3"
   },
   "dependencies": {
     "axios": "^0.19.2"
