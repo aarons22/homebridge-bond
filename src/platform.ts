@@ -231,7 +231,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
       const bond = this.bonds.find(x => x.deviceIds.includes(device.id));
       if (bond === undefined) {
         this.log.error(
-          `No Bond found for Accessory: ${accessory.displayName}. 
+          `No Bond found for Accessory: ${accessory.displayName}.
           This Accessory may have been removed from your Bond but still exists in cachedAccessories.`,
         );
       }
@@ -250,7 +250,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
     function get(): Promise<any> {
       return bond.api.getState(device.id).then(state => {
         if (state.light !== undefined) {
-          return state.light === 1 ? true : false;
+          return state.light === 1;
         } else {
           return false;
         }
