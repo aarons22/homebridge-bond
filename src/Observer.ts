@@ -1,27 +1,24 @@
-import Promise from 'bluebird';
-import { HAP, hap } from './homebridge/hap';
-import { Bond } from './interface/Bond';
+import { Characteristic } from 'homebridge';
+import { BondPlatform } from './platform';
 
 export class Observer {
   public static add(
-    log: HAP.Log,
-    bulb: HAP.Service,
-    characteristic: HAP.Characteristic,
+    platform: BondPlatform,
+    characteristic: Characteristic,
     get: () => Promise<any>,
     set: (value: any) => Promise<void> | undefined,
     props: {} = {},
   ) {
-    const char = bulb.getCharacteristic(characteristic);
 
     get().then(val => {
-      char.updateValue(val);
+      characteristic.updateValue(val);
     });
 
-    char
+    characteristic
       .setProps(props)
       .on('set', (value: any, callback: { (): void; (): void }) => {
         // Avoid doing anything when the device is in the requested state
-        if (value === char.value) {
+        if (value === characteristic.value) {
           callback();
           return;
         }
@@ -34,23 +31,23 @@ export class Observer {
 
         res
           .then(() => {
-            log(`value changed: ${value}`);
-            char.updateValue(value);
+            platform.log(`value changed: ${value}`);
+            characteristic.updateValue(value);
             callback();
           })
           .catch((error: string) => {
-            log(`error changing value: ${error}`);
+            platform.log(`error changing value: ${error}`);
             callback();
           });
       })
       .on('get', (callback: (arg0: null, arg1: boolean) => void) => {
         get()
           .then(value => {
-            log(`got value: ${value}`);
+            platform.log(`got value: ${value}`);
             callback(null, value);
           })
           .catch(error => {
-            log(`error getting value: ${error}`);
+            platform.log(`error getting value: ${error}`);
             callback(null, false);
           });
       });

@@ -1,15 +1,14 @@
-import Promise from 'bluebird';
-import rp from 'request-promise';
 import { BondUri } from './BondUri';
 import { Action } from './enum/Action';
-import { HAP, hap } from './homebridge/hap';
+import { BondPlatform } from './platform';
 import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
+import axios from 'axios';
 
 enum HTTPMethod {
-  GET = 'GET',
-  PUT = 'PUT',
+  GET = 'get',
+  PUT = 'put',
 }
 
 export class BondApi {
@@ -17,7 +16,11 @@ export class BondApi {
   private uri: BondUri;
   private isDebug: boolean;
 
-  constructor(private log: HAP.Log, bondToken: string, ipAddress: string, debug: boolean) {
+  constructor(
+    private readonly platform: BondPlatform,
+    bondToken: string,
+    ipAddress: string,
+    debug: boolean) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
     this.isDebug = debug;
@@ -40,7 +43,7 @@ export class BondApi {
   }
 
   public getDevices(ids: string[]): Promise<Device[]> {
-    const ps: Array<Promise<Device>> = [];
+    const ps: Promise<Device>[] = [];
     ids.forEach(id => {
       ps.push(this.getDevice(id));
     });
@@ -113,7 +116,7 @@ export class BondApi {
 
   private getCommands(deviceId: string): Promise<Command[]> {
     return this.getCommandIds(deviceId).then(ids => {
-      const ps: Array<Promise<Command>> = [];
+      const ps: Promise<Command>[] = [];
       ids.forEach(id => {
         ps.push(this.getCommand(deviceId, id));
       });
@@ -152,44 +155,38 @@ export class BondApi {
     } else {
       this.debug(`Request [${method} ${uri}]`);
     }
-    return rp({
+    return axios({
       method,
-      uri,
+      url: uri,
       headers: {
         'BOND-Token': this.bondToken,
       },
-      body,
-      json: true,
-      simple: false,
-      timeout: 10000,
+      data: body,
+      timeout: 10000
     })
-      .then(json => {
-        if (json !== undefined) {
-          this.debug(`Response [${method} ${uri}] - ${JSON.stringify(json)}`);
-        } else {
-          this.debug(`Response [${method} ${uri}]`);
-        }
-        return json;
+      .then(response => {
+        this.debug(`Response [${method} ${uri}] - ${JSON.stringify(response.data)}`);
+        return response.data
       })
-      .catch((error: any) => {
+      .catch(error => {
         this.debug(`Error [${method} ${uri}] - ${JSON.stringify(error)}`);
         if (error.name !== undefined && error.name === 'StatusCodeError') {
           switch (error.statusCode) {
             case 401:
-              this.log.error('Unauthorized. Please check your `bond_token` to see if it is correct.');
+              this.platform.log.error('Unauthorized. Please check your `bond_token` to see if it is correct.');
               return;
             default:
-              this.log.error(`statusCode ${error.statusCode}`);
+              this.platform.log.error(`statusCode ${error.statusCode}`);
           }
         } else {
-          this.log.error(`A request error occurred: ${error.error}`);
+          this.platform.log.error(`A request error occurred: ${error.error}`);
         }
       });
   }
 
   private debug(message: string) {
     if (this.isDebug) {
-      this.log(`DEBUG: ${message}`);
+      this.platform.log(`DEBUG: ${message}`);
     }
   }
 }
