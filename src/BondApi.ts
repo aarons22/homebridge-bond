@@ -5,11 +5,15 @@ import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
 import axios from 'axios';
+import FlakeId from 'flake-idgen';
+import intformat from 'biguint-format';
 
 enum HTTPMethod {
   GET = 'get',
   PUT = 'put',
 }
+
+const flakeIdGen = new FlakeId();
 
 export class BondApi {
   private bondToken: string;
@@ -156,11 +160,17 @@ export class BondApi {
     } else {
       this.debug(`Request [${method} ${uri}]`);
     }
+
+    const uuid = intformat(flakeIdGen.next(), 'hex', { prefix: '18', padstr: '0', size: 16 }); // avoid duplicate action
+    const bondUuid = uuid.substring(0, 13) + uuid.substring(15); // remove '00' used for datacenter/worker in flakeIdGen
+    this.debug(`Bond-UUID for request: [${bondUuid}]`);
+
     return axios({
       method,
       url: uri,
       headers: {
         'BOND-Token': this.bondToken,
+        'Bond-UUID': bondUuid,
       },
       data: body,
       timeout: 10000,

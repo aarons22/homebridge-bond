@@ -42,7 +42,9 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
-    "axios": "^0.19.2"
+    "axios": "^0.19.2",
+    "biguint-format": "^1.0.2",
+    "flake-idgen": "^1.4.0"
   },
   "homepage": "https://github.com/aarons22/homebridge-bond#readme",
   "author": "Aaron Sapp"
