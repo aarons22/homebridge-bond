@@ -73,27 +73,7 @@ You can tap on each row to copy the contents to the clipboard.
 | Option             | Default | Explanation                                                                                                                                                         |
 | ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `include_dimmer`   | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. Since this is an odd solution to dimming, it's off by default. |
-| `debug`            | false   | Turns on additional logging.                                                                                                                                        |
 | `fan_speed_values` | false   | Use fan speed values instead of percentages (i.e. Hey Siri set the Office Fan to 2).                                                                                |
-
-## Debug Mode
-
-To enable debug mode, add `"debug": true` to your platform config:
-
-```
-"platforms": [
-    {
-        "platform": "Bond",
-        "debug": true,
-        "bonds": [
-            {
-                "ip_address": "<BOND_IP_ADDRESS>",
-                "token": "<BOND_TOKEN>"
-            }
-        ],
-    }
-],
-```
 
 ## Development
 

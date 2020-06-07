@@ -10,7 +10,7 @@ export class Bond {
     const config = platform.config as BondPlatformConfig;
     const bondData: BondConfig[] = config.bonds;
     const bondObjs = bondData.map(val => {
-      return new Bond(platform, val.ip_address, val.token, config.debug);
+      return new Bond(platform, val.ip_address, val.token);
     });
 
     return bondObjs;
@@ -34,9 +34,8 @@ export class Bond {
   constructor(
     private readonly platform: BondPlatform,
     ipAddress: string,
-    token: string,
-    debug: boolean) {
-    this.api = new BondApi(platform, token, ipAddress, debug);
+    token: string) {
+    this.api = new BondApi(platform, token, ipAddress);
   }
 
   public updateDeviceIds(): Promise<void> {

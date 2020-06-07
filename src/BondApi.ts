@@ -19,16 +19,13 @@ const flakeIdGen = new FlakeId();
 export class BondApi {
   private bondToken: string;
   private uri: BondUri;
-  private isDebug: boolean;
 
   constructor(
     private readonly platform: BondPlatform,
     bondToken: string,
-    ipAddress: string,
-    debug: boolean) {
+    ipAddress: string) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
-    this.isDebug = debug;
   }
 
   // tslint:disable: object-literal-sort-keys
@@ -164,9 +161,9 @@ export class BondApi {
     const bondUuid = uuid.substring(0, 13) + uuid.substring(15); // remove '00' used for datacenter/worker in flakeIdGen
 
     if (bodyStr !== '{}') {
-      this.debug(`Request (${bondUuid}) [${method} ${uri}] - body: ${bodyStr}`);
+      this.platform.log.debug(`Request (${bondUuid}) [${method} ${uri}] - body: ${bodyStr}`);
     } else {
-      this.debug(`Request (${bondUuid}) [${method} ${uri}]`);
+      this.platform.log.debug(`Request (${bondUuid}) [${method} ${uri}]`);
     }
 
     return axios({
@@ -180,11 +177,11 @@ export class BondApi {
       timeout: 10000,
     })
       .then(response => {
-        this.debug(`Response (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(response.data)}`);
+        this.platform.log.debug(`Response (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(response.data)}`);
         return response.data;
       })
       .catch(error => {
-        this.debug(`Error (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(error)}`);
+        this.platform.log.debug(`Error (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(error)}`);
         if (error.name !== undefined && error.name === 'StatusCodeError') {
           switch (error.statusCode) {
             case 401:
@@ -197,12 +194,6 @@ export class BondApi {
           this.platform.log.error(`A request error occurred: ${error.error}`);
         }
       });
-  }
-
-  private debug(message: string) {
-    if (this.isDebug) {
-      this.platform.log(`DEBUG: ${message}`);
-    }
   }
 }
 
