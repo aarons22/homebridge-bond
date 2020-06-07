@@ -5,6 +5,10 @@ export class BondUri {
     this.bondIP = bondIP;
   }
 
+  public version(): string {
+    return `http://${this.bondIP}/v2/sys/version`;
+  }
+
   public deviceIds(): string {
     return `http://${this.bondIP}/v2/devices`;
   }

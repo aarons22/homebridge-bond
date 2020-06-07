@@ -31,13 +31,6 @@
           }
         }
       },
-      "debug": {
-        "title": "Debug mode",
-        "type": "boolean",
-        "default": false,
-        "required": false,
-        "description": "Turns on additional logging."
-      },
       "include_dimmer": {
         "title": "Include dimmer",
         "type": "boolean",

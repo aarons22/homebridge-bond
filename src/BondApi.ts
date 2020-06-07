@@ -4,6 +4,7 @@ import { BondPlatform } from './platform';
 import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
+import { Version } from './interface/Version';
 import axios from 'axios';
 import FlakeId from 'flake-idgen';
 import intformat from 'biguint-format';
@@ -18,19 +19,20 @@ const flakeIdGen = new FlakeId();
 export class BondApi {
   private bondToken: string;
   private uri: BondUri;
-  private isDebug: boolean;
 
   constructor(
     private readonly platform: BondPlatform,
     bondToken: string,
-    ipAddress: string,
-    debug: boolean) {
+    ipAddress: string) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
-    this.isDebug = debug;
   }
 
   // tslint:disable: object-literal-sort-keys
+
+  public getVersion(): Promise<Version> {
+    return this.request(HTTPMethod.GET, this.uri.version());
+  }
 
   public getState(id: string): Promise<BondState> {
     return this.request(HTTPMethod.GET, this.uri.state(id));
@@ -155,15 +157,14 @@ export class BondApi {
 
   private request(method: HTTPMethod, uri: string, body: Record<string, unknown> = {}): Promise<any> {
     const bodyStr = JSON.stringify(body);
-    if (bodyStr !== '{}') {
-      this.debug(`Request [${method} ${uri}] - body: ${bodyStr}`);
-    } else {
-      this.debug(`Request [${method} ${uri}]`);
-    }
-
     const uuid = intformat(flakeIdGen.next(), 'hex', { prefix: '18', padstr: '0', size: 16 }); // avoid duplicate action
     const bondUuid = uuid.substring(0, 13) + uuid.substring(15); // remove '00' used for datacenter/worker in flakeIdGen
-    this.debug(`Bond-UUID for request: [${bondUuid}]`);
+
+    if (bodyStr !== '{}') {
+      this.platform.log.debug(`Request (${bondUuid}) [${method} ${uri}] - body: ${bodyStr}`);
+    } else {
+      this.platform.log.debug(`Request (${bondUuid}) [${method} ${uri}]`);
+    }
 
     return axios({
       method,
@@ -176,11 +177,11 @@ export class BondApi {
       timeout: 10000,
     })
       .then(response => {
-        this.debug(`Response [${method} ${uri}] - ${JSON.stringify(response.data)}`);
+        this.platform.log.debug(`Response (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(response.data)}`);
         return response.data;
       })
       .catch(error => {
-        this.debug(`Error [${method} ${uri}] - ${JSON.stringify(error)}`);
+        this.platform.log.debug(`Error (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(error)}`);
         if (error.name !== undefined && error.name === 'StatusCodeError') {
           switch (error.statusCode) {
             case 401:
@@ -193,12 +194,6 @@ export class BondApi {
           this.platform.log.error(`A request error occurred: ${error.error}`);
         }
       });
-  }
-
-  private debug(message: string) {
-    if (this.isDebug) {
-      this.platform.log(`DEBUG: ${message}`);
-    }
   }
 }
 

@@ -435,16 +435,6 @@ export class BondPlatform implements DynamicPlatformPlugin {
   }
 
   private debug(device: Device, message: string) {
-    if (this.config.debug) {
-      this.log(`DEBUG: [${device.name}] ${message}`);
-    }
-  }
-
-  private verbose(device: Device, message: string) {
-    this.log(`[${device.name}] ${message}`);
-  }
-
-  private error(device: Device, message: string) {
-    this.log.error(`[${device.name}] ${message}`);
+    this.log.debug(`[${device.name}] ${message}`);
   }
 }
