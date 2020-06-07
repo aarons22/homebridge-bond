@@ -29,7 +29,7 @@ export class Bond {
 
   public api: BondApi;
   public deviceIds: string[] = [];
-  public version: Version | null = null;
+  public version!: Version;
 
   constructor(
     private readonly platform: BondPlatform,
