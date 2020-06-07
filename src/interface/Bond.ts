@@ -2,6 +2,7 @@ import { BondApi } from '../BondApi';
 import { BondConfig } from './config';
 import { BondPlatform } from '../platform';
 import { BondPlatformConfig } from '../interface/config';
+import { Version } from '../interface/version';
 
 export class Bond {
   // Helper to sanitze the config object into bond objects
@@ -20,13 +21,15 @@ export class Bond {
     const ps: Array<Promise<void>> = [];
     bonds.forEach(bond => {
       ps.push(bond.updateDeviceIds());
+      ps.push(bond.updateBondId());
     });
 
     return Promise.all(ps);
   }
 
   public api: BondApi;
-  public deviceIds: string[];
+  public deviceIds: string[] = [];
+  public version: Version | null = null;
 
   constructor(
     private readonly platform: BondPlatform,
@@ -34,7 +37,6 @@ export class Bond {
     token: string,
     debug: boolean) {
     this.api = new BondApi(platform, token, ipAddress, debug);
-    this.deviceIds = [];
   }
 
   public updateDeviceIds(): Promise<void> {
@@ -45,6 +47,23 @@ export class Bond {
       })
       .catch(error => {
         this.platform.log.error(`Error getting device ids: ${error}`);
+      });
+  }
+
+  public updateBondId(): Promise<void> {
+    return this.api.getVersion()
+      .then(version => {
+        this.version = version;
+        this.platform.log(`
+****** Bond Info *******
+ bondId: ${version.bondid}
+ FW: ${version.fw_ver}
+ API: v${version.api}
+ Make: ${version.model}
+ Model: ${version.model}\n************************`);
+      })
+      .catch(error => {
+        this.platform.log.error(`Error getting version: ${error}`);
       });
   }
 }

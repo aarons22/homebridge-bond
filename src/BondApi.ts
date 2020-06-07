@@ -4,6 +4,7 @@ import { BondPlatform } from './platform';
 import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
+import { Version } from './interface/Version';
 import axios from 'axios';
 import FlakeId from 'flake-idgen';
 import intformat from 'biguint-format';
@@ -31,6 +32,10 @@ export class BondApi {
   }
 
   // tslint:disable: object-literal-sort-keys
+
+  public getVersion(): Promise<Version> {
+    return this.request(HTTPMethod.GET, this.uri.version());
+  }
 
   public getState(id: string): Promise<BondState> {
     return this.request(HTTPMethod.GET, this.uri.state(id));
