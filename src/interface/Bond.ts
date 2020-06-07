@@ -2,7 +2,7 @@ import { BondApi } from '../BondApi';
 import { BondConfig } from './config';
 import { BondPlatform } from '../platform';
 import { BondPlatformConfig } from '../interface/config';
-import { Version } from '../interface/version';
+import { Version } from './Version';
 
 export class Bond {
   // Helper to sanitze the config object into bond objects
