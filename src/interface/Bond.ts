@@ -53,7 +53,7 @@ export class Bond {
     return this.api.getVersion()
       .then(version => {
         this.version = version;
-        this.platform.log(`
+        this.platform.log.debug(`
 ****** Bond Info *******
  bondId: ${version.bondid}
  FW: ${version.fw_ver}
