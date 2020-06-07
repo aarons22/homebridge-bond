@@ -82,7 +82,14 @@ export class BondPlatform implements DynamicPlatformPlugin {
       return;
     }
 
-    const accessory = new this.api.platformAccessory(`${displayName}`, this.UUIDGen.generate(device.id.toString()));
+    const bond = this.bondForDevice(device);
+    if (bond === undefined) {
+      return;
+    }
+    // ID should be unique across multiple bonds in case device's have the same
+    // id across bonds.
+    const id = `${bond.version.bondid}${device.id}`;
+    const accessory = new this.api.platformAccessory(`${displayName}`, this.UUIDGen.generate(id));
     accessory.context.device = device;
     new BondAccessory(this, accessory, device);
     this.setupObservers(accessory);
@@ -90,6 +97,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
     this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     this.accessories.push(accessory);
     this.log(`Adding accessory ${accessory.displayName}`);
+    this.log.debug(`Accessory id: ${id}`);
   }
 
   removeAccessory(accessory: PlatformAccessory) {
@@ -225,14 +233,18 @@ export class BondPlatform implements DynamicPlatformPlugin {
     }
   }
 
-  private bondForAccessory(accessory: PlatformAccessory): Bond | undefined {
+  public bondForAccessory(accessory: PlatformAccessory): Bond | undefined {
     const device: Device = accessory.context.device;
+    return this.bondForDevice(device);
+  }
+
+  private bondForDevice(device: Device): Bond | undefined {
     if (this.bonds) {
       const bond = this.bonds.find(x => x.deviceIds.includes(device.id));
       if (bond === undefined) {
         this.log.error(
-          `No Bond found for Accessory: ${accessory.displayName}.
-          This Accessory may have been removed from your Bond but still exists in cachedAccessories.`,
+          `No Bond found for Device: ${device.name}.
+          This Device may have been removed from your Bond but still exists in cachedAccessories.`,
         );
       }
       return bond;
