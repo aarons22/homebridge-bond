@@ -160,15 +160,14 @@ export class BondApi {
 
   private request(method: HTTPMethod, uri: string, body: Record<string, unknown> = {}): Promise<any> {
     const bodyStr = JSON.stringify(body);
-    if (bodyStr !== '{}') {
-      this.debug(`Request [${method} ${uri}] - body: ${bodyStr}`);
-    } else {
-      this.debug(`Request [${method} ${uri}]`);
-    }
-
     const uuid = intformat(flakeIdGen.next(), 'hex', { prefix: '18', padstr: '0', size: 16 }); // avoid duplicate action
     const bondUuid = uuid.substring(0, 13) + uuid.substring(15); // remove '00' used for datacenter/worker in flakeIdGen
-    this.debug(`Bond-UUID for request: [${bondUuid}]`);
+
+    if (bodyStr !== '{}') {
+      this.debug(`Request (${bondUuid}) [${method} ${uri}] - body: ${bodyStr}`);
+    } else {
+      this.debug(`Request (${bondUuid}) [${method} ${uri}]`);
+    }
 
     return axios({
       method,
@@ -181,11 +180,11 @@ export class BondApi {
       timeout: 10000,
     })
       .then(response => {
-        this.debug(`Response [${method} ${uri}] - ${JSON.stringify(response.data)}`);
+        this.debug(`Response (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(response.data)}`);
         return response.data;
       })
       .catch(error => {
-        this.debug(`Error [${method} ${uri}] - ${JSON.stringify(error)}`);
+        this.debug(`Error (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(error)}`);
         if (error.name !== undefined && error.name === 'StatusCodeError') {
           switch (error.statusCode) {
             case 401:
