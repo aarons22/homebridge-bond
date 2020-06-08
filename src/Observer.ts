@@ -6,7 +6,7 @@ export class Observer {
     platform: BondPlatform,
     characteristic: Characteristic,
     get: () => Promise<CharacteristicValue>,
-    set: (value: CharacteristicValue) => Promise<void> | undefined,
+    set: ((value: CharacteristicValue) => Promise<void> | undefined) | undefined = undefined,
     props: Record<string, unknown> = {},
   ) {
 
@@ -14,32 +14,8 @@ export class Observer {
       characteristic.updateValue(val);
     });
 
-    characteristic
+    const chain = characteristic
       .setProps(props)
-      .on('set', (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-        // Avoid doing anything when the device is in the requested state
-        if (value === characteristic.value) {
-          callback(null);
-          return;
-        }
-
-        const res = set(value);
-        if (res === undefined) {
-          callback(Error('set not defined'));
-          return;
-        }
-
-        res
-          .then(() => {
-            platform.log(`value changed: ${value}`);
-            characteristic.updateValue(value);
-            callback(null);
-          })
-          .catch((error: string) => {
-            platform.log(`error changing value: ${error}`);
-            callback(Error(error));
-          });
-      })
       .on('get', (callback: CharacteristicGetCallback) => {
         get()
           .then((value: CharacteristicValue) => {
@@ -49,6 +25,34 @@ export class Observer {
           .catch((error: string) => {
             platform.log(`error getting value: ${error}`);
             callback(Error(error), null);
+          });
+      });
+
+    if (set === undefined) {
+      return;
+    }
+
+    chain 
+      .on('set', (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
+        // Avoid doing anything when the device is in the requested state
+        if (value === characteristic.value) {
+          callback(null);
+          return;
+        }
+        
+        const res = set(value);
+        if (res === undefined) {
+          return;
+        }
+        res
+          .then(() => {
+            platform.log(`value changed: ${value}`);
+            characteristic.updateValue(value);
+            callback(null);
+          })
+          .catch((error: string) => {
+            platform.log(`error changing value: ${error}`);
+            callback(Error(error));
           });
       });
   }
