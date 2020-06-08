@@ -2,7 +2,8 @@ import { DeviceType } from './enum/DeviceType';
 import { Bond } from './interface/Bond';
 import { Device } from './interface/Device';
 import { Observer } from './Observer';
-import { API, DynamicPlatformPlugin, PlatformConfig, PlatformAccessory, Service, Characteristic, Logging } from 'homebridge';
+import { API, CharacteristicValue, DynamicPlatformPlugin, 
+  PlatformConfig, PlatformAccessory, Service, Characteristic, Logging } from 'homebridge';
 import { BondAccessory } from './platformAccessory';
 import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
 
@@ -259,7 +260,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
     if (bulb === undefined) {
       return;
     }
-    function get(): Promise<any> {
+    function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
         if (state.light !== undefined) {
           return state.light === 1;
@@ -284,11 +285,11 @@ export class BondPlatform implements DynamicPlatformPlugin {
     otherDimmer?: Service,
   ) {
     const that = this;
-    function get(): Promise<any> {
+    function get(): Promise<CharacteristicValue> {
       return Promise.resolve(false);
     }
 
-    function set(value: any): Promise<void> {
+    function set(value: CharacteristicValue): Promise<void> {
       if (value === true) {
         if (otherDimmer) {
           bond.api.stop(device);
@@ -322,7 +323,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
     this.debug(device, `min step: ${minStep}, max value: ${maxValue}`);
 
-    function get(): Promise<any> {
+    function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
         if (state.speed !== undefined && state.power === 1) {
           that.debug(device, `speed value: ${state.speed}`);
@@ -337,11 +338,11 @@ export class BondPlatform implements DynamicPlatformPlugin {
       });
     }
 
-    function set(step: any): Promise<void> | undefined {
+    function set(step: CharacteristicValue): Promise<void> | undefined {
       if (step === 0) {
         return undefined;
       }
-      const index = step / minStep - 1;
+      const index = step as number / minStep - 1;
       that.debug(device, `new index value: ${index}`);
       const speed = values[index];
       that.debug(device, `new speed value: ${speed}`);
@@ -362,13 +363,13 @@ export class BondPlatform implements DynamicPlatformPlugin {
     if (fan === undefined) {
       return;
     }
-    function get(): Promise<any> {
+    function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
         return state.power === 1;
       });
     }
 
-    function set(value: any): Promise<void> {
+    function set(value: CharacteristicValue): Promise<void> {
       return bond.api.toggleFan(device, value);
     }
 
@@ -381,7 +382,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
     if (fan === undefined) {
       return;
     }
-    function get(): Promise<any> {
+    function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
         if (state.direction !== undefined) {
           return state.direction!;
@@ -404,7 +405,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
     if (generic === undefined) {
       return;
     }
-    function get(): Promise<any> {
+    function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
         return state.power === 1;
       });
@@ -423,7 +424,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
     if (fireplace === undefined) {
       return;
     }
-    function get(): Promise<any> {
+    function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
         return state.power === 1;
       });

@@ -5,6 +5,7 @@ import { BondState } from './interface/BondState';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
 import { Version } from './interface/Version';
+import { CharacteristicValue } from 'homebridge';
 import axios from 'axios';
 import FlakeId from 'flake-idgen';
 import intformat from 'biguint-format';
@@ -77,14 +78,14 @@ export class BondApi {
     return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Stop));
   }
 
-  public toggleFan(device: Device, on: boolean): Promise<void> {
-    const action = on ? Action.TurnOn : Action.TurnOff;
+  public toggleFan(device: Device, on: CharacteristicValue): Promise<void> {
+    const action = on as boolean ? Action.TurnOn : Action.TurnOff;
     return this.request(HTTPMethod.PUT, this.uri.action(device.id, action));
   }
 
-  public setFanSpeed(id: string, speed: number): Promise<void> {
+  public setFanSpeed(id: string, speed: CharacteristicValue): Promise<void> {
     const body = {
-      argument: speed,
+      argument: speed as number,
     };
     return this.request(HTTPMethod.PUT, this.uri.action(id, Action.SetSpeed), body);
   }

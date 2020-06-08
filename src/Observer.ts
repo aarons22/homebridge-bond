@@ -1,12 +1,12 @@
-import { Characteristic } from 'homebridge';
+import { Characteristic, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback } from 'homebridge';
 import { BondPlatform } from './platform';
 
 export class Observer {
   public static add(
     platform: BondPlatform,
     characteristic: Characteristic,
-    get: () => Promise<any>,
-    set: (value: any) => Promise<void> | undefined,
+    get: () => Promise<CharacteristicValue>,
+    set: (value: CharacteristicValue) => Promise<void> | undefined,
     props: Record<string, unknown> = {},
   ) {
 
@@ -16,16 +16,16 @@ export class Observer {
 
     characteristic
       .setProps(props)
-      .on('set', (value: any, callback: { (): void; (): void }) => {
+      .on('set', (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
         // Avoid doing anything when the device is in the requested state
         if (value === characteristic.value) {
-          callback();
+          callback(null);
           return;
         }
 
         const res = set(value);
         if (res === undefined) {
-          callback();
+          callback(Error('set not defined'));
           return;
         }
 
@@ -33,22 +33,22 @@ export class Observer {
           .then(() => {
             platform.log(`value changed: ${value}`);
             characteristic.updateValue(value);
-            callback();
+            callback(null);
           })
           .catch((error: string) => {
             platform.log(`error changing value: ${error}`);
-            callback();
+            callback(Error(error));
           });
       })
-      .on('get', (callback: (arg0: null, arg1: boolean) => void) => {
+      .on('get', (callback: CharacteristicGetCallback) => {
         get()
-          .then(value => {
+          .then((value: CharacteristicValue) => {
             platform.log(`got value: ${value}`);
             callback(null, value);
           })
-          .catch(error => {
+          .catch((error: string) => {
             platform.log(`error getting value: ${error}`);
-            callback(null, false);
+            callback(Error(error), null);
           });
       });
   }
