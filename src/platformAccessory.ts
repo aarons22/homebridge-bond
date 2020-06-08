@@ -23,8 +23,8 @@ export class BondAccessory {
       }
 
       if (Device.CFhasUpDownLight(device)) {
-        accessory.addService(this.platform.Service.Lightbulb, `${accessory.displayName} Light`, 'up');
-        accessory.addService(this.platform.Service.Lightbulb, `${accessory.displayName} Light`, 'down');
+        accessory.addService(this.platform.Service.Lightbulb, `${accessory.displayName} Up Light`, 'UpLight');
+        accessory.addService(this.platform.Service.Lightbulb, `${accessory.displayName} Down Light`, 'DownLight');
       } else if (Device.CFhasLightbulb(device)) {
         accessory.addService(this.platform.Service.Lightbulb, `${accessory.displayName} Light`);
       }
