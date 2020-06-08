@@ -157,7 +157,13 @@ export class BondPlatform implements DynamicPlatformPlugin {
             }
           }
 
-          if (Device.CFhasLightbulb(device)) {
+          if (Device.CFhasUpDownLight(device)) {
+            const upBulb = accessory.getServiceByUUIDAndSubType(this.Service.Lightbulb, 'UpLight');
+            const downBulb = accessory.getServiceByUUIDAndSubType(this.Service.Lightbulb, 'DownLight');
+            this.setupLightbulbObservers(bond, device, upBulb);
+            this.setupLightbulbObservers(bond, device, downBulb);
+            // TODO: Add dimmer support for both
+          } else if (Device.CFhasLightbulb(device)) {
             const bulb = accessory.getService(this.Service.Lightbulb);
             this.setupLightbulbObservers(bond, device, bulb);
 
@@ -260,18 +266,28 @@ export class BondPlatform implements DynamicPlatformPlugin {
     if (bulb === undefined) {
       return;
     }
+    const subtype = bulb!.subtype;
+
     function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
-        if (state.light !== undefined) {
-          return state.light === 1;
+        if(subtype === 'UpLight') {
+          return state.up_light === 1;
+        } else if(subtype === 'DownLight') {
+          return state.down_light === 1;
         } else {
-          return false;
+          return state.light === 1;
         }
       });
     }
 
-    function set(): Promise<void> {
-      return bond.api.toggleLight(device.id);
+    function set(): Promise<void> {      
+      if(subtype === 'UpLight') {
+        return bond.api.toggleUpLight(device.id);
+      } else if(subtype === 'DownLight') {
+        return bond.api.toggleDownLight(device.id);
+      } else {
+        return bond.api.toggleLight(device.id);
+      }
     }
 
     Observer.add(this, bulb.getCharacteristic(this.Characteristic.On), get, set);

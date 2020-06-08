@@ -47,6 +47,11 @@ export namespace Device {
     return device.actions.some(r => lightbulb.includes(r));
   }
 
+  export function CFhasUpDownLight(device: Device): boolean {
+    const up = [Action.ToggleUpLight, Action.ToggleDownLight];
+    return device.actions.every(r => up.includes(r));
+  }
+
   export function CFhasFan(device: Device): boolean {
     const fan = [Action.SetSpeed];
     const hasSetSpeed = device.actions.some(r => fan.includes(r));
