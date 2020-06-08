@@ -106,6 +106,18 @@ export class BondApi {
     return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.TogglePower));
   }
 
+  public toggleOpen(device: Device): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleOpen));
+  }
+
+  public open(device: Device): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Open));
+  }
+
+  public close(device: Device): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Close));
+  }
+
   private getDevice(id: string): Promise<Device> {
     const req = this.request(HTTPMethod.GET, this.uri.device(id));
     return req.then(json => {

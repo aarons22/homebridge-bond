@@ -234,6 +234,14 @@ export class BondPlatform implements DynamicPlatformPlugin {
           }
         }
         break;
+      case DeviceType.Shades:
+        {
+          if (Device.MShasToggle(device)) {
+            const shades = accessory.getService(this.Service.WindowCovering);
+            this.setupShadesObserver(bond, device, shades);
+          }
+        }
+        break;
       default: {
         break;
       }
@@ -451,6 +459,35 @@ export class BondPlatform implements DynamicPlatformPlugin {
     }
 
     Observer.add(this, fireplace.getCharacteristic(this.Characteristic.On), get, set);
+  }
+
+  // Shades
+
+  private setupShadesObserver(bond: Bond, device: Device, shades?: Service) {
+    if (shades === undefined) {
+      return;
+    }
+
+    function getPosition(): Promise<CharacteristicValue> {
+      return bond.api.getState(device.id).then(state => {
+        // Always return either 1 or 100
+        return state.open === 1 ? 100 : 1;
+      });
+    }
+
+    function setPosition(): Promise<void> {
+      // Since we can't really track state, just toggle open / closed
+      return bond.api.toggleOpen(device);
+    }
+
+    function getState(): Promise<CharacteristicValue> {
+      // Always return stop
+      return Promise.resolve(2);
+    }
+
+    Observer.add(this, shades.getCharacteristic(this.Characteristic.CurrentPosition), getPosition);
+    Observer.add(this, shades.getCharacteristic(this.Characteristic.TargetPosition), getPosition, setPosition);
+    Observer.add(this, shades.getCharacteristic(this.Characteristic.PositionState), getState);
   }
 
   // Helper Methods

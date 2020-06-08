@@ -5,4 +5,5 @@ export interface BondState {
   up_light: number | null;
   down_light: number | null;
   direction: number | null;
+  open: number | null;
 }
