@@ -48,8 +48,8 @@ export namespace Device {
   }
 
   export function CFhasUpDownLight(device: Device): boolean {
-    const up = [Action.ToggleUpLight, Action.ToggleDownLight];
-    return device.actions.every(r => up.includes(r));
+    const required = [Action.ToggleUpLight, Action.ToggleDownLight];
+    return required.every(r => device.actions.includes(r));
   }
 
   export function CFhasFan(device: Device): boolean {
