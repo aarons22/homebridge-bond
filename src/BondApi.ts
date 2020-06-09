@@ -41,7 +41,7 @@ export class BondApi {
 
   public getDeviceIds(): Promise<string[]> {
     const req = this.request(HTTPMethod.GET, this.uri.deviceIds());
-    return req.then((json: Record<string, unknown>) =>
+    return req.then(json =>
       Object.keys(json).filter(x => {
         // Ignore anything that is an empty string or '_'
         return x.length > 0 && x !== '_';
@@ -141,7 +141,7 @@ export class BondApi {
 
   private getCommandIds(id: string): Promise<string[]> {
     const req = this.request(HTTPMethod.GET, this.uri.commands(id));
-    return req.then((json: Record<string, unknown>) =>
+    return req.then(json =>
       Object.keys(json).filter(x => {
         // Ignore anything that is an empty string or '_'
         return x.length > 0 && x !== '_';
@@ -164,7 +164,7 @@ export class BondApi {
 
   // Helpers
 
-  private request(method: HTTPMethod, uri: string, body: Record<string, unknown> = {}): Promise<any> {
+  private request(method: HTTPMethod, uri: string, body: unknown = {}): Promise<any> {
     const bodyStr = JSON.stringify(body);
     const uuid = intformat(flakeIdGen.next(), 'hex', { prefix: '18', padstr: '0', size: 16 }); // avoid duplicate action
     const bondUuid = uuid.substring(0, 13) + uuid.substring(15); // remove '00' used for datacenter/worker in flakeIdGen

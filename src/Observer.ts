@@ -1,4 +1,4 @@
-import { Characteristic, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback } from 'homebridge';
+import { Characteristic, CharacteristicProps, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback } from 'homebridge';
 import { BondPlatform } from './platform';
 
 export class Observer {
@@ -7,7 +7,7 @@ export class Observer {
     characteristic: Characteristic,
     get: () => Promise<CharacteristicValue>,
     set: (value: CharacteristicValue) => Promise<void> | undefined,
-    props: Record<string, unknown> = {},
+    props: Partial<CharacteristicProps> = {},
   ) {
 
     get().then(val => {
