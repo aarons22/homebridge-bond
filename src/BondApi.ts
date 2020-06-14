@@ -156,10 +156,7 @@ export class BondApi {
   // Properties
 
   private getProperties(id: string): Promise<Properties> {
-    const req = this.request(HTTPMethod.GET, this.uri.properties(id));
-    return req.then(json => {
-      return json;
-    });
+    return this.request(HTTPMethod.GET, this.uri.properties(id));
   }
 
   // Helpers

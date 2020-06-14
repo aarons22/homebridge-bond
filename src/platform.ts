@@ -57,13 +57,17 @@ export class BondPlatform implements DynamicPlatformPlugin {
     bond.api
       .getDevices(filtered)
       .then(devices => {
-        devices.forEach(device => {
-          this.addAccessory(device);
-        });
+        this.addAccessories(devices);
       })
       .catch(error => {
         this.log(`Error getting devices: ${error}`);
       });
+  }
+  
+  addAccessories(devices: Device[]) {
+    devices.forEach(device => {
+      this.addAccessory(device);
+    });
   }
 
   // Accessory
