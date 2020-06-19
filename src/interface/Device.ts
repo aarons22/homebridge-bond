@@ -9,7 +9,7 @@ export interface Device {
   location: string;
   actions: Action[];
   properties: Properties;
-  commands: Command[] | null;
+  commands: Command[] | undefined;
 }
 
 export interface Command {
@@ -65,7 +65,7 @@ export namespace Device {
   }
 
   export function fanSpeeds(device: Device): number[] {
-    if (device.commands === null) {
+    if (device.commands === undefined) {
       if (device.properties.max_speed === undefined || device.properties.max_speed === null) {
         return [];
       } else {
