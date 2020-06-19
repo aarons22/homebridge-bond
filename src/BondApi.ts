@@ -29,7 +29,7 @@ export class BondApi {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
 
-    axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
+    axiosRetry(axios, { retries: 10, retryDelay: axiosRetry.exponentialDelay });
   }
 
   // tslint:disable: object-literal-sort-keys
