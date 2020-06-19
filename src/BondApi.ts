@@ -7,6 +7,7 @@ import { Properties } from './interface/Properties';
 import { Version } from './interface/Version';
 import { CharacteristicValue } from 'homebridge';
 import axios from 'axios';
+import axiosRetry from 'axios-retry';
 import FlakeId from 'flake-idgen';
 import intformat from 'biguint-format';
 
@@ -27,6 +28,8 @@ export class BondApi {
     ipAddress: string) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
+
+    axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
   }
 
   // tslint:disable: object-literal-sort-keys
