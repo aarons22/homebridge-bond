@@ -31,23 +31,23 @@ export class Observer {
 
         res
           .then(() => {
-            platform.log(`value changed: ${value}`);
+            platform.log.debug(`value changed: ${value}`);
             characteristic.updateValue(value);
             callback(null);
           })
           .catch((error: string) => {
-            platform.log(`error changing value: ${error}`);
+            platform.log.error(`error changing value: ${error}`);
             callback(Error(error));
           });
       })
       .on('get', (callback: CharacteristicGetCallback) => {
         get()
           .then((value: CharacteristicValue) => {
-            platform.log(`got value: ${value}`);
+            platform.log.debug(`got value: ${value}`);
             callback(null, value);
           })
           .catch((error: string) => {
-            platform.log(`error getting value: ${error}`);
+            platform.log.error(`error getting value: ${error}`);
             callback(Error(error), null);
           });
       });
