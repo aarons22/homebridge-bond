@@ -47,6 +47,13 @@
         "required": false,
         "description": "If dimming is a valid action on a device, it will be included as additional switch on the accessory. Since this is an odd solution to dimming, it's off by default."
       },
+      "include_toggle_state": {
+        "title": "Include toggle switch for fixing device state.",
+        "type": "boolean",
+        "default": false,
+        "required": false,
+        "description": "This will add a switch to single-action accessories to toggle the state (i.e. Shades, Fireplace, Generic, Lights). Fan speeds are not eligible for this option."
+      },
       "fan_speed_values": {
         "title": "Use fan speed values",
         "type": "boolean",

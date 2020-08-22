@@ -1,11 +1,11 @@
-import { BondUri } from './BondUri';
 import { Action } from './enum/Action';
 import { BondPlatform } from './platform';
-import { BondState } from './interface/BondState';
+import { BondState } from './interface/Bond';
+import { BondUri } from './BondUri';
+import { CharacteristicValue, CharacteristicSetCallback } from 'homebridge';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
 import { Version } from './interface/Version';
-import { CharacteristicValue } from 'homebridge';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import FlakeId from 'flake-idgen';
@@ -14,6 +14,7 @@ import intformat from 'biguint-format';
 enum HTTPMethod {
   GET = 'get',
   PUT = 'put',
+  PATCH = 'patch'
 }
 
 const flakeIdGen = new FlakeId();
@@ -61,64 +62,161 @@ export class BondApi {
   }
 
   // tslint:disable: object-literal-sort-keys
-  public toggleLight(id: string): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(id, Action.ToggleLight));
+  public toggleLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleLight))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public toggleUpLight(id: string): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(id, Action.ToggleUpLight));
+  public toggleUpLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleUpLight))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public toggleDownLight(id: string): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(id, Action.ToggleDownLight));
+  public toggleDownLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleDownLight))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public startDimmer(device: Device): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDimmer));
+  public startDimmer(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDimmer))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public startIncreasingBrightness(device: Device): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartIncreasingBrightness));
+  public startIncreasingBrightness(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartIncreasingBrightness))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public startDecreasingBrightness(device: Device): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDecreasingBrightness));
+  public startDecreasingBrightness(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDecreasingBrightness))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public stop(device: Device): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Stop));
+  public stop(device: Device, callback?: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Stop))
+      .then(() => {
+        if (callback) {
+          callback(null);
+        }
+      })
+      .catch((error: string) => {
+        if (callback) {
+          callback(Error(error));
+        }
+      });
   }
 
-  public toggleFan(device: Device, on: CharacteristicValue): Promise<void> {
+  public toggleFan(device: Device, on: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     const action = on as boolean ? Action.TurnOn : Action.TurnOff;
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, action));
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, action))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public setFanSpeed(id: string, speed: CharacteristicValue): Promise<void> {
+  public setFanSpeed(device: Device, speed: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     const body = {
       argument: speed as number,
     };
-    return this.request(HTTPMethod.PUT, this.uri.action(id, Action.SetSpeed), body);
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetSpeed), body)
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public toggleDirection(id: string): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(id, Action.ToggleDirection));
+  public toggleDirection(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleDirection))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public togglePower(device: Device): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.TogglePower));
+  public togglePower(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.TogglePower))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public toggleOpen(device: Device): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleOpen));
+  public toggleOpen(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleOpen))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public open(device: Device): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Open));
+  public updateState(device: Device, state: BondState, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PATCH, this.uri.state(device.id), state)
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
   }
 
-  public close(device: Device): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Close));
+  // PATCH: Toggle state property for a device
+  public toggleState(device: Device, property: string, callback: CharacteristicSetCallback): Promise<void> {
+    return this.getState(device.id)
+      .then(state => {
+        if(property !== 'open' && property !== 'power' && property !== 'light' ) {
+          callback(null);
+          throw Error(`This device does not have ${property} in it's Bond state`);
+        }
+        if (state[property] !== undefined) {
+          const newState: BondState = {};
+          newState[property] = state[property] === 1 ? 0 : 1;
+          return this.updateState(device, newState, callback);
+        } else {
+          callback(null);
+          throw Error(`This device does not have ${property} in it's Bond state`);
+        }
+      });
   }
 
   private getDevice(id: string): Promise<Device> {
@@ -129,14 +227,14 @@ export class BondApi {
       // get the properties of the device
       return this.getProperties(id).then(properties => {
         json.properties = properties;
-        if (json.commands === undefined) {
-          return json;
-        } else {
+        if (json.commands) {
           // commands are only present on Bridge devices.
           return this.getCommands(id).then(commands => {
             json.commands = commands;
             return json;
           });
+        } else {
+          return json;
         }
       });
     });
@@ -203,7 +301,7 @@ export class BondApi {
       })
       .catch(error => {
         this.platform.log.debug(`Error (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(error)}`);
-        if (error.name !== undefined && error.name === 'StatusCodeError') {
+        if (error.name && error.name === 'StatusCodeError') {
           switch (error.statusCode) {
             case 401:
               this.platform.log.error('Unauthorized. Please check your `bond_token` to see if it is correct.');

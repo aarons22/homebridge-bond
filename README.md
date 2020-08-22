@@ -18,30 +18,31 @@ Some Bond's may not be able to update to v2 firmware. If so, you can use the [v1
 This plugin currently supports the following devices and features:
 
 - Multiple Bonds
-- Ceiling Fan
-  - Light on/off
-  - Up/Down light (no dimming yet)
-  - Fan Speeds 1-8 (dynamic based on bond configuration)
-  - Light Dimming (`off` by default; see config below)
-    - When using this feature, turn the switch on to start dimming. When you reach the brightness level you would like, turn the switch off.
-- Blinds
-  - Open / Close
-- Generic Device
-  - On / Off (appears as switch in HomeKit)
-- Fireplace
-  - Flame On / Off (appears as switch in HomeKit)
+- Supported Devices
+  - Ceiling Fan
+    - Light on/off
+    - Up/Down light (no dimming yet)
+    - Fan Speeds 1-8 (dynamic based on bond configuration)
+    - Light Dimming
+  - Blinds
+    - Open / Close
+  - Generic Device
+    - On / Off (appears as switch in HomeKit)
+  - Fireplace
+    - Flame On / Off (appears as switch in HomeKit)
+
 
 You can view the backlog of features [here](https://github.com/aarons22/homebridge-bond/). Feel free to add a feature request in the Issues tab!
 
 ## Installation
 
-Assuming a global installation of `homebridge`:
+### Bond Parameters
 
-`npm i -g homebridge-bond`
-
-## Homebridge Configuration
-
-Add the `Bond` platform in your homebridge `config.json` file.
+| Option             | Required | Explanation |
+| ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ip_address`   | true   | To get your Bond IP Address, follow the instructions [here](https://github.com/aarons22/homebridge-bond/wiki/Get-Bond-IP-Address). |
+| `token` | true   | This can be found in the Bond app in your Bond Settings. Scroll down until you see `Local Token`. You can tap on the row to copy to your clipboard. |
+| `hide_device_ids` | false  | Array of device ids to ignore (i.e. `["1111", "2222"]`) |
 
 ### Easiest Configuration
 
@@ -49,13 +50,11 @@ For the best experience setting up this plugin, please use [homebridge-config-ui
 
 ### Basic Configuration
 
-To get your Bond IP Address, follow the instructions [here](https://github.com/aarons22/homebridge-bond/wiki/Get-Bond-IP-Address).
+Assuming a global installation of `homebridge`, install the plugin:
 
-`BOND_TOKEN` (Local token) can be found in the app. Go to your Bond settings:
+`npm i -g homebridge-bond`
 
-![alt text](./docs/bond-settings.jpeg 'Bond Settings')
-
-You can tap on each row to copy the contents to the clipboard.
+Add the `Bond` platform in your homebridge `config.json` file:
 
 ```json
 "platforms": [
@@ -63,20 +62,21 @@ You can tap on each row to copy the contents to the clipboard.
         "platform": "Bond",
         "bonds": [
             {
-                "ip_address": "<BOND_IP_ADDRESS>",
-                "token": "<BOND_TOKEN>"
+                "ip_address": "<IP_ADDRESS>",
+                "token": "<TOKEN>"
             }
         ],
     }
 ],
 ```
 
-## Optional Parameters
+### Optional Platform Parameters
 
 | Option             | Default | Explanation                                                                                                                                                         |
 | ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `include_dimmer`   | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. Since this is an odd solution to dimming, it's off by default. |
-| `fan_speed_values` | false   | Use fan speed values instead of percentages (i.e. Hey Siri set the Office Fan to 2).                                                                                |
+| `include_dimmer`   | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. When using this feature, turn the switch on to start dimming. When you reach the brightness level you would like, turn the switch off. |
+| `fan_speed_values` | false   | Use fan speed values instead of percentages (i.e. Hey Siri set the Office Fan to 2) |
+| `include_toggle_state` | false  | This will add a switch to single-action accessories to toggle the state (i.e. Shades, Fireplace, Generic, Lights). Fan speeds are not eligible for this option. |
 
 ## Development
 

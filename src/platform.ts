@@ -1,11 +1,9 @@
-import { DeviceType } from './enum/DeviceType';
-import { Bond } from './interface/Bond';
-import { Device } from './interface/Device';
-import { Observer } from './Observer';
-import { API, CharacteristicValue, DynamicPlatformPlugin, 
-  PlatformConfig, PlatformAccessory, Service, Characteristic, Logging } from 'homebridge';
+import { API, DynamicPlatformPlugin, PlatformConfig, PlatformAccessory, Service, Characteristic, Logging } from 'homebridge';
+import { Bond, BPUPPacket } from './interface/Bond';
 import { BondAccessory } from './platformAccessory';
+import { Device } from './interface/Device';
 import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
+import dgram from 'dgram';
 
 export class BondPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
@@ -37,9 +35,11 @@ export class BondPlatform implements DynamicPlatformPlugin {
       // get the device ids before doing anything
       Bond.updateDeviceIds(bonds).then(() => {
         this.bonds = bonds;
+        this.log.debug(`Config: ${JSON.stringify(config)}`);
         this.log(`${this.accessories.length} cached accessories were loaded`);
         this.bonds.forEach(bond => {
           this.getDevices(bond);
+          this.setupBPUP(bond);
         });
       });
     });
@@ -137,17 +137,16 @@ export class BondPlatform implements DynamicPlatformPlugin {
     const displayName = Device.displayName(device);
     const accessory = new this.api.platformAccessory(`${displayName}`, uuid);
     accessory.context.device = device;
-    new BondAccessory(this, accessory, device);
-    this.setupObservers(accessory);
+    this.create(accessory);
 
     this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     this.accessories.push(accessory);
-    this.log(`Adding accessory ${accessory.displayName}`);
+    this.log(`Adding Afccessory ${accessory.displayName}`);
     this.log.debug(`Device unique id: ${device.uniqueId}`);
   }
 
   removeAccessory(accessory: PlatformAccessory) {
-    this.log(`Removing accessory ${accessory.displayName}`);
+    this.log(`Removing Accessory: ${accessory.displayName}`);
 
     const index = this.accessories.indexOf(accessory);
     if (index > -1) {
@@ -161,136 +160,78 @@ export class BondPlatform implements DynamicPlatformPlugin {
     if (this.config === null || this.config.bonds === undefined) {
       return;
     }
-    this.accessories.push(accessory);
 
+    this.accessories.push(accessory);
+    
     // If bonds hasn't been initilized, attempt to configure the accessory
     // after a delay
     if (this.bonds) {
       this.log(`Configuring Accessory: ${accessory.displayName}`);
-      this.setupObservers(accessory);
+      this.create(accessory);
     } else {
       const that = this;
       const timer = setInterval(() => {
         if (this.bonds) {
           that.log(`Configuring Accessory: ${accessory.displayName}`);
-          that.setupObservers(accessory);
+          that.create(accessory);
           clearInterval(timer);
         }
       }, 500);
     }
   }
 
-  private setupObservers(accessory: PlatformAccessory) {
+  private create(accessory: PlatformAccessory) {
     const device: Device = accessory.context.device;
     const bond = this.bondForDevice(device);
 
-    if (bond === undefined) {
+    if (!bond) {
       return;
     }
 
-    switch (device.type) {
-      case DeviceType.CeilingFan:
-        {
-          if (Device.CFhasFan(device)) {
-            const fan = accessory.getService(this.Service.Fan);
-            this.setupFanObservers(bond, device, fan);
-            this.setupFanPowerObservers(bond, device, fan);
-
-            // RotationDirection button will appear based on characteristic observations
-            if (Device.CFhasReverseSwitch(device)) {
-              this.setupFanDirectionObservers(bond, device, fan);
-            }
-          }
-
-          if (Device.CFhasUpDownLight(device)) {
-            const upBulb = accessory.getServiceByUUIDAndSubType(this.Service.Lightbulb, 'UpLight');
-            const downBulb = accessory.getServiceByUUIDAndSubType(this.Service.Lightbulb, 'DownLight');
-            this.setupLightbulbObservers(bond, device, upBulb);
-            this.setupLightbulbObservers(bond, device, downBulb);
-            // TODO: Add dimmer support for both
-          } else if (Device.CFhasLightbulb(device)) {
-            const bulb = accessory.getService(this.Service.Lightbulb);
-            this.setupLightbulbObservers(bond, device, bulb);
-
-            let dimmer = accessory.getService(`${accessory.displayName} Dimmer`);
-            let dimmerUp = accessory.getService(`${accessory.displayName} DimmerUp`);
-            let dimmerDown = accessory.getService(`${accessory.displayName} DimmerDown`);
-            if (this.config.include_dimmer) {
-              // Add service if previously undefined
-              if (Device.HasDimmer(device)) {
-                if (dimmer === undefined) {
-                  this.log(`${accessory.displayName} didn't have dimmer defined. define it now`);
-                  dimmer = accessory.addService(this.Service.Switch, `${accessory.displayName} Dimmer`);
-                }
-                this.setupLightbulbDimmerObserver(bond, device, dimmer, d => bond.api.startDimmer(d));
-              }
-              if (Device.HasSeparateDimmers(device)) {
-                if (dimmerUp === undefined) {
-                  dimmerUp = accessory.addService(new this.Service.Switch(`${accessory.displayName} DimmerUp`, 'up'));
-                }
-                if (dimmerDown === undefined) {
-                  dimmerDown = accessory.addService(
-                    new this.Service.Switch(`${accessory.displayName} DimmerDown`, 'down'),
-                  );
-                }
-                this.setupLightbulbDimmerObserver(
-                  bond,
-                  device,
-                  dimmerUp,
-                  d => bond.api.startIncreasingBrightness(d),
-                  dimmerDown,
-                );
-                this.setupLightbulbDimmerObserver(
-                  bond,
-                  device,
-                  dimmerDown,
-                  d => bond.api.startDecreasingBrightness(d),
-                  dimmerUp,
-                );
-              }
-            } else {
-              // Remove service if previously added
-              if (dimmer !== undefined) {
-                accessory.removeService(dimmer);
-              }
-              if (dimmerUp !== undefined) {
-                accessory.removeService(dimmerUp);
-              }
-              if (dimmerDown !== undefined) {
-                accessory.removeService(dimmerDown);
-              }
-            }
-          }
-        }
-        break;
-      case DeviceType.Generic:
-        {
-          if (Device.GXhasToggle(device)) {
-            const generic = accessory.getService(this.Service.Switch);
-            this.setupGenericObserver(bond, device, generic);
-          }
-        }
-        break;
-      case DeviceType.Fireplace:
-        {
-          if (Device.FPhasToggle(device)) {
-            const fireplace = accessory.getService(this.Service.Switch);
-            this.setupFireplaceObserver(bond, device, fireplace);
-          }
-        }
-        break;
-      case DeviceType.Shades:
-        {
-          if (Device.MShasToggle(device)) {
-            const shades = accessory.getService(this.Service.WindowCovering);
-            this.setupShadesObserver(bond, device, shades);
-          }
-        }
-        break;
-      default: {
-        break;
-      }
+    if ((bond.config.hide_device_ids
+      && bond.config.hide_device_ids.includes(device.id))) {
+      this.removeAccessory(accessory);
+      return;
     }
+    
+    const bondAccessory = BondAccessory.create(this, accessory, bond);
+    bond.accessories.push(bondAccessory);
+  }
+
+  private setupBPUP(bond: Bond) {
+    const PORT = 30007;
+    const HOST = bond.config.ip_address;
+
+    const message = Buffer.from('');
+
+    const client = dgram.createSocket('udp4');
+    
+    const log = this.log;
+
+    function send() {
+      client.send(message, 0, message.length, PORT, HOST, (err: any) => {
+        if (err) {
+          log.error(`Erorr sending UDP message: ${err}`);
+          throw err;
+        }
+        log.debug(`UDP message sent to ${HOST}:${PORT}`);
+      });
+    }
+    send(); 
+    // From Bond API Docs: The client should continue to send the Keep-Alive datagram on 
+    // the same socket every 60 seconds to keep the connection active.
+    setInterval(send, 1000 * 60);
+
+    client.on('message', (message: Buffer, remote: { address: string; port: string }) => {
+      const msg = message.toString().trim();
+      const packet = JSON.parse(msg) as BPUPPacket;
+      log.debug(`UDP Message received from ${remote.address}:${remote.port} - ${msg}`);
+      bond.receivedBPUPPacket(packet);
+    });
+
+    client.on('close', () => {
+      this.log('Connection closed');
+    });
   }
 
   private bondForDevice(device: Device): Bond | undefined {
@@ -308,236 +249,6 @@ export class BondPlatform implements DynamicPlatformPlugin {
     }
   }
 
-  // Lightbulb
-
-  private setupLightbulbObservers(bond: Bond, device: Device, bulb?: Service) {
-    if (bulb === undefined) {
-      return;
-    }
-    const subtype = bulb!.subtype;
-
-    function get(): Promise<CharacteristicValue> {
-      return bond.api.getState(device.id).then(state => {
-        if(subtype === 'UpLight') {
-          return state.up_light === 1 && state.light === 1;
-        } else if(subtype === 'DownLight') {
-          return state.down_light === 1 && state.light === 1;
-        } else {
-          return state.light === 1;
-        }
-      });
-    }
-
-    function set(): Promise<void> {      
-      if(subtype === 'UpLight') {
-        return bond.api.toggleUpLight(device.id);
-      } else if(subtype === 'DownLight') {
-        return bond.api.toggleDownLight(device.id);
-      } else {
-        return bond.api.toggleLight(device.id);
-      }
-    }
-
-    Observer.add(this, bulb.getCharacteristic(this.Characteristic.On), get, set);
-  }
-
-  private setupLightbulbDimmerObserver(
-    bond: Bond,
-    device: Device,
-    dimmer: Service,
-    startCallback: (device: Device) => Promise<void>,
-    otherDimmer?: Service,
-  ) {
-    const that = this;
-    function get(): Promise<CharacteristicValue> {
-      return Promise.resolve(false);
-    }
-
-    function set(value: CharacteristicValue): Promise<void> {
-      if (value === true) {
-        if (otherDimmer) {
-          bond.api.stop(device);
-          otherDimmer.setCharacteristic(that.Characteristic.On, false);
-        }
-        return startCallback(device);
-      } else {
-        return bond.api.stop(device);
-      }
-    }
-
-    Observer.add(this, dimmer.getCharacteristic(this.Characteristic.On), get, set);
-  }
-
-  // Fan - Speed
-
-  private setupFanObservers(bond: Bond, device: Device, fan?: Service) {
-    if (fan === undefined) {
-      return;
-    }
-    const that = this;
-    const values = Device.fanSpeeds(device);
-
-    let minStep = Math.floor(100 / values.length);
-    let maxValue = minStep * values.length;
-
-    if (this.config.fan_speed_values) {
-      minStep = 1;
-      maxValue = values.length;
-    }
-
-    this.debug(device, `min step: ${minStep}, max value: ${maxValue}`);
-
-    function get(): Promise<CharacteristicValue> {
-      return bond.api.getState(device.id).then(state => {
-        if (state.speed !== undefined && state.power === 1) {
-          that.debug(device, `speed value: ${state.speed}`);
-          const index = values.indexOf(state.speed!) + 1;
-          that.debug(device, `index value: ${index}`);
-          const step = index * minStep;
-          that.debug(device, `step value: ${step}`);
-          return step;
-        } else {
-          return 0;
-        }
-      });
-    }
-
-    function set(step: CharacteristicValue): Promise<void> | undefined {
-      if (step === 0) {
-        return undefined;
-      }
-      const index = step as number / minStep - 1;
-      that.debug(device, `new index value: ${index}`);
-      const speed = values[index];
-      that.debug(device, `new speed value: ${speed}`);
-
-      return bond.api.setFanSpeed(device.id, speed);
-    }
-
-    const props = {
-      maxValue,
-      minStep,
-    };
-    Observer.add(this, fan.getCharacteristic(this.Characteristic.RotationSpeed), get, set, props);
-  }
-
-  // Fan - Power
-
-  private setupFanPowerObservers(bond: Bond, device: Device, fan?: Service) {
-    if (fan === undefined) {
-      return;
-    }
-    function get(): Promise<CharacteristicValue> {
-      return bond.api.getState(device.id).then(state => {
-        return state.power === 1;
-      });
-    }
-
-    function set(value: CharacteristicValue): Promise<void> {
-      return bond.api.toggleFan(device, value);
-    }
-
-    Observer.add(this, fan.getCharacteristic(this.Characteristic.On), get, set);
-  }
-
-  // Fan -  Rotation Direction
-
-  private setupFanDirectionObservers(bond: Bond, device: Device, fan?: Service) {
-    if (fan === undefined) {
-      return;
-    }
-    function get(): Promise<CharacteristicValue> {
-      return bond.api.getState(device.id).then(state => {
-        if (state.direction) {
-          // Homekit direction is 1/0
-          // Bond direction is 1/-1
-          const direction = state.direction === 1 ? 1 : 0;
-          return direction;
-        } else {
-          return 0;
-        }
-      });
-    }
-
-    function set(): Promise<void> {
-      return bond.api.toggleDirection(device.id);
-    }
-
-    Observer.add(this, fan.getCharacteristic(this.Characteristic.RotationDirection), get, set);
-  }
-
-  // Generic
-
-  private setupGenericObserver(bond: Bond, device: Device, generic?: Service) {
-    if (generic === undefined) {
-      return;
-    }
-    function get(): Promise<CharacteristicValue> {
-      return bond.api.getState(device.id).then(state => {
-        return state.power === 1;
-      });
-    }
-
-    function set(): Promise<void> {
-      return bond.api.togglePower(device);
-    }
-
-    Observer.add(this, generic.getCharacteristic(this.Characteristic.On), get, set);
-  }
-
-  // Fireplace
-
-  private setupFireplaceObserver(bond: Bond, device: Device, fireplace?: Service) {
-    if (fireplace === undefined) {
-      return;
-    }
-    function get(): Promise<CharacteristicValue> {
-      return bond.api.getState(device.id).then(state => {
-        return state.power === 1;
-      });
-    }
-
-    function set(): Promise<void> {
-      return bond.api.togglePower(device);
-    }
-
-    Observer.add(this, fireplace.getCharacteristic(this.Characteristic.On), get, set);
-  }
-
-  // Shades
-
-  private setupShadesObserver(bond: Bond, device: Device, shades?: Service) {
-    if (shades === undefined) {
-      return;
-    }
-
-    function getPosition(): Promise<CharacteristicValue> {
-      return bond.api.getState(device.id).then(state => {
-        // Always return either 0 or 100
-        return state.open === 1 ? 100 : 0;
-      });
-    }
-
-    function setPosition(): Promise<void> {
-      // Since we can't really track state, just toggle open / closed
-      return bond.api.toggleOpen(device);
-    }
-
-    function getState(): Promise<CharacteristicValue> {
-      // Always return stop
-      return Promise.resolve(2);
-    }
-
-    const props = {
-      minValue: 0,
-      maxValue: 100,
-      minStep: 100,
-    };
-    Observer.add(this, shades.getCharacteristic(this.Characteristic.CurrentPosition), getPosition);
-    Observer.add(this, shades.getCharacteristic(this.Characteristic.TargetPosition), getPosition, setPosition, props);
-    Observer.add(this, shades.getCharacteristic(this.Characteristic.PositionState), getState);
-  }
-
   // Helper Methods
 
   private accessoryAdded(uuid: string) {
@@ -547,7 +258,13 @@ export class BondPlatform implements DynamicPlatformPlugin {
     return accessories.length > 0;
   }
 
-  private debug(device: Device, message: string) {
+  debug(accessory: PlatformAccessory, message: string) {
+    const device: Device = accessory.context.device;
     this.log.debug(`[${device.name}] ${message}`);
+  }
+
+  error(accessory: PlatformAccessory, message: string) {
+    const device: Device = accessory.context.device;
+    this.log.error(`[${device.name}] ${message}`);
   }
 }

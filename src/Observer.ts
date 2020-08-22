@@ -1,59 +1,18 @@
-import { Characteristic, CharacteristicProps, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback } from 'homebridge';
-import { BondPlatform } from './platform';
+import { Characteristic, CharacteristicValue, CharacteristicSetCallback } from 'homebridge';
 
 export class Observer {
-  public static add(
-    platform: BondPlatform,
+  public static set(
     characteristic: Characteristic,
-    get: () => Promise<CharacteristicValue>,
-    set: ((value: CharacteristicValue) => Promise<void> | undefined) | undefined = undefined,
-    props: Partial<CharacteristicProps> = {},
-  ) {
-
-    get().then(val => {
-      characteristic.updateValue(val);
-    });
-
-    const chain = characteristic
-      .setProps(props)
-      .on('get', (callback: CharacteristicGetCallback) => {
-        get()
-          .then((value: CharacteristicValue) => {
-            platform.log.debug(`got value: ${value}`);
-            callback(null, value);
-          })
-          .catch((error: string) => {
-            platform.log.error(`error getting value: ${error}`);
-            callback(Error(error), null);
-          });
-      });
-
-    if (set === undefined) {
-      return;
-    }
-
-    chain 
+    set: (value: CharacteristicValue, callback: CharacteristicSetCallback) => void) {
+    characteristic 
       .on('set', (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
         // Avoid doing anything when the device is in the requested state
         if (value === characteristic.value) {
           callback(null);
           return;
         }
-        
-        const res = set(value);
-        if (res === undefined) {
-          return;
-        }
-        res
-          .then(() => {
-            platform.log.debug(`value changed: ${value}`);
-            characteristic.updateValue(value);
-            callback(null);
-          })
-          .catch((error: string) => {
-            platform.log.error(`error changing value: ${error}`);
-            callback(Error(error));
-          });
+
+        set(value, callback);
       });
   }
 }
