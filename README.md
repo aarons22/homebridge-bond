@@ -24,6 +24,8 @@ This plugin currently supports the following devices and features:
   - Fan Speeds 1-8 (dynamic based on bond configuration)
   - Light Dimming (`off` by default; see config below)
     - When using this feature, turn the switch on to start dimming. When you reach the brightness level you would like, turn the switch off.
+- Blinds
+  - Open / Close
 - Generic Device
   - On / Off (appears as switch in HomeKit)
 - Fireplace
