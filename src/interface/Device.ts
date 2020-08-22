@@ -25,7 +25,7 @@ export namespace Device {
   }
 
   export function isSupported(device: Device): boolean {
-    const supported = [DeviceType.CeilingFan, DeviceType.Generic, DeviceType.Fireplace];
+    const supported = [DeviceType.CeilingFan, DeviceType.Generic, DeviceType.Fireplace, DeviceType.Shades];
     return supported.includes(device.type);
   }
 
