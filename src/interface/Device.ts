@@ -104,4 +104,9 @@ export namespace Device {
     const fan = [Action.TogglePower];
     return device.actions.some(r => fan.includes(r));
   }
+
+  export function MShasToggle(device: Device): boolean {
+    const fan = [Action.ToggleOpen];
+    return device.actions.some(r => fan.includes(r));
+  }
 }

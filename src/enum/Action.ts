@@ -11,4 +11,7 @@ export enum Action {
   SetSpeed = 'SetSpeed',
   ToggleDirection = 'ToggleDirection',
   TogglePower = 'TogglePower',
+  ToggleOpen = 'ToggleOpen',
+  Open = 'Open',
+  Close = 'Close'
 }

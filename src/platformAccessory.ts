@@ -49,5 +49,11 @@ export class BondAccessory {
         accessory.addService(this.platform.Service.Switch, accessory.displayName);
       }
     }
+
+    if (device.type === DeviceType.Shades) {
+      if (Device.MShasToggle(device)) {
+        accessory.addService(this.platform.Service.WindowCovering, accessory.displayName);
+      }
+    }
   }
 }

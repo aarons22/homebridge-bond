@@ -27,6 +27,15 @@
               "required": true,
               "description": "Can be found in the bond app by tapping your Bond device and looking for 'Local Token'.",
               "placeholder": "e.g. fd3904894ff98f"
+            },
+            "hide_device_ids": {
+              "title": "Hide Device IDs",
+              "description": "Hide individual devices by Device ID. Device ID can be found in the Bond app under Device Settings.",
+              "placeholder": "e.g. 0000018",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }
