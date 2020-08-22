@@ -9,8 +9,8 @@ export class Bond {
   public static objects(platform: BondPlatform): Bond[] {
     const config = platform.config as BondPlatformConfig;
     const bondData: BondConfig[] = config.bonds;
-    const bondObjs = bondData.map(val => {
-      return new Bond(platform, val.ip_address, val.token);
+    const bondObjs = bondData.map(config => {
+      return new Bond(platform, config);
     });
 
     return bondObjs;
@@ -28,14 +28,15 @@ export class Bond {
   }
 
   public api: BondApi;
+  public config: BondConfig;
   public deviceIds: string[] = [];
   public version!: Version;
 
   constructor(
     private readonly platform: BondPlatform,
-    ipAddress: string,
-    token: string) {
-    this.api = new BondApi(platform, token, ipAddress);
+    config: BondConfig) {
+    this.config = config;
+    this.api = new BondApi(platform, config.token, config.ip_address);
   }
 
   public updateDeviceIds(): Promise<void> {

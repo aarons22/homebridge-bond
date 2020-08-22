@@ -91,6 +91,12 @@ export class BondPlatform implements DynamicPlatformPlugin {
     if (bond === undefined) {
       return;
     }
+
+    if ((bond.config.hide_device_ids !== undefined 
+      && bond.config.hide_device_ids.includes(device.id))) {
+      this.log(`Excluding ${device.id}.`);
+      return;
+    }
     // ID should be unique across multiple bonds in case device's have the same
     // id across bonds.
     const id = `${bond.version.bondid}${device.id}`;
