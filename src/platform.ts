@@ -474,8 +474,8 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
     function getPosition(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
-        // Always return either 1 or 100
-        return state.open === 1 ? 100 : 1;
+        // Always return either 0 or 100
+        return state.open === 1 ? 100 : 0;
       });
     }
 
