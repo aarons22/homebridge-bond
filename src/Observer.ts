@@ -19,11 +19,11 @@ export class Observer {
       .on('get', (callback: CharacteristicGetCallback) => {
         get()
           .then((value: CharacteristicValue) => {
-            platform.log(`got value: ${value}`);
+            platform.log.debug(`got value: ${value}`);
             callback(null, value);
           })
           .catch((error: string) => {
-            platform.log(`error getting value: ${error}`);
+            platform.log.error(`error getting value: ${error}`);
             callback(Error(error), null);
           });
       });
