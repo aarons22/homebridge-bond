@@ -4,7 +4,7 @@
 
 # homebridge-bond
 
-Bond plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the [Bond V2 API](http://docs-local.appbond.com). In oder to use this plugin, you'll need to make sure your Bond has been updated to firmware v2.
+Bond plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the [Bond V2 API](http://docs-local.appbond.com). In order to use this plugin, you'll need to make sure your Bond has been updated to firmware v2.
 
 **NOTE: If you are still on v1 (using the Bond Bridge app)**:
 
