@@ -495,8 +495,13 @@ export class BondPlatform implements DynamicPlatformPlugin {
       return Promise.resolve(2);
     }
 
+    const props = {
+      minValue: 0,
+      maxValue: 100,
+      minStep: 100,
+    };
     Observer.add(this, shades.getCharacteristic(this.Characteristic.CurrentPosition), getPosition);
-    Observer.add(this, shades.getCharacteristic(this.Characteristic.TargetPosition), getPosition, setPosition);
+    Observer.add(this, shades.getCharacteristic(this.Characteristic.TargetPosition), getPosition, setPosition, props);
     Observer.add(this, shades.getCharacteristic(this.Characteristic.PositionState), getState);
   }
 
