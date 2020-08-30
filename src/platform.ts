@@ -289,9 +289,9 @@ export class BondPlatform implements DynamicPlatformPlugin {
     function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
         if(subtype === 'UpLight') {
-          return state.up_light === 1;
+          return state.up_light === 1 && state.light === 1;
         } else if(subtype === 'DownLight') {
-          return state.down_light === 1;
+          return state.down_light === 1 && state.light === 1;
         } else {
           return state.light === 1;
         }
