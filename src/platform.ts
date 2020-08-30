@@ -418,10 +418,10 @@ export class BondPlatform implements DynamicPlatformPlugin {
     }
     function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
-        if (state.direction !== undefined) {
-          return state.direction!;
+        if (state.direction) {
+          return state.direction;
         } else {
-          return 0;
+          return 1;
         }
       });
     }
