@@ -50,7 +50,11 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
     this.log(`${bond.deviceIds.length} devices were found on this Bond.`);
     const filtered = bond.deviceIds.filter(id => {
-      return !this.deviceAdded(id);
+      const accessories = this.accessories.filter(acc => {
+        const device: Device = acc.context.device;
+        return device.id === id;
+      });
+      return accessories.length === 0;
     });
 
     this.log(`Attempting to add ${filtered.length} devices that were not previously added.`);
@@ -76,31 +80,38 @@ export class BondPlatform implements DynamicPlatformPlugin {
    * Add a new accessory that hasn't been added before.
    */
   public addAccessory(device: Device) {
-    const displayName = Device.displayName(device);
-    if (this.deviceAdded(device.id)) {
-      this.log(`${device.id} has already been added.`);
-      return;
-    }
-
-    if (!Device.isSupported(device)) {
-      this.log(`${displayName} has no supported actions.`);
-      return;
-    }
-
     const bond = this.bondForDevice(device);
+
+    // Make sure Bond exists
     if (bond === undefined) {
+      this.log(`[${device.name}] Bond does not exist for device id: ${device.id}.`);
       return;
     }
 
+    // Make sure device shouldn't be excluded
     if ((bond.config.hide_device_ids !== undefined 
       && bond.config.hide_device_ids.includes(device.id))) {
-      this.log(`Excluding ${device.id}.`);
+      this.log(`[${device.name}] Excluding ${device.id}.`);
       return;
     }
+    
+    // Make sure device has supported actions
+    if (!Device.isSupported(device)) {
+      this.log(`[${device.name}] Device has no supported actions.`);
+      return;
+    }
+
     // ID should be unique across multiple bonds in case device's have the same
     // id across bonds.
     const id = `${bond.version.bondid}${device.id}`;
-    const accessory = new this.api.platformAccessory(`${displayName}`, this.UUIDGen.generate(id));
+    const uuid = this.UUIDGen.generate(id);
+    if (this.accessoryAdded(uuid)) {
+      this.log(`[${device.name}] Accessory already added.`);
+      return;
+    }
+
+    const displayName = Device.displayName(device);
+    const accessory = new this.api.platformAccessory(`${displayName}`, uuid);
     accessory.context.device = device;
     new BondAccessory(this, accessory, device);
     this.setupObservers(accessory);
@@ -510,10 +521,9 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
   // Helper Methods
 
-  private deviceAdded(id: string) {
+  private accessoryAdded(uuid: string) {
     const accessories = this.accessories.filter(acc => {
-      const device: Device = acc.context.device;
-      return device.id === id;
+      return acc.UUID === uuid;
     });
     return accessories.length > 0;
   }
