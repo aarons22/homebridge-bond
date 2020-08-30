@@ -66,4 +66,9 @@ export class Bond {
         this.platform.log.error(`Error getting version: ${error}`);
       });
   }
+
+  // ID should be unique across multiple bonds in case device's have the same id across bonds.
+  public uniqueDeviceId(deviceId: string): string {
+    return `${this.version.bondid}${deviceId}`;
+  }
 }
