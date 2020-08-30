@@ -419,9 +419,12 @@ export class BondPlatform implements DynamicPlatformPlugin {
     function get(): Promise<CharacteristicValue> {
       return bond.api.getState(device.id).then(state => {
         if (state.direction) {
-          return state.direction;
+          // Homekit direction is 1/0
+          // Bond direction is 1/-1
+          const direction = state.direction === 1 ? 1 : 0;
+          return direction;
         } else {
-          return 1;
+          return 0;
         }
       });
     }
