@@ -46,21 +46,41 @@ export class BondPlatform implements DynamicPlatformPlugin {
   }
 
   public getDevices(bond: Bond) {
-    this.log('Getting devices...');
+    this.log(`Getting devices for this Bond (${bond.version.bondid})...`);
 
-    this.log(`${bond.deviceIds.length} devices were found on this Bond.`);
-    const filtered = bond.deviceIds.filter(id => {
+    // Data cleanup - Make sure all cached devices have uniqueId on them
+    bond.deviceIds.forEach(deviceId => {
+      this.accessories.forEach(accessory => {
+        if (accessory.context.device.id === deviceId) {
+          accessory.context.device.uniqueId = bond.uniqueDeviceId(deviceId);
+        }
+      });
+    });
+
+    this.log(`${bond.deviceIds.length} devices were found on this Bond (${bond.version.bondid}).`);
+    const filtered = bond.deviceIds.filter(deviceId => {
+      const uniqueId = bond.uniqueDeviceId(deviceId);
       const accessories = this.accessories.filter(acc => {
         const device: Device = acc.context.device;
-        return device.id === id;
+        return device.uniqueId === uniqueId;
       });
       return accessories.length === 0;
     });
+
+    if (filtered.length === 0) {
+      this.log(`No new devices to add for this Bond (${bond.version.bondid}).`);
+      return;
+    }
 
     this.log(`Attempting to add ${filtered.length} devices that were not previously added.`);
     bond.api
       .getDevices(filtered)
       .then(devices => {
+        devices.forEach(device => {
+          // Set the unique id
+          device.uniqueId = bond.uniqueDeviceId(device.id);
+          this.addAccessory(device);
+        });
         this.addAccessories(devices);
       })
       .catch(error => {
@@ -101,10 +121,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
       return;
     }
 
-    // ID should be unique across multiple bonds in case device's have the same
-    // id across bonds.
-    const id = `${bond.version.bondid}${device.id}`;
-    const uuid = this.UUIDGen.generate(id);
+    const uuid = this.UUIDGen.generate(device.uniqueId);
     if (this.accessoryAdded(uuid)) {
       this.log(`[${device.name}] Accessory already added.`);
       return;
@@ -119,7 +136,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
     this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     this.accessories.push(accessory);
     this.log(`Adding accessory ${accessory.displayName}`);
-    this.log.debug(`Accessory id: ${id}`);
+    this.log.debug(`Device unique id: ${device.uniqueId}`);
   }
 
   removeAccessory(accessory: PlatformAccessory) {

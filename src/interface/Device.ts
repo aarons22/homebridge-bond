@@ -4,6 +4,7 @@ import { Properties } from './Properties';
 
 export interface Device {
   id: string;
+  uniqueId: string;
   name: string;
   type: DeviceType;
   location: string;
