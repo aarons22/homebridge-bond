@@ -3,14 +3,18 @@ import { DeviceType } from '../enum/DeviceType';
 import { Properties } from './Properties';
 
 export interface Device {
+  // Bond API properties
   id: string;
-  uniqueId: string;
   name: string;
   type: DeviceType;
   location: string;
   actions: Action[];
   properties: Properties;
   commands: Command[] | undefined;
+
+  // homebridge-bond properties
+  uniqueId: string;
+  bondId: string;
 }
 
 export interface Command {

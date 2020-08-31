@@ -48,11 +48,12 @@ export class BondPlatform implements DynamicPlatformPlugin {
   public getDevices(bond: Bond) {
     this.log(`Getting devices for this Bond (${bond.version.bondid})...`);
 
-    // Data cleanup - Make sure all cached devices have uniqueId on them
+    // Data cleanup - Make sure all cached devices have uniqueId and bondId on them
     bond.deviceIds.forEach(deviceId => {
       this.accessories.forEach(accessory => {
         if (accessory.context.device.id === deviceId) {
           accessory.context.device.uniqueId = bond.uniqueDeviceId(deviceId);
+          accessory.context.device.bondId = bond.version.bondid;
         }
       });
     });
@@ -79,7 +80,8 @@ export class BondPlatform implements DynamicPlatformPlugin {
         devices.forEach(device => {
           // Set the unique id
           device.uniqueId = bond.uniqueDeviceId(device.id);
-          this.addAccessory(device);
+          // Set the bond id
+          device.bondId = bond.version.bondid;
         });
         this.addAccessories(devices);
       })
@@ -175,7 +177,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
   private setupObservers(accessory: PlatformAccessory) {
     const device: Device = accessory.context.device;
-    const bond = this.bondForAccessory(accessory);
+    const bond = this.bondForDevice(device);
 
     if (bond === undefined) {
       return;
@@ -286,14 +288,9 @@ export class BondPlatform implements DynamicPlatformPlugin {
     }
   }
 
-  public bondForAccessory(accessory: PlatformAccessory): Bond | undefined {
-    const device: Device = accessory.context.device;
-    return this.bondForDevice(device);
-  }
-
   private bondForDevice(device: Device): Bond | undefined {
     if (this.bonds) {
-      const bond = this.bonds.find(x => x.deviceIds.includes(device.id));
+      const bond = this.bonds.find(x => x.version.bondid === device.bondId && x.deviceIds.includes(device.id));
       if (bond === undefined) {
         this.log.error(
           `No Bond found for Device: ${device.name}.
