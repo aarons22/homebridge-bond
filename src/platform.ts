@@ -46,24 +46,13 @@ export class BondPlatform implements DynamicPlatformPlugin {
   }
 
   public getDevices(bond: Bond) {
+    this.cleanupBondData(bond);
+    
     this.log(`Getting devices for this Bond (${bond.version.bondid})...`);
-
-    // Data cleanup - Make sure all cached devices have uniqueId and bondId on them
-    bond.deviceIds.forEach(deviceId => {
-      this.accessories.forEach(accessory => {
-        if (accessory.context.device.id === deviceId) {
-          accessory.context.device.uniqueId = bond.uniqueDeviceId(deviceId);
-          accessory.context.device.bondId = bond.version.bondid;
-        }
-      });
-    });
-
     this.log(`${bond.deviceIds.length} devices were found on this Bond (${bond.version.bondid}).`);
     const filtered = bond.deviceIds.filter(deviceId => {
-      const uniqueId = bond.uniqueDeviceId(deviceId);
       const accessories = this.accessories.filter(acc => {
-        const device: Device = acc.context.device;
-        return device.uniqueId === uniqueId;
+        return acc.context.device.uniqueId === bond.uniqueDeviceId(deviceId);
       });
       return accessories.length === 0;
     });
@@ -88,6 +77,22 @@ export class BondPlatform implements DynamicPlatformPlugin {
       .catch(error => {
         this.log(`Error getting devices: ${error}`);
       });
+  }
+
+  private cleanupBondData(bond: Bond) {
+    // Data cleanup - Make sure all cached devices have uniqueId and bondId on them
+    bond.deviceIds.forEach(deviceId => {
+      this.accessories.forEach(accessory => {
+        // Only run if device does not have uniqueId
+        if (accessory.context.device.uniqueId === undefined 
+          && accessory.context.device.id === deviceId) {
+          const uniqueId = bond.uniqueDeviceId(deviceId);
+          this.log.debug(`Updating device data with uniqueId ${uniqueId}`);
+          accessory.context.device.uniqueId = bond.uniqueDeviceId(deviceId);
+          accessory.context.device.bondId = bond.version.bondid;
+        }
+      });
+    });
   }
   
   addAccessories(devices: Device[]) {
