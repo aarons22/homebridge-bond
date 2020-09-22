@@ -62,8 +62,8 @@ export class CeilingFanAccessory implements BondAccessory  {
       this.downLightService = new LightbulbService(platform, accessory, `${accessory.displayName} Down Light`, 'DownLight');
 
       if (includeToggle) {
-        this.toggleUpLightService = new ButtonService(platform, accessory, 'Toggle Up Light State', 'UpLight');
-        this.toggleDownLightService = new ButtonService(platform, accessory, 'Toggle Down Light State', 'DownLight');
+        this.toggleUpLightService = new ButtonService(platform, accessory, 'Toggle Up Light State', 'ToggleUpLight');
+        this.toggleDownLightService = new ButtonService(platform, accessory, 'Toggle Down Light State', 'ToggleDownLight');
       } else {
         // Remove services if previously added
         this.removeService('Toggle Up Light State');
@@ -81,17 +81,17 @@ export class CeilingFanAccessory implements BondAccessory  {
     } else if (Device.CFhasLightbulb(device)) {
       this.lightService = new LightbulbService(platform, accessory, `${accessory.displayName} Light`);
       if (includeToggle) {
-        this.toggleLightService = new ButtonService(platform, accessory, 'Toggle Light State');
+        this.toggleLightService = new ButtonService(platform, accessory, 'Toggle Light State', 'ToggleState');
       } else {
         this.removeService('Toggle Light State');
       } 
-    }
 
-    if (includeDimmer && Device.HasDimmer(device)) {
-      this.dimmerService = new SwitchService(platform, accessory, `${accessory.displayName} Dimmer`);
-    } else {
-      // Remove service if previously added
-      this.removeService(`${accessory.displayName} Dimmer`);
+      if (includeDimmer && Device.HasDimmer(device)) {
+        this.dimmerService = new SwitchService(platform, accessory, `${accessory.displayName} Dimmer`, 'Dimmer');
+      } else {
+        // Remove service if previously added
+        this.removeService(`${accessory.displayName} Dimmer`);
+      }
     }
 
     if (includeDimmer && Device.HasSeparateDimmers(device)) {
@@ -283,7 +283,7 @@ export class CeilingFanAccessory implements BondAccessory  {
       
       promise
         .then(() => {
-          this.platform.debug(this.accessory, `${device.name} light state toggled`);
+          this.platform.debug(this.accessory, 'light state toggled');
         })
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error toggling light state: ${error}`);

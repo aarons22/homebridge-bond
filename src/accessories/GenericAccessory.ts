@@ -18,9 +18,9 @@ export class GenericAccessory implements BondAccessory  {
     bond: Bond) {
     this.platform = platform;
     this.accessory = accessory;
-    this.switchService = new SwitchService(platform, accessory, accessory.displayName);
+    this.switchService = new SwitchService(platform, accessory, accessory.displayName, 'Power');
     if (platform.config.include_toggle_state) {
-      this.toggleStateService = new ButtonService(platform, accessory, 'Toggle State');
+      this.toggleStateService = new ButtonService(platform, accessory, 'Toggle State', 'ToggleState');
     } else {
       this.removeService('Toggle State');
     }

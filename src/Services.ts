@@ -42,7 +42,7 @@ export class LightbulbService {
     subType?: string) {
     let service = accessory.getService(platform.Service.Lightbulb);
     if (subType) {
-      service = accessory.getServiceByUUIDAndSubType(platform.Service.Lightbulb, subType);
+      service = accessory.getServiceById(platform.Service.Lightbulb, subType);
     }
     
     if (service === undefined) {
@@ -57,17 +57,14 @@ export class LightbulbService {
 export class SwitchService {
   on: Characteristic
   name?: Characteristic
-  subType?: string
+  subType: string
 
   constructor(
     platform: BondPlatform,
     accessory: PlatformAccessory,
     name: string,
-    subType?: string) {
-    let service = accessory.getService(platform.Service.Switch);
-    if (subType) {
-      service = accessory.getServiceByUUIDAndSubType(platform.Service.Switch, subType);
-    }
+    subType: string) {
+    let service = accessory.getServiceById(platform.Service.Switch, subType);
     if (service === undefined) {
       service = accessory.addService(platform.Service.Switch, name, subType);
     }
@@ -81,17 +78,14 @@ export class SwitchService {
 // button like experience that isn't available in homebridge.
 export class ButtonService {
   on: Characteristic
-  subType?: string
+  subType: string
 
   constructor(
     platform: BondPlatform,
     accessory: PlatformAccessory,
     name: string,
-    subType?: string) {
-    let service = accessory.getService(platform.Service.Switch);
-    if (subType) {
-      service = accessory.getServiceByUUIDAndSubType(platform.Service.Switch, subType);
-    }
+    subType: string) {
+    let service = accessory.getServiceById(platform.Service.Switch, subType);
     if (service === undefined) {
       service = accessory.addService(platform.Service.Switch, name, subType);
     }

@@ -20,8 +20,8 @@ export class ShadesAccessory implements BondAccessory  {
     this.accessory = accessory;
     this.windowCoveringService = new WindowCoveringService(platform, accessory);
     if (platform.config.include_toggle_state) {
-      this.toggleStateService = new ButtonService(platform, accessory, 'Toggle State');
-    } else {
+      this.toggleStateService = new ButtonService(platform, accessory, 'Toggle State', 'ToggleState');
+    } else {  
       this.removeService('Toggle State');
     }
     
