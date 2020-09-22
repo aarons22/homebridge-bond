@@ -33,7 +33,7 @@ export class BondApi {
     axiosRetry(axios, { retries: 10, retryDelay: axiosRetry.exponentialDelay });
   }
 
-  // tslint:disable: object-literal-sort-keys
+  // Bond / Device Info
 
   public getVersion(): Promise<Version> {
     return this.request(HTTPMethod.GET, this.uri.version());
@@ -61,85 +61,86 @@ export class BondApi {
     return Promise.all(ps);
   }
 
-  // tslint:disable: object-literal-sort-keys
-  public toggleLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleLight))
+  private getDevice(id: string): Promise<Device> {
+    const req = this.request(HTTPMethod.GET, this.uri.device(id));
+    return req.then(json => {
+      // Set the id since it's not included in the response
+      json.id = id;
+      // get the properties of the device
+      return this.getProperties(id).then(properties => {
+        json.properties = properties;
+        if (json.commands) {
+          // commands are only present on Bridge devices.
+          return this.getCommands(id).then(commands => {
+            json.commands = commands;
+            return json;
+          });
+        } else {
+          return json;
+        }
+      });
+    });
+  }
+
+  // Actions
+
+  private action(device: Device, action: Action, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, action))
       .then(() => {
         callback(null);
       })
       .catch((error: string) => {
         callback(Error(error));
       });
+  }
+
+  public toggleLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.action(device, Action.ToggleLight, callback);
   }
 
   public toggleUpLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleUpLight))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.ToggleUpLight, callback);
   }
 
   public toggleDownLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleDownLight))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.ToggleDownLight, callback);
   }
 
   public startDimmer(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDimmer))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.StartDimmer, callback);
   }
 
   public startUpLightDimmer(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartUpLightDimmer))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.StartUpLightDimmer, callback);
   }
 
   public startDownLightDimmer(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDownLightDimmer))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.StartDownLightDimmer, callback);
   }
 
   public startIncreasingBrightness(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartIncreasingBrightness))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.StartIncreasingBrightness, callback);
   }
 
   public startDecreasingBrightness(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDecreasingBrightness))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.StartDecreasingBrightness, callback);
+  }
+
+  public toggleFan(device: Device, on: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
+    const action = on as boolean ? Action.TurnOn : Action.TurnOff;
+    return this.action(device, action, callback);
+  }
+
+  public toggleDirection(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.action(device, Action.ToggleDirection, callback);
+  }
+
+  public togglePower(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.action(device, Action.TogglePower, callback);
+  }
+
+  public toggleOpen(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.action(device, Action.ToggleOpen, callback);
   }
 
   public stop(device: Device, callback?: CharacteristicSetCallback): Promise<void> {
@@ -156,17 +157,6 @@ export class BondApi {
       });
   }
 
-  public toggleFan(device: Device, on: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
-    const action = on as boolean ? Action.TurnOn : Action.TurnOff;
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, action))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
-  }
-
   public setFanSpeed(device: Device, speed: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     const body = {
       argument: speed as number,
@@ -180,35 +170,7 @@ export class BondApi {
       });
   }
 
-  public toggleDirection(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleDirection))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
-  }
-
-  public togglePower(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.TogglePower))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
-  }
-
-  public toggleOpen(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.ToggleOpen))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
-  }
+  // State
 
   public updateState(device: Device, state: BondState, callback: CharacteristicSetCallback): Promise<void> {
     return this.request(HTTPMethod.PATCH, this.uri.state(device.id), state)
@@ -237,27 +199,6 @@ export class BondApi {
           throw Error(`This device does not have ${property} in it's Bond state`);
         }
       });
-  }
-
-  private getDevice(id: string): Promise<Device> {
-    const req = this.request(HTTPMethod.GET, this.uri.device(id));
-    return req.then(json => {
-      // Set the id since it's not included in the response
-      json.id = id;
-      // get the properties of the device
-      return this.getProperties(id).then(properties => {
-        json.properties = properties;
-        if (json.commands) {
-          // commands are only present on Bridge devices.
-          return this.getCommands(id).then(commands => {
-            json.commands = commands;
-            return json;
-          });
-        } else {
-          return json;
-        }
-      });
-    });
   }
 
   // Commands
