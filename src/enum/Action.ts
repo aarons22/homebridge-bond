@@ -5,6 +5,8 @@ export enum Action {
   TurnOff = 'TurnOff',
   TurnOn = 'TurnOn',
   StartDimmer = 'StartDimmer',
+  StartUpLightDimmer = 'StartUpLightDimmer',
+  StartDownLightDimmer = 'StartDownLightDimmer',
   StartIncreasingBrightness = 'StartIncreasingBrightness',
   StartDecreasingBrightness = 'StartDecreasingBrightness',
   Stop = 'Stop',

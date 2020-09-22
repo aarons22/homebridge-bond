@@ -102,6 +102,26 @@ export class BondApi {
       });
   }
 
+  public startUpLightDimmer(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartUpLightDimmer))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
+  }
+
+  public startDownLightDimmer(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartDownLightDimmer))
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
+  }
+
   public startIncreasingBrightness(device: Device, callback: CharacteristicSetCallback): Promise<void> {
     return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.StartIncreasingBrightness))
       .then(() => {
