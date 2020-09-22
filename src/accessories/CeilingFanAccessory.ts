@@ -23,8 +23,8 @@ export class CeilingFanAccessory implements BondAccessory  {
   toggleDownLightService?: ButtonService
   downLightDimmerService?: SwitchService
 
-  dimmerUpService?: SwitchService
-  dimmerDownService?: SwitchService
+  increaseBrightnessService?: SwitchService
+  decreaseBrightnessService?: SwitchService
 
   fanSpeedValues: boolean
   minStep: number
@@ -95,12 +95,12 @@ export class CeilingFanAccessory implements BondAccessory  {
     }
 
     if (includeDimmer && Device.HasSeparateDimmers(device)) {
-      this.dimmerUpService = new SwitchService(platform, accessory, `${accessory.displayName} DimmerDown`, 'up');
-      this.dimmerDownService = new SwitchService(platform, accessory, `${accessory.displayName} DimmerUp`, 'down');
+      this.increaseBrightnessService = new SwitchService(platform, accessory, `${accessory.displayName} Increase Brightness`, 'IncreaseBrightness');
+      this.decreaseBrightnessService = new SwitchService(platform, accessory, `${accessory.displayName} Decrease Brightness`, 'DecreaseBrightness');
     } else {
       // Remove service if previously added
-      this.removeService(`${accessory.displayName} DimmerUp`);
-      this.removeService(`${accessory.displayName} DimmerDown`);
+      this.removeService(`${accessory.displayName} Increase Brightness`);
+      this.removeService(`${accessory.displayName} Decrease Brightness`);
     }
 
     this.observe(bond);
@@ -149,9 +149,9 @@ export class CeilingFanAccessory implements BondAccessory  {
 
   private observe(bond: Bond): void {
     const device: Device = this.accessory.context.device;
-    this.fanPowerObservers(bond, device);
-    this.fanSpeedObservers(bond, device);
-    this.fanDirectionObservers(bond, device);
+    this.observeFanPower(bond, device);
+    this.observeFanSpeed(bond, device);
+    this.observeFanDirection(bond, device);
 
     this.observeLight(bond, device, this.lightService);
     this.observeLightToggle(bond, device, this.toggleLightService);
@@ -165,8 +165,8 @@ export class CeilingFanAccessory implements BondAccessory  {
     this.observeLightToggle(bond, device, this.toggleDownLightService);
     this.observeLightDimmer(bond, device, this.downLightDimmerService);
 
-    this.lightbulbDimmerUpObserver(bond, device, this.dimmerDownService);
-    this.lightbulbDimmerDownObserver(bond, device, this.dimmerUpService);
+    this.observeLightIncreaseBrightness(bond, device, this.decreaseBrightnessService);
+    this.observeLightDecreaseBrightness(bond, device, this.increaseBrightnessService);
 
     // Set initial state
     bond.api.getState(device.id).then(state => {
@@ -174,7 +174,7 @@ export class CeilingFanAccessory implements BondAccessory  {
     });
   }
 
-  fanPowerObservers(bond: Bond, device: Device) {
+  private observeFanPower(bond: Bond, device: Device) {
     if (!(Device.hasFan(device))) {
       this.platform.error(this.accessory, 'CeilingFanAccessory does not have required actions for fan service.');
       return;
@@ -182,16 +182,16 @@ export class CeilingFanAccessory implements BondAccessory  {
 
     Observer.set(this.fanService.on, (value, callback) => {
       bond.api.toggleFan(device, value, callback)
-        .then(() => {
-          this.platform.debug(this.accessory, `Toggled fan: ${value}`);
+        .then(() => { 
+          this.platform.debug(this.accessory, `Set fan power: ${value}`);
         })
         .catch((error: string) => {
-          this.platform.error(this.accessory, `Error toggling fan: ${error}`);
+          this.platform.error(this.accessory, `Error setting fan power: ${error}`);
         });
     });
   }
 
-  fanSpeedObservers(bond: Bond, device: Device) {
+  private observeFanSpeed(bond: Bond, device: Device) {
     if (!this.fanService.rotationSpeed) {
       return;
     }
@@ -221,7 +221,7 @@ export class CeilingFanAccessory implements BondAccessory  {
     });
   }
 
-  fanDirectionObservers(bond: Bond, device: Device) {
+  private observeFanDirection(bond: Bond, device: Device) {
     if (!this.fanService.rotationDirection) {
       return;
     }
@@ -229,10 +229,10 @@ export class CeilingFanAccessory implements BondAccessory  {
     Observer.set(this.fanService.rotationDirection, (value, callback) => {
       bond.api.toggleDirection(device, callback)
         .then(() => {
-          this.platform.debug(this.accessory, `Toggled direction: ${value}`);
+          this.platform.debug(this.accessory, `Set fan direction: ${value}`);
         })
         .catch((error: string) => {
-          this.platform.error(this.accessory, `Error toggling direction: ${error}`);
+          this.platform.error(this.accessory, `Error setting fan direction: ${error}`);
         });
     });
   }
@@ -256,10 +256,10 @@ export class CeilingFanAccessory implements BondAccessory  {
 
       promise
         .then(() => {
-          this.platform.debug(this.accessory, `Toggled light: ${value}`);
+          this.platform.debug(this.accessory, `Set light power: ${value}`);
         })
         .catch((error: string) => {
-          this.platform.error(this.accessory, `Error toggling light: ${error}`);
+          this.platform.error(this.accessory, `Error setting light power: ${error}`);
         });
     });
   }
@@ -283,7 +283,7 @@ export class CeilingFanAccessory implements BondAccessory  {
       
       promise
         .then(() => {
-          this.platform.debug(this.accessory, 'light state toggled');
+          this.platform.debug(this.accessory, 'Light state toggled');
         })
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error toggling light state: ${error}`);
@@ -322,12 +322,12 @@ export class CeilingFanAccessory implements BondAccessory  {
     });
   }
 
-  lightbulbDimmerUpObserver(bond: Bond, device: Device, downService?: SwitchService) {
-    if (!this.dimmerUpService) {
+  private observeLightIncreaseBrightness(bond: Bond, device: Device, downService?: SwitchService) {
+    if (!this.increaseBrightnessService) {
       return;
     }
 
-    Observer.set(this.dimmerUpService.on, (value, callback) => {
+    Observer.set(this.increaseBrightnessService.on, (value, callback) => {
       let promise: Promise<void>;
 
       if (value === true) {
@@ -342,20 +342,20 @@ export class CeilingFanAccessory implements BondAccessory  {
 
       promise
         .then(() => {
-          this.platform.debug(this.accessory, `Toggled dimmer up: ${value}`);
+          this.platform.debug(this.accessory, `Increased Brightness: ${value}`);
         })
         .catch((error: string) => {
-          this.platform.error(this.accessory, `Error toggling dimmer up: ${error}`);
+          this.platform.error(this.accessory, `Error increasing brightness: ${error}`);
         });
     });
   }
 
-  lightbulbDimmerDownObserver(bond: Bond, device: Device, upService?: SwitchService) {
-    if (!this.dimmerDownService) {
+  private observeLightDecreaseBrightness(bond: Bond, device: Device, upService?: SwitchService) {
+    if (!this.decreaseBrightnessService) {
       return;
     }
 
-    Observer.set(this.dimmerDownService.on, (value, callback) => {
+    Observer.set(this.decreaseBrightnessService.on, (value, callback) => {
       let promise: Promise<void>;
 
       if (value === true) {
@@ -370,10 +370,10 @@ export class CeilingFanAccessory implements BondAccessory  {
 
       promise
         .then(() => {
-          this.platform.debug(this.accessory, `Toggled dimmer down: ${value}`);
+          this.platform.debug(this.accessory, `Decreased Brightness: ${value}`);
         })
         .catch((error: string) => {
-          this.platform.error(this.accessory, `Error toggling dimmer down: ${error}`);
+          this.platform.error(this.accessory, `Error decreasing brightness: ${error}`);
         });
     });
   }
