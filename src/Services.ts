@@ -57,6 +57,7 @@ export class LightbulbService {
 export class SwitchService {
   on: Characteristic
   name?: Characteristic
+  subType?: string
 
   constructor(
     platform: BondPlatform,
@@ -71,6 +72,7 @@ export class SwitchService {
       service = accessory.addService(platform.Service.Switch, name, subType);
     }
     this.on = service.getCharacteristic(platform.Characteristic.On);
+    this.subType = subType;
     this.name = service.getCharacteristic(platform.Characteristic.Name);
   }
 }
@@ -79,6 +81,7 @@ export class SwitchService {
 // button like experience that isn't available in homebridge.
 export class ButtonService {
   on: Characteristic
+  subType?: string
 
   constructor(
     platform: BondPlatform,
@@ -101,6 +104,7 @@ export class ButtonService {
         clearInterval(timer);
       }, 500);
     });
+    this.subType = subType;
   }
 }
 

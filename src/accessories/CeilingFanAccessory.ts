@@ -13,7 +13,9 @@ export class CeilingFanAccessory implements BondAccessory  {
   lightService?: LightbulbService
   toggleLightService?: ButtonService
   upLightService?: LightbulbService
+  toggleUpLightService?: ButtonService
   downLightService?: LightbulbService
+  toggleDownLightService?: ButtonService
   dimmerService?: SwitchService
   dimmerUpService?: SwitchService
   dimmerDownService?: SwitchService
@@ -32,6 +34,7 @@ export class CeilingFanAccessory implements BondAccessory  {
     this.fanSpeedValues = platform.config.fan_speed_values;
 
     const includeDimmer = platform.config.include_dimmer;
+    const includeToggle = platform.config.include_toggle_state;
     const device: Device = accessory.context.device;
 
     this.values = Device.fanSpeeds(device);
@@ -51,9 +54,18 @@ export class CeilingFanAccessory implements BondAccessory  {
     if (Device.CFhasUpDownLight(device)) {
       this.upLightService = new LightbulbService(platform, accessory, `${accessory.displayName} Up Light`, 'UpLight');
       this.downLightService = new LightbulbService(platform, accessory, `${accessory.displayName} Down Light`, 'DownLight');
+
+      if (includeToggle) {
+        this.toggleUpLightService = new ButtonService(platform, accessory, 'Toggle Up Light State', 'UpLight');
+        this.toggleDownLightService = new ButtonService(platform, accessory, 'Toggle Down Light State', 'DownLight');
+      } else {
+        // Remove services if previously added
+        this.removeService('Toggle Up Light State');
+        this.removeService('Toggle Down Light State');
+      } 
     } else if (Device.CFhasLightbulb(device)) {
       this.lightService = new LightbulbService(platform, accessory, `${accessory.displayName} Light`);
-      if (platform.config.include_toggle_state) {
+      if (includeToggle) {
         this.toggleLightService = new ButtonService(platform, accessory, 'Toggle Light State');
       } else {
         this.removeService('Toggle Light State');
@@ -126,9 +138,11 @@ export class CeilingFanAccessory implements BondAccessory  {
     this.fanSpeedObservers(bond, device);
     this.fanDirectionObservers(bond, device);
     this.lightbulbObservers(bond, device, this.lightService);
-    this.observeLightToggle(bond, device);
+    this.observeLightToggle(bond, device, this.toggleLightService);
     this.lightbulbObservers(bond, device, this.upLightService);
+    this.observeLightToggle(bond, device, this.toggleUpLightService);
     this.lightbulbObservers(bond, device, this.downLightService);
+    this.observeLightToggle(bond, device, this.toggleDownLightService);
     this.lightbulbDimmerObserver(bond, device);
     this.lightbulbDimmerUpObserver(bond, device, this.dimmerDownService);
     this.lightbulbDimmerDownObserver(bond, device, this.dimmerUpService);
@@ -229,13 +243,24 @@ export class CeilingFanAccessory implements BondAccessory  {
     });
   }
 
-  private observeLightToggle(bond: Bond, device: Device) {
-    if (!this.toggleLightService) {
+  private observeLightToggle(bond: Bond, device: Device, service?: ButtonService) {
+    if (!service) {
       return;
     }
 
-    Observer.set(this.toggleLightService.on, (_, callback) => {
-      bond.api.toggleState(device, 'light', callback)
+    Observer.set(service.on, (_, callback) => {
+      let promise: Promise<void>;
+
+      const subtype = service.subType;
+      if(subtype === 'UpLight') {
+        promise = bond.api.toggleState(device, 'up_light', callback);
+      } else if(subtype === 'DownLight') {
+        promise = bond.api.toggleState(device, 'down_light', callback);
+      } else {
+        promise = bond.api.toggleState(device, 'light', callback);
+      }
+      
+      promise
         .then(() => {
           this.platform.debug(this.accessory, `${device.name} light state toggled`);
         })
