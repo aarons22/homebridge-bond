@@ -7,7 +7,6 @@ export class FanService {
   on: Characteristic
   rotationSpeed?: Characteristic
   rotationDirection?: Characteristic
-  name?: Characteristic
 
   constructor(
     platform: BondPlatform,
@@ -26,8 +25,6 @@ export class FanService {
         this.rotationDirection = service.getCharacteristic(platform.Characteristic.RotationDirection);
       }
     }
-    
-    this.name = service.getCharacteristic(platform.Characteristic.Name);
   }
 }
 
@@ -56,7 +53,6 @@ export class LightbulbService {
 
 export class SwitchService {
   on: Characteristic
-  name?: Characteristic
   subType: string
 
   constructor(
@@ -64,13 +60,17 @@ export class SwitchService {
     accessory: PlatformAccessory,
     name: string,
     subType: string) {
-    let service = accessory.getServiceById(platform.Service.Switch, subType);
+    // Check for service by subtype, then fallback to service by id only (mainly for legacy services)
+    let service = accessory.getServiceById(platform.Service.Switch, subType) || accessory.getService(platform.Service.Switch);
     if (service === undefined) {
       service = accessory.addService(platform.Service.Switch, name, subType);
     }
+    // Set the subtype if not defined
+    if (service.subtype === undefined) {
+      service.subtype = subType;
+    }
     this.on = service.getCharacteristic(platform.Characteristic.On);
     this.subType = subType;
-    this.name = service.getCharacteristic(platform.Characteristic.Name);
   }
 }
 
@@ -85,10 +85,16 @@ export class ButtonService {
     accessory: PlatformAccessory,
     name: string,
     subType: string) {
-    let service = accessory.getServiceById(platform.Service.Switch, subType);
+    // Check for service by subtype, then fallback to service by id only (mainly for legacy services)
+    let service = accessory.getServiceById(platform.Service.Switch, subType) || accessory.getService(platform.Service.Switch);
     if (service === undefined) {
       service = accessory.addService(platform.Service.Switch, name, subType);
     }
+    // Set the subtype if not defined
+    if (service.subtype === undefined) {
+      service.subtype = subType;
+    }
+    
     this.on = service.getCharacteristic(platform.Characteristic.On);
     this.on.setValue(false);
 
@@ -106,7 +112,6 @@ export class WindowCoveringService {
   currentPosition: Characteristic
   targetPosition: Characteristic
   positionState: Characteristic
-  name?: Characteristic
 
   constructor(
     platform: BondPlatform,
@@ -118,6 +123,5 @@ export class WindowCoveringService {
     this.currentPosition = service.getCharacteristic(platform.Characteristic.CurrentPosition);
     this.targetPosition = service.getCharacteristic(platform.Characteristic.TargetPosition);
     this.positionState = service.getCharacteristic(platform.Characteristic.PositionState);
-    this.name = service.getCharacteristic(platform.Characteristic.Name);
   }
 }

@@ -1,6 +1,7 @@
 import { Bond, BondState } from '../interface/Bond';
 import { BondAccessory } from '../platformAccessory';
 import { BondPlatform } from '../platform';
+import { BondPlatformConfig } from '../interface/config';
 import { PlatformAccessory } from 'homebridge';
 import { Device } from '../interface/Device';
 import { ButtonService, FanService, LightbulbService, SwitchService } from '../Services';
@@ -26,7 +27,6 @@ export class CeilingFanAccessory implements BondAccessory  {
   increaseBrightnessService?: SwitchService
   decreaseBrightnessService?: SwitchService
 
-  fanSpeedValues: boolean
   minStep: number
   maxValue: number
   values: number[]
@@ -35,18 +35,19 @@ export class CeilingFanAccessory implements BondAccessory  {
     platform: BondPlatform,
     accessory: PlatformAccessory,
     bond: Bond) {
+    const config = platform.config as BondPlatformConfig;
     this.platform = platform;
     this.accessory = accessory;
-    this.fanSpeedValues = platform.config.fan_speed_values;
 
-    const includeDimmer = platform.config.include_dimmer;
-    const includeToggle = platform.config.include_toggle_state;
+    const fanSpeedValues = config.fan_speed_values;
+    const includeDimmer = config.include_dimmer;
+    const includeToggle = config.include_toggle_state;
     const device: Device = accessory.context.device;
 
     this.values = Device.fanSpeeds(device);
     this.minStep = Math.floor(100 / this.values.length);
     this.maxValue = this.minStep * this.values.length;
-    if (this.fanSpeedValues) {
+    if (fanSpeedValues) {
       this.minStep = 1;
       this.maxValue = this.values.length;
     }
