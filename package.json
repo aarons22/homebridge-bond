@@ -27,7 +27,7 @@
   },
   "engines": {
     "node": ">=10.17.0",
-    "homebridge": ">0.4.53"
+    "homebridge": ">=1.1.0"
   },
   "devDependencies": {
     "@types/node": "^14.0.11",
