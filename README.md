@@ -4,14 +4,7 @@
 
 # homebridge-bond
 
-Bond plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the [Bond V2 API](http://docs-local.appbond.com). In order to use this plugin, you'll need to make sure your Bond has been updated to firmware v2.
-
-**NOTE: If you are still on v1 (using the Bond Bridge app)**:
-
-- You need to download the new [Bond Home](https://apps.apple.com/us/app/bond-home/id1447691811) app and update your firmware.
-- After that, follow the [migration guide](https://github.com/aarons22/homebridge-bond/wiki/Migrating-from-v1-to-v2).
-
-Some Bond's may not be able to update to v2 firmware. If so, you can use the [v1 homebrige plugin](https://www.npmjs.com/package/homebridge-bond-v1).
+Bond plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the [Bond V2 API](http://docs-local.appbond.com).
 
 ## Features
 
@@ -21,7 +14,7 @@ This plugin currently supports the following devices and features:
 - Supported Devices
   - Ceiling Fan
     - Light on/off
-    - Up/Down light (no dimming yet)
+    - Up/Down light
     - Fan Speeds 1-8 (dynamic based on bond configuration)
     - Light Dimming
   - Blinds
