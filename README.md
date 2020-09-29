@@ -63,6 +63,8 @@ Add the `Bond` platform in your homebridge `config.json` file:
 ],
 ```
 
+NOTE: If you have a "Smart by BOND" fan/device, you will need to add a Bond in the config for _each_ fan/device.
+
 ### Optional Platform Parameters
 
 | Option             | Default | Explanation                                                                                                                                                         |
