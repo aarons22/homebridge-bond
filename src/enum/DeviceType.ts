@@ -3,4 +3,5 @@ export enum DeviceType {
   Shades = 'MS',
   Generic = 'GX',
   Fireplace = 'FP',
+  Light = 'LT'
 }

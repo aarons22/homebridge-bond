@@ -30,7 +30,7 @@ export namespace Device {
   }
 
   export function isSupported(device: Device): boolean {
-    const supported = [DeviceType.CeilingFan, DeviceType.Generic, DeviceType.Fireplace, DeviceType.Shades];
+    const supported = [DeviceType.CeilingFan, DeviceType.Generic, DeviceType.Fireplace, DeviceType.Shades, DeviceType.Light];
     return supported.includes(device.type);
   }
 
@@ -111,5 +111,10 @@ export namespace Device {
   export function MShasToggle(device: Device): boolean {
     const fan = [Action.ToggleOpen];
     return device.actions.some(r => fan.includes(r));
+  }
+
+  export function LThasLightbulb(device: Device): boolean {
+    const lightbulb = [Action.ToggleLight];
+    return device.actions.some(r => lightbulb.includes(r));
   }
 }

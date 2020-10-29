@@ -5,6 +5,7 @@ import { Device } from './interface/Device';
 import { DeviceType } from './enum/DeviceType';
 import { FireplaceAccessory } from './accessories/FireplaceAccessory';
 import { GenericAccessory } from './accessories/GenericAccessory';
+import { LightAccessory } from './accessories/LightAccessory';
 import { PlatformAccessory } from 'homebridge';
 import { ShadesAccessory } from './accessories/ShadesAccessory';
 
@@ -31,6 +32,8 @@ export namespace BondAccessory {
         return new FireplaceAccessory(platform, accessory, bond);
       case DeviceType.Shades:
         return new ShadesAccessory(platform, accessory, bond);
+      case DeviceType.Light:
+        return new LightAccessory(platform, accessory, bond);
       default: {
         throw 'Invalid Device Type';
       }
