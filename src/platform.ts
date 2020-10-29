@@ -193,6 +193,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
       this.removeAccessory(accessory);
       return;
     }
+    this.logAccessory(accessory, `actions: ${device.actions}`);
     
     const bondAccessory = BondAccessory.create(this, accessory, bond);
     bond.accessories.push(bondAccessory);
@@ -261,6 +262,11 @@ export class BondPlatform implements DynamicPlatformPlugin {
   debug(accessory: PlatformAccessory, message: string) {
     const device: Device = accessory.context.device;
     this.log.debug(`[${device.name}] ${message}`);
+  }
+
+  logAccessory(accessory: PlatformAccessory, message: string) {
+    const device: Device = accessory.context.device;
+    this.log(`[${device.name}] ${message}`);
   }
 
   error(accessory: PlatformAccessory, message: string) {
