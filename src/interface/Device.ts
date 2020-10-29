@@ -119,7 +119,7 @@ export namespace Device {
   }
 
   export function LThasBrightness(device: Device): boolean {
-    const brightness = [Action.SetBrightness, Action.TurnLightOff];
-    return device.actions.some(r => brightness.includes(r));
+    const required = [Action.SetBrightness, Action.TurnLightOff];
+    return required.every(r => device.actions.includes(r));
   }
 }
