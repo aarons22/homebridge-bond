@@ -30,6 +30,7 @@ export class FanService {
 
 export class LightbulbService {
   on: Characteristic
+  brightness?: Characteristic
   subType?: string
 
   constructor(
@@ -38,6 +39,7 @@ export class LightbulbService {
     name: string,
     subType?: string) {
     let service = accessory.getService(platform.Service.Lightbulb);
+    const device: Device = accessory.context.device;
     if (subType) {
       service = accessory.getServiceById(platform.Service.Lightbulb, subType);
     }
@@ -47,6 +49,10 @@ export class LightbulbService {
     }
 
     this.on = service.getCharacteristic(platform.Characteristic.On);
+    if (Device.LThasBrightness(device)) {
+      this.brightness = service.getCharacteristic(platform.Characteristic.Brightness);
+    }
+    
     this.subType = subType;
   }
 }

@@ -30,6 +30,10 @@ export class LightAccessory implements BondAccessory {
 
   updateState(state: BondState) {
     this.lightService.on.updateValue(state.light === 1);
+
+    if (this.lightService.brightness && state.brightness) {
+      this.lightService.brightness.updateValue(state.brightness);
+    }
   }
 
   private observe(bond: Bond): void {
@@ -37,6 +41,7 @@ export class LightAccessory implements BondAccessory {
     
     this.observeLight(bond, device);
     this.observeLightToggle(bond, device);
+    this.observeBrightness(bond, device);
   }
 
   private observeLight(bond: Bond, device: Device): void {
@@ -73,6 +78,35 @@ export class LightAccessory implements BondAccessory {
         })
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error toggling light state: ${error}`);
+        });
+    });
+  }
+
+  private observeBrightness(bond: Bond, device: Device) {
+    if (!this.lightService.brightness) {
+      return;
+    }
+
+    Observer.set(this.lightService.brightness, (value, callback) => {
+      if (value === 0) {
+        // Value of 0 is the same as turning the light off.
+        this.platform.debug(this.accessory, 'Brightness is 0, turning light off.');
+        bond.api.turnLightOff(device, callback)
+          .then(() => {
+            this.platform.debug(this.accessory, `Turned light off: ${value}`);
+          })
+          .catch((error: string) => {
+            this.platform.error(this.accessory, `Error turning light off: ${error}`);
+          });
+        return;
+      } 
+
+      bond.api.setFanSpeed(device, value, callback)
+        .then(() => {
+          this.platform.debug(this.accessory, `Set light brightness: ${value}`);
+        })
+        .catch((error: string) => {
+          this.platform.error(this.accessory, `Error setting light brightness: ${error}`);
         });
     });
   }

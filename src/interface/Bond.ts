@@ -99,6 +99,7 @@ export interface BondState {
   down_light?: number;
   direction?: number;
   open?: number;
+  brightness?: number;
 }
 
 export interface BPUPPacket {

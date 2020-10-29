@@ -126,6 +126,23 @@ export class BondApi {
     return this.action(device, Action.StartDecreasingBrightness, callback);
   }
 
+  public setBrightness(device: Device, value: number, callback: CharacteristicSetCallback): Promise<void> {
+    const body = {
+      argument: value as number,
+    };
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetBrightness), body)
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
+  }
+
+  public turnLightOff(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.action(device, Action.TurnLightOff, callback);
+  }
+
   public toggleFan(device: Device, on: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     const action = on as boolean ? Action.TurnOn : Action.TurnOff;
     return this.action(device, action, callback);
