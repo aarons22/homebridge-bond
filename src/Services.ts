@@ -49,8 +49,13 @@ export class LightbulbService {
     }
 
     this.on = service.getCharacteristic(platform.Characteristic.On);
+
+    const brightness = service.getCharacteristic(platform.Characteristic.Brightness);
     if (Device.LThasBrightness(device)) {
-      this.brightness = service.getCharacteristic(platform.Characteristic.Brightness);
+      this.brightness = brightness;
+    } else {
+      // Fixing bug from 3.1.0 where brightness was added to lights unintentionally
+      service.removeCharacteristic(brightness);
     }
     
     this.subType = subType;
