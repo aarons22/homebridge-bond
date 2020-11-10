@@ -57,11 +57,21 @@ export namespace Device {
     return required.every(r => device.actions.includes(r));
   }
 
-  export function hasFan(device: Device): boolean {
+  export function canSetSpeed(device: Device): boolean {
     const fan = [Action.SetSpeed];
     const hasSetSpeed = device.actions.some(r => fan.includes(r));
     const hasMaxSpeed = device.properties.max_speed !== undefined;
     return hasSetSpeed && hasMaxSpeed;
+  }
+
+  export function canIncreaseDecreaseSpeed(device: Device): boolean {
+    const required = [Action.IncreaseSpeed, Action.DecreaseSpeed];
+    return required.every(r => device.actions.includes(r));
+  }
+
+  export function hasOffOn(device: Device): boolean {
+    const required = [Action.TurnOff, Action.TurnOn];
+    return required.every(r => device.actions.includes(r));
   }
 
   export function hasReverseSwitch(device: Device): boolean {

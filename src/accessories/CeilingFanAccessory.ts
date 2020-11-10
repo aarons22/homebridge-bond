@@ -12,6 +12,9 @@ export class CeilingFanAccessory implements BondAccessory  {
   accessory: PlatformAccessory
   fanService: FanService
 
+  increaseSpeedService?: ButtonService
+  decreaseSpeedService?: ButtonService
+
   lightService?: LightbulbService
   toggleLightService?: ButtonService
   dimmerService?: SwitchService
@@ -55,7 +58,12 @@ export class CeilingFanAccessory implements BondAccessory  {
     this.fanService = new FanService(platform, accessory);
 
     if (device.properties.max_speed === undefined) {
-      this.platform.log(`${accessory.displayName} Fan is not supported (missing max_speed property).`);
+      if (Device.canIncreaseDecreaseSpeed(device)) {
+        this.increaseSpeedService = new ButtonService(platform, accessory, `${accessory.displayName} Increase Speed`, 'IncreaseSpeed');
+        this.decreaseSpeedService = new ButtonService(platform, accessory, `${accessory.displayName} Decrease Speed`, 'DecreaseSpeed');
+      } else {
+        this.platform.error(accessory, 'Fan Speed is not supported (missing max_speed property or IncreaseSpeed/DescreaseSpeed actions).');
+      }
     }
 
     if (Device.CFhasUpDownLight(device)) {
@@ -153,6 +161,8 @@ export class CeilingFanAccessory implements BondAccessory  {
     this.observeFanPower(bond, device);
     this.observeFanSpeed(bond, device);
     this.observeFanDirection(bond, device);
+    this.observeFanIncreaseSpeed(bond, device);
+    this.observeFanDecreaseSpeed(bond, device);
 
     this.observeLight(bond, device, this.lightService);
     this.observeLightToggle(bond, device, this.toggleLightService);
@@ -176,7 +186,7 @@ export class CeilingFanAccessory implements BondAccessory  {
   }
 
   private observeFanPower(bond: Bond, device: Device) {
-    if (!(Device.hasFan(device))) {
+    if (!Device.hasOffOn(device)) {
       this.platform.error(this.accessory, 'CeilingFanAccessory does not have required actions for fan service.');
       return;
     }
@@ -234,6 +244,38 @@ export class CeilingFanAccessory implements BondAccessory  {
         })
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error setting fan direction: ${error}`);
+        });
+    });
+  }
+
+  private observeFanIncreaseSpeed(bond: Bond, device: Device) {
+    if (!this.increaseSpeedService) {
+      return;
+    }
+
+    Observer.set(this.increaseSpeedService.on, (value, callback) => {
+      bond.api.increaseSpeed(device, callback)
+        .then(() => {
+          this.platform.debug(this.accessory, `Increased fan speed: ${value}`);
+        })
+        .catch((error: string) => {
+          this.platform.error(this.accessory, `Error increasing fan speed: ${error}`);
+        });
+    });
+  }
+
+  private observeFanDecreaseSpeed(bond: Bond, device: Device) {
+    if (!this.decreaseSpeedService) {
+      return;
+    }
+
+    Observer.set(this.decreaseSpeedService.on, (value, callback) => {
+      bond.api.increaseSpeed(device, callback)
+        .then(() => {
+          this.platform.debug(this.accessory, `Decreased fan speed: ${value}`);
+        })
+        .catch((error: string) => {
+          this.platform.error(this.accessory, `Error decreasing fan speed: ${error}`);
         });
     });
   }

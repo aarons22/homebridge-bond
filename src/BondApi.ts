@@ -187,6 +187,32 @@ export class BondApi {
       });
   }
 
+  public increaseSpeed(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    const body = {
+      argument: 1,
+    };
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.IncreaseSpeed), body)
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
+  }
+
+  public decreaseSpeed(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    const body = {
+      argument: 1,
+    };
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.DecreaseSpeed), body)
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
+  }
+
   // State
 
   public updateState(device: Device, state: BondState, callback: CharacteristicSetCallback): Promise<void> {

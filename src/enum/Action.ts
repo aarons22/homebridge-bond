@@ -12,10 +12,12 @@ export enum Action {
   Stop = 'Stop',
   SetBrightness = 'SetBrightness',
   SetSpeed = 'SetSpeed',
+  IncreaseSpeed = 'IncreaseSpeed',
+  DecreaseSpeed = 'DecreaseSpeed',
   ToggleDirection = 'ToggleDirection',
   TogglePower = 'TogglePower',
   ToggleOpen = 'ToggleOpen',
   TurnLightOff = 'TurnLightOff',
   Open = 'Open',
-  Close = 'Close'
+  Close = 'Close',
 }

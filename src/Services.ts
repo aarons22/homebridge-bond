@@ -18,12 +18,12 @@ export class FanService {
     }
 
     this.on = service.getCharacteristic(platform.Characteristic.On);
-    if (Device.hasFan(device)) {
+    if (Device.canSetSpeed(device)) {
       this.rotationSpeed = service.getCharacteristic(platform.Characteristic.RotationSpeed);
+    }
 
-      if (Device.hasReverseSwitch(device)) {
-        this.rotationDirection = service.getCharacteristic(platform.Characteristic.RotationDirection);
-      }
+    if (Device.hasReverseSwitch(device)) {
+      this.rotationDirection = service.getCharacteristic(platform.Characteristic.RotationDirection);
     }
   }
 }
