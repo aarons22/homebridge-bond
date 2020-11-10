@@ -1,6 +1,7 @@
 import { API, DynamicPlatformPlugin, PlatformConfig, PlatformAccessory, Service, Characteristic, Logging } from 'homebridge';
 import { Bond, BPUPPacket } from './interface/Bond';
 import { BondAccessory } from './platformAccessory';
+import { BondPlatformConfig } from './interface/config';
 import { Device } from './interface/Device';
 import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
 import dgram from 'dgram';
@@ -23,10 +24,12 @@ export class BondPlatform implements DynamicPlatformPlugin {
       return;
     }
 
-    if (config.bonds === undefined) {
-      this.log.error('bonds array is required but missing from config.json');
+    if(!BondPlatformConfig.isValid(this)) {
+      this.log.error(`Config: ${JSON.stringify(config, null, 2)}`);
       return;
     }
+    
+    this.log.debug(`Config: ${JSON.stringify(config, null, 2)}`);
 
     const bonds = Bond.objects(this);
 
@@ -35,7 +38,6 @@ export class BondPlatform implements DynamicPlatformPlugin {
       // get the device ids before doing anything
       Bond.updateDeviceIds(bonds).then(() => {
         this.bonds = bonds;
-        this.log.debug(`Config: ${JSON.stringify(config)}`);
         this.log(`${this.accessories.length} cached accessories were loaded`);
         this.bonds.forEach(bond => {
           this.getDevices(bond);
