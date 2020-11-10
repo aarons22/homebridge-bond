@@ -41,6 +41,23 @@ You can view the backlog of features [here](https://github.com/aarons22/homebrid
 
 For the best experience setting up this plugin, please use [homebridge-config-ui-x](https://www.npmjs.com/package/homebridge-config-ui-x).
 
+### HOOBS Configuration
+
+In HOOBS, you need to provide the bonds (optionally, turn on opt-in features):
+```json
+[
+    {
+        "ip_address": "<IP_ADDRESS>",
+        "token": "<TOKEN>",
+        "hide_device_ids": ["123456"]
+    }
+]
+```
+
+<ins>Example Config in HOOBS:</ins>
+
+![Config](./images/hoobs_configuration.png)
+
 ### Basic Configuration
 
 Assuming a global installation of `homebridge`, install the plugin:
