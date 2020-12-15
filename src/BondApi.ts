@@ -126,7 +126,7 @@ export class BondApi {
     return this.action(device, Action.StartDecreasingBrightness, callback);
   }
 
-  public setBrightness(device: Device, value: number, callback: CharacteristicSetCallback): Promise<void> {
+  public setBrightness(device: Device, value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     const body = {
       argument: value as number,
     };

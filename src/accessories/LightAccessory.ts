@@ -101,7 +101,7 @@ export class LightAccessory implements BondAccessory {
         return;
       } 
 
-      bond.api.setFanSpeed(device, value, callback)
+      bond.api.setBrightness(device, value, callback)
         .then(() => {
           this.platform.debug(this.accessory, `Set light brightness: ${value}`);
         })
