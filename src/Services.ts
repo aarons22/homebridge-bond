@@ -96,8 +96,8 @@ export class ButtonService {
     accessory: PlatformAccessory,
     name: string,
     subType: string) {
-    // Check for service by subtype, then fallback to service by id only (mainly for legacy services)
-    let service = accessory.getServiceById(platform.Service.Switch, subType) || accessory.getService(platform.Service.Switch);
+    // Check for service by subtype
+    let service = accessory.getServiceById(platform.Service.Switch, subType);
     if (service === undefined) {
       service = accessory.addService(platform.Service.Switch, name, subType);
     }

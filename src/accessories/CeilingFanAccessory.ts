@@ -62,6 +62,8 @@ export class CeilingFanAccessory implements BondAccessory  {
         this.increaseSpeedService = new ButtonService(platform, accessory, `${accessory.displayName} Increase Speed`, 'IncreaseSpeed');
         this.decreaseSpeedService = new ButtonService(platform, accessory, `${accessory.displayName} Decrease Speed`, 'DecreaseSpeed');
       } else {
+        this.removeService(`${accessory.displayName} Increase Speed`);
+        this.removeService(`${accessory.displayName} Decrease Speed`);
         this.platform.error(accessory, 'Fan Speed is not supported (missing max_speed property or IncreaseSpeed/DescreaseSpeed actions).');
       }
     }
@@ -271,6 +273,7 @@ export class CeilingFanAccessory implements BondAccessory  {
 
     Observer.set(this.decreaseSpeedService.on, (value, callback) => {
       bond.api.increaseSpeed(device, callback)
+      bond.api.decreaseSpeed(device, callback)
         .then(() => {
           this.platform.debug(this.accessory, `Decreased fan speed: ${value}`);
         })
@@ -425,6 +428,7 @@ export class CeilingFanAccessory implements BondAccessory  {
     const service = this.accessory.getService(serviceName);
     if (service) {
       this.accessory.removeService(service);
+      this.platform.log(`Removing Service ${serviceName}`);
     }
   }
 }
