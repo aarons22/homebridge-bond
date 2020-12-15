@@ -20,4 +20,5 @@ export enum Action {
   TurnLightOff = 'TurnLightOff',
   Open = 'Open',
   Close = 'Close',
+  Preset = 'Preset'
 }

@@ -123,6 +123,11 @@ export namespace Device {
     return device.actions.some(r => fan.includes(r));
   }
 
+  export function MShasPreset(device: Device): boolean {
+    const required = [Action.Preset];
+    return required.every(r => device.actions.includes(r));
+  }
+
   export function LThasLightbulb(device: Device): boolean {
     const lightbulb = [Action.ToggleLight];
     return device.actions.some(r => lightbulb.includes(r));

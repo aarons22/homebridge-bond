@@ -272,7 +272,6 @@ export class CeilingFanAccessory implements BondAccessory  {
     }
 
     Observer.set(this.decreaseSpeedService.on, (value, callback) => {
-      bond.api.increaseSpeed(device, callback)
       bond.api.decreaseSpeed(device, callback)
         .then(() => {
           this.platform.debug(this.accessory, `Decreased fan speed: ${value}`);

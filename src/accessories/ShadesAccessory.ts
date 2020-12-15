@@ -10,6 +10,7 @@ export class ShadesAccessory implements BondAccessory  {
   platform: BondPlatform
   accessory: PlatformAccessory
   windowCoveringService: WindowCoveringService
+  presetService?: ButtonService
   toggleStateService?: ButtonService
 
   constructor(
@@ -18,15 +19,20 @@ export class ShadesAccessory implements BondAccessory  {
     bond: Bond) {
     this.platform = platform;
     this.accessory = accessory;
+    const device: Device = accessory.context.device;
+
     this.windowCoveringService = new WindowCoveringService(platform, accessory);
     if (platform.config.include_toggle_state) {
       this.toggleStateService = new ButtonService(platform, accessory, 'Toggle State', 'ToggleState');
     } else {  
       this.removeService('Toggle State');
     }
+
+    if (Device.MShasPreset(device)) {
+      this.presetService = new ButtonService(platform, accessory, 'Preset', 'Preset');
+    }
     
     this.observe(bond);
-    this.observeToggle(bond);
   }
 
   updateState(state: BondState) {
@@ -37,8 +43,15 @@ export class ShadesAccessory implements BondAccessory  {
     }
   }
 
-  private observe(bond: Bond) {
+  private observe(bond: Bond): void {
     const device: Device = this.accessory.context.device;
+    
+    this.observeWindowCovering(bond, device);
+    this.observePreset(bond, device);
+    this.observeToggleState(bond, device);
+  }
+
+  private observeWindowCovering(bond: Bond, device: Device) {
     if (!Device.MShasToggle(device)) {
       this.platform.error(this.accessory, 'ShadesAccessory does not have required ToggleOpen action.');
       return;
@@ -68,11 +81,26 @@ export class ShadesAccessory implements BondAccessory  {
     });
   }
 
-  private observeToggle(bond: Bond) {
+  private observePreset(bond: Bond, device: Device) {
+    if (!this.presetService) {
+      return;
+    }
+
+    Observer.set(this.presetService.on, (_, callback) => {
+      bond.api.preset(device, callback)
+        .then(() => {
+          this.platform.debug(this.accessory, 'Executed shade preset');
+        })
+        .catch((error: string) => {
+          this.platform.error(this.accessory, `Error executing preset: ${error}`);
+        });
+    });
+  }
+
+  private observeToggleState(bond: Bond, device: Device) {
     if (!this.toggleStateService) {
       return;
     }
-    const device: Device = this.accessory.context.device;
 
     Observer.set(this.toggleStateService.on, (_, callback) => {
       bond.api.toggleState(device, 'open', callback)

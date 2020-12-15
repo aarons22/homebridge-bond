@@ -36,7 +36,7 @@ export class FireplaceAccessory implements BondAccessory {
   private observe(bond: Bond): void {
     const device: Device = this.accessory.context.device;
     if (!Device.FPhasToggle(device)) {
-      this.platform.error(this.accessory, 'FireplaceAccessory does not have required ToggleOpen action.');
+      this.platform.error(this.accessory, 'FireplaceAccessory does not have required TogglePower action.');
       return;
     }
 

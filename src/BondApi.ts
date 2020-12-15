@@ -160,6 +160,10 @@ export class BondApi {
     return this.action(device, Action.ToggleOpen, callback);
   }
 
+  public preset(device: Device, callback: CharacteristicSetCallback): Promise<void> {
+    return this.action(device, Action.Preset, callback);
+  }
+
   public stop(device: Device, callback?: CharacteristicSetCallback): Promise<void> {
     return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Stop))
       .then(() => {
