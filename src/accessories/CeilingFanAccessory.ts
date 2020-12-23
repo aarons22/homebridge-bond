@@ -181,6 +181,8 @@ export class CeilingFanAccessory implements BondAccessory  {
     this.observeLightIncreaseBrightness(bond, device, this.decreaseBrightnessService);
     this.observeLightDecreaseBrightness(bond, device, this.increaseBrightnessService);
 
+    this.observeLightBrightness(bond, device);
+
     // Set initial state
     bond.api.getState(device.id).then(state => {
       this.updateState(state);
@@ -419,6 +421,26 @@ export class CeilingFanAccessory implements BondAccessory  {
         })
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error decreasing brightness: ${error}`);
+        });
+    });
+  }
+
+  private observeLightBrightness(bond: Bond, device: Device) {
+    if (!this.lightService || !this.lightService.brightness) {
+      return;
+    }
+
+    Observer.set(this.lightService.brightness, (value, callback) => {
+      if (value === 0) {
+        return;
+      } 
+
+      bond.api.setBrightness(device, value, callback)
+        .then(() => {
+          this.platform.debug(this.accessory, `Set light brightness: ${value}`);
+        })
+        .catch((error: string) => {
+          this.platform.error(this.accessory, `Error setting light brightness: ${error}`);
         });
     });
   }

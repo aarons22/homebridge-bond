@@ -89,15 +89,7 @@ export class LightAccessory implements BondAccessory {
 
     Observer.set(this.lightService.brightness, (value, callback) => {
       if (value === 0) {
-        // Value of 0 is the same as turning the light off.
-        this.platform.debug(this.accessory, 'Brightness is 0, turning light off.');
-        bond.api.turnLightOff(device, callback)
-          .then(() => {
-            this.platform.debug(this.accessory, `Turned light off: ${value}`);
-          })
-          .catch((error: string) => {
-            this.platform.error(this.accessory, `Error turning light off: ${error}`);
-          });
+        // Value of 0 is the same as turning the light off.s
         return;
       } 
 
