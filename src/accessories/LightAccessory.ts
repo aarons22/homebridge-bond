@@ -39,31 +39,13 @@ export class LightAccessory implements BondAccessory {
   private observe(bond: Bond): void {
     const device: Device = this.accessory.context.device;
     
-    this.observeLight(bond, device);
-    this.observeLightToggle(bond, device);
-    this.observeBrightness(bond, device);
-  }
-
-  private observeLight(bond: Bond, device: Device): void {
-    if (!Device.LThasLightbulb(device)) {
+    if (Device.LThasLightbulb(device)) {
+      this.lightService.observe(this.platform, bond, this.accessory);
+    } else {
       this.platform.error(this.accessory, 'LightAccessory does not have required ToggleLight action.');
-      return;
     }
 
-    // Set initial state
-    bond.api.getState(device.id).then(state => {
-      this.updateState(state);
-    });
-
-    Observer.set(this.lightService.on, (value, callback) => {
-      bond.api.toggleLight(device, callback)
-        .then(() => {
-          this.platform.debug(this.accessory, `Set light power: ${value}`);
-        })
-        .catch((error: string) => {
-          this.platform.error(this.accessory, `Error setting light power: ${error}`);
-        });
-    });
+    this.observeLightToggle(bond, device);
   }
 
   private observeLightToggle(bond: Bond, device: Device) {
@@ -78,27 +60,6 @@ export class LightAccessory implements BondAccessory {
         })
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error toggling light state: ${error}`);
-        });
-    });
-  }
-
-  private observeBrightness(bond: Bond, device: Device) {
-    if (!this.lightService.brightness) {
-      return;
-    }
-
-    Observer.set(this.lightService.brightness, (value, callback) => {
-      if (value === 0) {
-        // Value of 0 is the same as turning the light off.s
-        return;
-      } 
-
-      bond.api.setBrightness(device, value, callback)
-        .then(() => {
-          this.platform.debug(this.accessory, `Set light brightness: ${value}`);
-        })
-        .catch((error: string) => {
-          this.platform.error(this.accessory, `Error setting light brightness: ${error}`);
         });
     });
   }

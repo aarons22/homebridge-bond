@@ -166,22 +166,26 @@ export class CeilingFanAccessory implements BondAccessory  {
     this.observeFanIncreaseSpeed(bond, device);
     this.observeFanDecreaseSpeed(bond, device);
 
-    this.observeLight(bond, device, this.lightService);
+    if (this.lightService) {
+      this.lightService.observe(this.platform, bond, this.accessory);
+    }
     this.observeLightToggle(bond, device, this.toggleLightService);
     this.observeLightDimmer(bond, device, this.dimmerService);
 
-    this.observeLight(bond, device, this.upLightService);
+    if (this.upLightService) {
+      this.upLightService.observe(this.platform, bond, this.accessory);
+    }
     this.observeLightToggle(bond, device, this.toggleUpLightService);
     this.observeLightDimmer(bond, device, this.upLightDimmerService);
 
-    this.observeLight(bond, device, this.downLightService);
+    if (this.downLightService) {
+      this.downLightService.observe(this.platform, bond, this.accessory);
+    }
     this.observeLightToggle(bond, device, this.toggleDownLightService);
     this.observeLightDimmer(bond, device, this.downLightDimmerService);
 
     this.observeLightIncreaseBrightness(bond, device, this.decreaseBrightnessService);
     this.observeLightDecreaseBrightness(bond, device, this.increaseBrightnessService);
-
-    this.observeLightBrightness(bond, device);
 
     // Set initial state
     bond.api.getState(device.id).then(state => {
@@ -280,33 +284,6 @@ export class CeilingFanAccessory implements BondAccessory  {
         })
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error decreasing fan speed: ${error}`);
-        });
-    });
-  }
-
-  private observeLight(bond: Bond, device: Device, service?: LightbulbService) {
-    if (!service) {
-      return;
-    }
-    
-    Observer.set(service.on, (value, callback) => {
-      let promise: Promise<void>;
-
-      const subtype = service.subType;
-      if(subtype === 'UpLight') {
-        promise = bond.api.toggleUpLight(device, callback);
-      } else if(subtype === 'DownLight') {
-        promise = bond.api.toggleDownLight(device, callback);
-      } else {
-        promise = bond.api.toggleLight(device, callback);
-      }
-
-      promise
-        .then(() => {
-          this.platform.debug(this.accessory, `Set light power: ${value}`);
-        })
-        .catch((error: string) => {
-          this.platform.error(this.accessory, `Error setting light power: ${error}`);
         });
     });
   }
@@ -421,26 +398,6 @@ export class CeilingFanAccessory implements BondAccessory  {
         })
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error decreasing brightness: ${error}`);
-        });
-    });
-  }
-
-  private observeLightBrightness(bond: Bond, device: Device) {
-    if (!this.lightService || !this.lightService.brightness) {
-      return;
-    }
-
-    Observer.set(this.lightService.brightness, (value, callback) => {
-      if (value === 0) {
-        return;
-      } 
-
-      bond.api.setBrightness(device, value, callback)
-        .then(() => {
-          this.platform.debug(this.accessory, `Set light brightness: ${value}`);
-        })
-        .catch((error: string) => {
-          this.platform.error(this.accessory, `Error setting light brightness: ${error}`);
         });
     });
   }

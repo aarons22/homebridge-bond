@@ -1,7 +1,8 @@
-
+import { Bond } from './interface/Bond';
 import { BondPlatform } from './platform';
 import { Device } from './interface/Device';
 import { Characteristic, PlatformAccessory } from 'homebridge';
+import { Observer } from './Observer';
 
 export class FanService {
   on: Characteristic
@@ -59,6 +60,60 @@ export class LightbulbService {
     }
     
     this.subType = subType;
+  }
+
+  observe(platform: BondPlatform, bond: Bond, accessory: PlatformAccessory) {
+    const device: Device = accessory.context.device;
+    this.observeLight(platform, bond, device, accessory);
+    this.observeLightBrightness(platform, bond, device, accessory);
+  }
+
+  private observeLight(platform: BondPlatform, bond: Bond, device: Device, accessory: PlatformAccessory) {
+    if (!this.on) {
+      return;
+    }
+    
+    Observer.set(this.on, (value, callback) => {
+      let promise: Promise<void>;
+
+      const subtype = this.subType;
+      if(subtype === 'UpLight') {
+        promise = bond.api.toggleUpLight(device, callback);
+      } else if(subtype === 'DownLight') {
+        promise = bond.api.toggleDownLight(device, callback);
+      } else {
+        promise = bond.api.toggleLight(device, callback);
+      }
+
+      promise
+        .then(() => {
+          platform.debug(accessory, `Set light power: ${value}`);
+        })
+        .catch((error: string) => {
+          platform.error(accessory, `Error setting light power: ${error}`);
+        });
+    });
+  }
+  
+  private observeLightBrightness(platform: BondPlatform, bond: Bond, device: Device, accessory: PlatformAccessory) {
+    if (!this.brightness) {
+      return;
+    }
+
+    Observer.set(this.brightness, (value, callback) => {
+      if (value === 0) {
+        // Value of 0 is the same as turning the light off.
+        return;
+      } 
+
+      bond.api.setBrightness(device, value, callback)
+        .then(() => {
+          platform.debug(accessory, `Set light brightness: ${value}`);
+        })
+        .catch((error: string) => {
+          platform.error(accessory, `Error setting light brightness: ${error}`);
+        });
+    });
   }
 }
 
