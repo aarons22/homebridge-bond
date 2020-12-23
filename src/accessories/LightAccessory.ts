@@ -29,11 +29,7 @@ export class LightAccessory implements BondAccessory {
   }
 
   updateState(state: BondState) {
-    this.lightService.on.updateValue(state.light === 1);
-
-    if (this.lightService.brightness && state.brightness) {
-      this.lightService.brightness.updateValue(state.brightness);
-    }
+    this.lightService.updateState(state);
   }
 
   private observe(bond: Bond): void {

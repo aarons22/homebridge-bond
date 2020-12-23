@@ -144,17 +144,17 @@ export class CeilingFanAccessory implements BondAccessory  {
 
     // Light
     if (this.lightService) {
-      this.lightService.on.updateValue(state.light === 1);
+      this.lightService.updateState(state);
     }
 
     // Up Light
     if (this.upLightService) {
-      this.upLightService.on.updateValue(state.up_light === 1 && state.light === 1);
+      this.upLightService.updateState(state);
     }
 
     // Down Light
     if (this.downLightService) {
-      this.downLightService.on.updateValue(state.down_light === 1 && state.light === 1);
+      this.downLightService.updateState(state);
     }
   }
 

@@ -1,4 +1,4 @@
-import { Bond } from './interface/Bond';
+import { Bond, BondState } from './interface/Bond';
 import { BondPlatform } from './platform';
 import { Device } from './interface/Device';
 import { Characteristic, PlatformAccessory } from 'homebridge';
@@ -62,6 +62,20 @@ export class LightbulbService {
     this.subType = subType;
   }
 
+  updateState(state: BondState) {
+    if(this.subType === 'UpLight') {
+      this.on.updateValue(state.up_light === 1 && state.light === 1);
+    } else if(this.subType === 'DownLight') {
+      this.on.updateValue(state.down_light === 1 && state.light === 1);
+    } else {
+      this.on.updateValue(state.light === 1);
+    }
+    
+    if (this.brightness && state.brightness) {
+      this.brightness.updateValue(state.brightness);
+    }
+  }
+
   observe(platform: BondPlatform, bond: Bond, accessory: PlatformAccessory) {
     const device: Device = accessory.context.device;
     this.observeLight(platform, bond, device, accessory);
@@ -69,10 +83,6 @@ export class LightbulbService {
   }
 
   private observeLight(platform: BondPlatform, bond: Bond, device: Device, accessory: PlatformAccessory) {
-    if (!this.on) {
-      return;
-    }
-    
     Observer.set(this.on, (value, callback) => {
       let promise: Promise<void>;
 
