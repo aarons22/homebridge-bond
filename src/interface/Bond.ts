@@ -62,7 +62,7 @@ export class Bond {
  bondId: ${version.bondid}
  FW: ${version.fw_ver}
  API: v${version.api}
- Make: ${version.model}
+ Make: ${version.make}
  Model: ${version.model}\n************************`);
       })
       .catch(error => {
