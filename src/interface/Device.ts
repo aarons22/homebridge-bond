@@ -76,35 +76,6 @@ export namespace Device {
     return required.every(r => device.actions.includes(r));
   }
 
-  export function fanSpeeds(device: Device): number[] {
-    if (device.commands) {
-      const values = device.commands
-        .filter(cmd => {
-        // Find all of the commands associated with speed
-          return cmd.action === Action.SetSpeed;
-        })
-        .sort((a, b) => {
-        // sort them
-          return a.argument! < b.argument! ? 0 : 1;
-        })
-        .map(cmd => {
-        // map down to the raw argument values from that command
-          return cmd.argument || 0;
-        });
-
-      return values.sort();
-    } else if (device.properties.max_speed === undefined || device.properties.max_speed === null) {
-      return [];
-    } else {
-      // Assume speeds 1 - max_speed
-      const max_speed = device.properties.max_speed;
-      const vals = Array(max_speed)
-        .fill(1)
-        .map((x, y) => x + y);
-      return vals.sort();
-    }
-  }
-
   export function GXhasToggle(device: Device): boolean {
     const fan = [Action.TogglePower];
     return device.actions.some(r => fan.includes(r));
@@ -133,5 +104,34 @@ export namespace Device {
   export function LThasBrightness(device: Device): boolean {
     const required = [Action.SetBrightness, Action.TurnLightOff];
     return required.every(r => device.actions.includes(r));
+  }
+
+  export function fanSpeeds(device: Device): number[] {
+    if (device.commands) {
+      const values = device.commands
+        .filter(cmd => {
+        // Find all of the commands associated with speed
+          return cmd.action === Action.SetSpeed;
+        })
+        .sort((a, b) => {
+        // sort them
+          return a.argument! < b.argument! ? 0 : 1;
+        })
+        .map(cmd => {
+        // map down to the raw argument values from that command
+          return cmd.argument || 0;
+        });
+
+      return values.sort();
+    } else if (device.properties.max_speed === undefined || device.properties.max_speed === null) {
+      return [];
+    } else {
+      // Assume speeds 1 - max_speed
+      const max_speed = device.properties.max_speed;
+      const vals = Array(max_speed)
+        .fill(1)
+        .map((x, y) => x + y);
+      return vals.sort();
+    }
   }
 }

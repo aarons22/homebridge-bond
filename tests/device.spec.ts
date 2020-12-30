@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import 'mocha';
 import { Action } from '../src/enum/Action';
 import { DeviceType } from '../src/enum/DeviceType';
-import { Device } from '../src/interface/Device';
+import { Command, Device } from '../src/interface/Device';
 import { DeviceFactory } from './factories/device';
 
 describe('displayName', () => {
@@ -145,5 +145,35 @@ describe('hasReverseSwitch', () => {
   it('does not have reverse switch', () => {
     const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
     expect(Device.hasReverseSwitch(device)).equal(false);
+  });
+});
+
+describe('fanSpeeds', () => {
+  context('has commands', () => {
+    it('returns correct values', () => {
+      const device = DeviceFactory.createFanWithSpeeds([1,2,3]);
+      expect(Device.fanSpeeds(device)).to.deep.equal([1,2,3]);
+    });
+
+    it('returns correct values', () => {
+      const device = DeviceFactory.createFanWithSpeeds([1,2,4]);
+      expect(Device.fanSpeeds(device)).to.deep.equal([1,2,4]);
+    });
+  });
+
+  context('does not have commands', () => {
+    context('has max speed', () => {
+      it('returns correct values', () => {
+        const device = DeviceFactory.createDevice({maxSpeed: 6});
+        expect(Device.fanSpeeds(device)).to.deep.equal([1,2,3,4,5,6]);
+      });
+    });
+
+    context('does not have max speed', () => {
+      it('returns empty array', () => {
+        const device = DeviceFactory.createDevice();
+        expect(Device.fanSpeeds(device)).to.deep.equal([]);
+      });
+    });
   });
 });
