@@ -148,6 +148,78 @@ describe('hasReverseSwitch', () => {
   });
 });
 
+describe('GXhasToggle', () => {
+  it('has toggle', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.TogglePower] });
+    expect(Device.GXhasToggle(device)).equal(true);
+  });
+  
+  it('does not have toggle', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.GXhasToggle(device)).equal(false);
+  });
+});
+
+describe('FPhasToggle', () => {
+  it('has toggle', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.TogglePower] });
+    expect(Device.FPhasToggle(device)).equal(true);
+  });
+  
+  it('does not have toggle', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.FPhasToggle(device)).equal(false);
+  });
+});
+
+describe('MShasToggle', () => {
+  it('has toggle', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.ToggleOpen] });
+    expect(Device.MShasToggle(device)).equal(true);
+  });
+  
+  it('does not have toggle', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.MShasToggle(device)).equal(false);
+  });
+});
+
+describe('MShasPreset', () => {
+  it('has preset', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.Preset] });
+    expect(Device.MShasPreset(device)).equal(true);
+  });
+  
+  it('does not have preset', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.MShasPreset(device)).equal(false);
+  });
+});
+
+describe('LThasLightbulb', () => {
+  it('has lightbulb', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.ToggleLight] });
+    expect(Device.LThasLightbulb(device)).equal(true);
+  });
+  
+  it('does not have lightbulb', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.LThasLightbulb(device)).equal(false);
+  });
+});
+
+describe('LThasBrightness', () => {
+  it('has brightness', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.SetBrightness, Action.TurnLightOff] });
+    expect(Device.LThasBrightness(device)).equal(true);
+  });
+  
+  it('does not have brightness', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.LThasBrightness(device)).equal(false);
+  });
+});
+
 describe('fanSpeeds', () => {
   context('has commands', () => {
     it('returns correct values', () => {
