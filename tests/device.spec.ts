@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import 'mocha';
 import { Action } from '../src/enum/Action';
 import { DeviceType } from '../src/enum/DeviceType';
-import { Command, Device } from '../src/interface/Device';
+import { Device } from '../src/interface/Device';
 import { DeviceFactory } from './factories/device';
 
 describe('displayName', () => {
