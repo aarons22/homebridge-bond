@@ -22,16 +22,17 @@ export namespace BondAccessory {
     const service = accessory.getService(platform.Service.AccessoryInformation)!;
     service
       .setCharacteristic(platform.Characteristic.Manufacturer, bond.version.make ?? `Bond (${bond.version.target})`)
-      .setCharacteristic(platform.Characteristic.FirmwareRevision, bond.version.fw_ver)
-      // Use uniqueId to prevent issues with invalid serial number length (has to be more than 1)
+      // FirmwareRevision only supports semantic versioning, so the 'v' in the firmware version needs to be dropped
+      .setCharacteristic(platform.Characteristic.FirmwareRevision, bond.version.fw_ver.replace('v',''))
+      // SerialNumber must be at least 2 characters. Use uniqueId to prevent warnings.
       .setCharacteristic(platform.Characteristic.SerialNumber, device.uniqueId); 
 
-    if (bond.version.model !== null) {
+    if (bond.version.model) {
       service
         .setCharacteristic(platform.Characteristic.Model, bond.version.model);
     }
 
-    if (bond.version.mcu_ver !== null) {
+    if (bond.version.mcu_ver) {
       service
         .setCharacteristic(platform.Characteristic.HardwareRevision, bond.version.mcu_ver);
     }
