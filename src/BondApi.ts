@@ -9,7 +9,8 @@ import { Version } from './interface/Version';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import FlakeId from 'flake-idgen';
-import intformat from 'biguint-format';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const intformat = require('biguint-format');
 
 enum HTTPMethod {
   GET = 'get',

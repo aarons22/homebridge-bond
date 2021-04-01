@@ -8,7 +8,7 @@
     "lint": "eslint src/**.ts",
     "watch": "npm run build && npm link && nodemon",
     "dev": "tsc --watch & nodemon dist",
-    "build": "rimraf ./dist && tsc",
+    "build": "rimraf ./dist && tsc -p tsconfig-build.json",
     "prepublishOnly": "npm run lint && npm run build",
     "test": "mocha -r ts-node/register tests/**/*.spec.ts",
     "coverage": "nyc -r lcov -e .ts -x \"*.spec.ts\" npm run test"
