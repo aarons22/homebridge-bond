@@ -112,9 +112,11 @@ export class LightbulbService {
 
     Observer.set(this.brightness, (value, callback) => {
       if (value === 0) {
-        // Value of 0 is the same as turning the light off.
+        // Value of 0 is the same as turning the light off. 
+        // Ignore and complete callback.
+        callback(null);
         return;
-      } 
+      }
 
       bond.api.setBrightness(device, value, callback)
         .then(() => {
