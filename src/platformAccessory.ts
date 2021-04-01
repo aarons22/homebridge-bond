@@ -21,7 +21,8 @@ export namespace BondAccessory {
     const device: Device = accessory.context.device;
     accessory
       .getService(platform.Service.AccessoryInformation)!
-      .setCharacteristic(platform.Characteristic.SerialNumber, device.id);
+      // Use uniqueId to prevent issues with invalid serial number length
+      .setCharacteristic(platform.Characteristic.SerialNumber, device.uniqueId); 
 
     switch (device.type) {
       case DeviceType.CeilingFan:
