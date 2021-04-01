@@ -19,10 +19,22 @@ export interface BondAccessory {
 export namespace BondAccessory {
   export function create(platform: BondPlatform, accessory: PlatformAccessory, bond: Bond): BondAccessory {
     const device: Device = accessory.context.device;
-    accessory
-      .getService(platform.Service.AccessoryInformation)!
-      // Use uniqueId to prevent issues with invalid serial number length
+    const service = accessory.getService(platform.Service.AccessoryInformation)!;
+    service
+      .setCharacteristic(platform.Characteristic.Manufacturer, bond.version.make ?? `Bond (${bond.version.target})`)
+      .setCharacteristic(platform.Characteristic.FirmwareRevision, bond.version.fw_ver)
+      // Use uniqueId to prevent issues with invalid serial number length (has to be more than 1)
       .setCharacteristic(platform.Characteristic.SerialNumber, device.uniqueId); 
+
+    if (bond.version.model !== null) {
+      service
+        .setCharacteristic(platform.Characteristic.Model, bond.version.model);
+    }
+
+    if (bond.version.mcu_ver !== null) {
+      service
+        .setCharacteristic(platform.Characteristic.HardwareRevision, bond.version.mcu_ver);
+    }
 
     switch (device.type) {
       case DeviceType.CeilingFan:
