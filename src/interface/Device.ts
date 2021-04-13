@@ -86,6 +86,11 @@ export namespace Device {
     return device.actions.some(r => fan.includes(r));
   }
 
+  export function FPhasFlame(device: Device): boolean {
+    const required = [Action.SetFlame, Action.TurnLightOff];
+    return required.every(r => device.actions.includes(r));
+  }
+
   export function MShasToggle(device: Device): boolean {
     const fan = [Action.ToggleOpen];
     return device.actions.some(r => fan.includes(r));

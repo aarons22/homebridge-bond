@@ -100,6 +100,7 @@ export interface BondState {
   direction?: number;
   open?: number;
   brightness?: number;
+  flame?: number;
 }
 
 export interface BPUPPacket {

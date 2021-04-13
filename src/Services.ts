@@ -203,3 +203,78 @@ export class WindowCoveringService {
     this.positionState = service.getCharacteristic(platform.Characteristic.PositionState);
   }
 }
+
+export class FlameService {
+  on: Characteristic
+  flame?: Characteristic
+
+  constructor(
+    platform: BondPlatform,
+    accessory: PlatformAccessory,
+    name: string,
+    subType?: string) {
+    let service = accessory.getService(platform.Service.Lightbulb);
+    const device: Device = accessory.context.device;
+    if (subType) {
+      service = accessory.getServiceById(platform.Service.Lightbulb, subType);
+    }
+    
+    if (service === undefined) {
+      service = accessory.addService(platform.Service.Lightbulb, name, subType);
+    }
+    
+    this.on = service.getCharacteristic(platform.Characteristic.On);
+
+    const flame = service.getCharacteristic(platform.Characteristic.Brightness);
+    if (Device.FPhasFlame(device)) {
+      this.flame = flame;
+    }
+  }
+
+  updateState(state: BondState) {
+    if (this.flame && state.flame) {
+      this.flame.updateValue(state.flame);
+    }
+  }
+
+  observe(platform: BondPlatform, bond: Bond, accessory: PlatformAccessory) {
+    const device: Device = accessory.context.device;
+    this.observePower(platform, bond, device, accessory);
+    this.observeFlame(platform, bond, device, accessory);
+  }
+
+  private observePower(platform: BondPlatform, bond: Bond, device: Device, accessory: PlatformAccessory) {
+    Observer.set(this.on, (value, callback) => {
+      bond.api.togglePower(device, callback)
+        .then(() => {
+          platform.debug(accessory, `Set flame power: ${value}`);
+        })
+        .catch((error: string) => {
+          platform.error(accessory, `Error setting flame power: ${error}`);
+        });
+    });
+  }
+  
+  private observeFlame(platform: BondPlatform, bond: Bond, device: Device, accessory: PlatformAccessory) {
+    if (!this.flame) {
+      return;
+    }
+
+    Observer.set(this.flame, (value, callback) => {
+      if (value === 0) {
+        // Value of 0 is the same as turning the flame off. 
+        // Ignore and complete callback.
+        callback(null);
+        return;
+      }
+
+      bond.api.setFlame(device, value, callback)
+        .then(() => {
+          platform.debug(accessory, `Set flame brightness: ${value}`);
+        })
+        .catch((error: string) => {
+          platform.error(accessory, `Error setting flame brightness: ${error}`);
+        });
+    });
+  }
+}

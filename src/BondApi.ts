@@ -140,6 +140,19 @@ export class BondApi {
       });
   }
 
+  public setFlame(device: Device, value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
+    const body = {
+      argument: value as number,
+    };
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetFlame), body)
+      .then(() => {
+        callback(null);
+      })
+      .catch((error: string) => {
+        callback(Error(error));
+      });
+  }
+
   public turnLightOff(device: Device, callback: CharacteristicSetCallback): Promise<void> {
     return this.action(device, Action.TurnLightOff, callback);
   }
