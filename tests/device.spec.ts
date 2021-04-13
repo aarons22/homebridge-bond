@@ -172,6 +172,18 @@ describe('FPhasToggle', () => {
   });
 });
 
+describe('FPhasFlame', () => {
+  it('has flame and toggle power', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.SetFlame, Action.TogglePower] });
+    expect(Device.FPhasFlame(device)).equal(true);
+  });
+  
+  it('does not have flame and toggle power', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.TogglePower] });
+    expect(Device.FPhasFlame(device)).equal(false);
+  });
+});
+
 describe('MShasToggle', () => {
   it('has toggle', () => {
     const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.ToggleOpen] });

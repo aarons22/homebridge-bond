@@ -87,7 +87,7 @@ export namespace Device {
   }
 
   export function FPhasFlame(device: Device): boolean {
-    const required = [Action.SetFlame, Action.TurnLightOff];
+    const required = [Action.SetFlame, Action.TogglePower];
     return required.every(r => device.actions.includes(r));
   }
 
