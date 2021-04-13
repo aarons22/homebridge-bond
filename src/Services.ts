@@ -225,8 +225,8 @@ export class FlameService {
     
     this.on = service.getCharacteristic(platform.Characteristic.On);
 
-    const flame = service.getCharacteristic(platform.Characteristic.Brightness);
     if (Device.FPhasFlame(device)) {
+      const flame = service.getCharacteristic(platform.Characteristic.Brightness);
       this.flame = flame;
     }
   }
