@@ -4,12 +4,12 @@ import { BondPlatform } from '../platform';
 import { Device } from '../interface/Device';
 import { Observer } from '../Observer';
 import { PlatformAccessory } from 'homebridge';
-import { ButtonService, SwitchService } from '../Services';
+import { ButtonService, FlameService } from '../Services';
 
 export class FireplaceAccessory implements BondAccessory {
   platform: BondPlatform
   accessory: PlatformAccessory
-  switchService: SwitchService
+  flameService: FlameService
   toggleStateService?: ButtonService
 
   constructor(
@@ -18,7 +18,7 @@ export class FireplaceAccessory implements BondAccessory {
     bond: Bond) {
     this.platform = platform;
     this.accessory = accessory;
-    this.switchService = new SwitchService(platform, accessory, accessory.displayName, 'Power');
+    this.flameService = new FlameService(platform, accessory, accessory.displayName, 'Flame');
     if (platform.config.include_toggle_state) {
       this.toggleStateService = new ButtonService(platform, accessory, 'Toggle State', 'ToggleState');
     } else {
@@ -26,33 +26,20 @@ export class FireplaceAccessory implements BondAccessory {
     }
 
     this.observe(bond);
-    this.observeToggle(bond);
   }
 
   updateState(state: BondState) {
-    this.switchService.on.updateValue(state.power === 1);
+    this.flameService.updateState(state);
   }
 
   private observe(bond: Bond): void {
     const device: Device = this.accessory.context.device;
-    if (!Device.FPhasToggle(device)) {
-      this.platform.error(this.accessory, 'FireplaceAccessory does not have required TogglePower action.');
-      return;
-    }
+    this.flameService.observe(this.platform, bond, this.accessory);
+    this.observeToggle(bond);
 
     // Set initial state
     bond.api.getState(device.id).then(state => {
       this.updateState(state);
-    });
-
-    Observer.set(this.switchService.on, (value, callback) => {
-      bond.api.togglePower(device, callback)
-        .then(() => {
-          this.platform.debug(this.accessory, `Toggled power: ${value}`);
-        })
-        .catch((error: string) => {
-          this.platform.error(this.accessory, `Error toggling power: ${error}`);
-        });
     });
   }
 
