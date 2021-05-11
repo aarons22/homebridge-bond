@@ -98,8 +98,8 @@ export class Bond {
  bondId: ${version.bondid}
  FW: ${version.fw_ver}
  API: v${version.api}
- Make: ${version.make}
- Model: ${version.model}\n************************`);
+ Make: ${version.make ?? 'N/A'}
+ Model: ${version.model ?? 'N/A'}\n************************`);
       })
       .catch(error => {
         this.platform.log.error(`Error getting version: ${error}`);
