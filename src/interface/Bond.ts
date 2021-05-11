@@ -5,6 +5,7 @@ import { BondPlatform } from '../platform';
 import { BondPlatformConfig } from '../interface/config';
 import { Device } from '../interface/Device';
 import { Version } from './Version';
+import axios, { AxiosError } from 'axios';
 
 export class Bond {
   public api: BondApi;
@@ -29,6 +30,41 @@ export class Bond {
     });
 
     return bondObjs;
+  }
+
+  // Helper to update the device ids of a group of bonds
+  public static validate(bonds: Bond[]): Promise<(void | Bond)[]> {
+    const ps: Array<Promise<Bond | void>> = [];
+    bonds.forEach(bond => {
+      ps.push(bond.validate());
+    });
+
+    return Promise.all(ps);
+  }
+
+  private validate(): Promise<Bond | void> {
+    const bond = this;
+    return this.api
+      .ping()
+      .then(() => {
+        return bond;
+      })
+      .catch((error: any | AxiosError) =>  {
+        if (axios.isAxiosError(error) && error.response) {
+          const response = error.response;
+          switch (response.status) {
+            case 401:
+              this.platform.log.error('Unauthorized. Please check your `bond_token` to see if it is correct.');
+              return;
+            default:
+              this.platform.log.error(`A request error occurred: [status] ${response.status} [statusText] ${response.statusText}`);
+          }
+        } else if (error.code === 'ECONNABORTED') {
+          this.platform.log.error(`Unable to find Bond for IP Address: ${bond.config.ip_address}. Skipping this Bond.`);
+        } else {
+          this.platform.log.error(`A request error occurred: ${JSON.stringify(error)} [code] ${error.code ?? ''}`);
+        }
+      });
   }
 
   // Helper to update the device ids of a group of bonds

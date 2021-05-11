@@ -6,7 +6,7 @@ import { CharacteristicValue, CharacteristicSetCallback } from 'homebridge';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
 import { Version } from './interface/Version';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
 import FlakeId from 'flake-idgen';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -296,6 +296,20 @@ export class BondApi {
 
   // Helpers
 
+  ping(): Promise<any> {
+    const uuid = intformat(flakeIdGen.next(), 'hex', { prefix: '18', padstr: '0', size: 16 }); // avoid duplicate action
+    const bondUuid = uuid.substring(0, 13) + uuid.substring(15); // remove '00' used for datacenter/worker in flakeIdGen
+    return axios({
+      method: HTTPMethod.GET,
+      url: this.uri.deviceIds(),
+      headers: {
+        'BOND-Token': this.bondToken,
+        'Bond-UUID': bondUuid,
+      },
+      timeout: 1000,
+    });
+  }
+
   private request(method: HTTPMethod, uri: string, body: unknown = {}): Promise<any> {
     const bodyStr = JSON.stringify(body);
     const uuid = intformat(flakeIdGen.next(), 'hex', { prefix: '18', padstr: '0', size: 16 }); // avoid duplicate action
@@ -321,25 +335,19 @@ export class BondApi {
         this.platform.log.debug(`Response (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(response.data)}`);
         return response.data;
       })
-      .catch(error => {
-        this.platform.log.debug(`Error (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(error)}`);
-        if (error.name && error.name === 'StatusCodeError') {
-          switch (error.statusCode) {
+      .catch((error: Error | AxiosError) =>  {
+        if (axios.isAxiosError(error) && error.response) {
+          const response = error.response;
+          switch (response.status) {
             case 401:
               this.platform.log.error('Unauthorized. Please check your `bond_token` to see if it is correct.');
               return;
             default:
-              this.platform.log.error(`statusCode ${error.statusCode}`);
+              this.platform.log.error(`A request error occurred: [status] ${response.status} [statusText] ${response.statusText}`);
           }
         } else {
-          this.platform.log.error(`A request error occurred: ${error.error}`);
+          this.platform.log.error(`A request error occurred: ${JSON.stringify(error)}`);
         }
       });
   }
-}
-
-interface HTTPError {
-  name: string;
-  statusCode: number | null;
-  error: string | undefined;
 }

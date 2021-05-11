@@ -31,18 +31,37 @@ export class BondPlatform implements DynamicPlatformPlugin {
     
     this.log.debug(`Config: ${JSON.stringify(config, null, 2)}`);
 
-    const bonds = Bond.objects(this);
-
     api.on('didFinishLaunching', () => {
       // Delaying the initialization of bonds property because we need to
       // get the device ids before doing anything
-      Bond.updateDeviceIds(bonds).then(() => {
-        this.bonds = bonds;
-        this.log(`${this.accessories.length} cached accessories were loaded`);
-        this.bonds.forEach(bond => {
-          this.getDevices(bond);
-          this.setupBPUP(bond);
-        });
+      this.validateBonds();
+    });
+  }
+
+  // Validate that all of the bonds provided in the config are online and authenticaiton is working
+  validateBonds() {
+    const bonds = Bond.objects(this);
+    const validated: Bond[] = [];
+
+    Bond.validate(bonds).then(res => {
+      res.forEach(res => {
+        if (res !== undefined) {
+          validated.push(res);
+        }
+      });
+
+      this.setupBonds(validated);
+    });
+  }
+
+  setupBonds(bonds: Bond[]) {
+    // const bonds = Bond.objects(this);
+    Bond.updateDeviceIds(bonds).then(() => {
+      this.bonds = bonds;
+      this.log(`${this.accessories.length} cached accessories were loaded`);
+      this.bonds.forEach(bond => {
+        this.getDevices(bond);
+        this.setupBPUP(bond);
       });
     });
   }
