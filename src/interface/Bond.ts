@@ -54,7 +54,7 @@ export class Bond {
           const response = error.response;
           switch (response.status) {
             case 401:
-              this.platform.log.error('Unauthorized. Please check your `bond_token` to see if it is correct.');
+              this.platform.log.error('Unauthorized. Please check the `token` in your config to see if it is correct.');
               return;
             default:
               this.platform.log.error(`A request error occurred: [status] ${response.status} [statusText] ${response.statusText}`);

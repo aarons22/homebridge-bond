@@ -55,6 +55,10 @@ export class BondPlatform implements DynamicPlatformPlugin {
   }
 
   setupBonds(bonds: Bond[]) {
+    if (bonds.length === 0) {
+      this.log.warn('No valid Bonds available.');
+      return;
+    }
     // const bonds = Bond.objects(this);
     Bond.updateDeviceIds(bonds).then(() => {
       this.bonds = bonds;

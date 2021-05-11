@@ -32,7 +32,7 @@ export namespace BondPlatformConfig {
     const validFanSpeed = evaluate('boolean', 'fan_speed_values');
     const validToggleState = evaluate('boolean', 'include_toggle_state');
 
-    if (cast.bonds === undefined) {
+    if (cast.bonds === undefined || cast.bonds.length === 0) {
       platform.log.error('Missing bonds in config');
       return false;
     }
