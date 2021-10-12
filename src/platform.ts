@@ -166,7 +166,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
     this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     this.accessories.push(accessory);
-    this.log(`Adding Afccessory ${accessory.displayName}`);
+    this.log(`Adding Accessory ${accessory.displayName}`);
     this.log.debug(`Device unique id: ${device.uniqueId}`);
   }
 
