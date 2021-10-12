@@ -36,7 +36,7 @@ export class GenericAccessory implements BondAccessory  {
   private observe(bond: Bond) {
     const device: Device = this.accessory.context.device;
     if (!Device.GXhasToggle(device)) {
-      this.platform.error(this.accessory, 'GenericAccessory does not have required ToggleOpen action.');
+      this.platform.error(this.accessory, 'GenericAccessory does not have required TogglePower action.');
       return;
     }
 
