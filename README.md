@@ -103,7 +103,3 @@ To use the local version of the plugin in homebridge, I run `npm link` in the di
 ## Support
 
 If you have general questions about usage, please use the [Discussions](https://github.com/aarons22/homebridge-bond/discussions) tab! If you are unsure if a problem you are having is actually a bug/issue with the plugin, that is a great place to start 😄.
-
-## Contact
-
-You can find me on Twitter [@aaronsapp](https://twitter.com/aaronsapp)
