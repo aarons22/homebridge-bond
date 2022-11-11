@@ -48,8 +48,8 @@ export class BondApi {
     const req = this.request(HTTPMethod.GET, this.uri.deviceIds());
     return req.then(json =>
       Object.keys(json).filter(x => {
-        // Ignore anything that is an empty string or all underscores
-        return x.length > 0 && !/^_+$/.test(x);
+        // Ignore anything that is an empty string or starts with underscores
+        return x.length > 0 && !/^_+/.test(x);
       }),
     );
   }
@@ -278,8 +278,8 @@ export class BondApi {
     const req = this.request(HTTPMethod.GET, this.uri.commands(id));
     return req.then(json =>
       Object.keys(json).filter(x => {
-        // Ignore anything that is an empty string or all underscores
-        return x.length > 0 && !/^_+$/.test(x);
+        // Ignore anything that is an empty string or starts with underscores
+        return x.length > 0 && !/^_+/.test(x);
       }),
     );
   }
