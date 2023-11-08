@@ -322,7 +322,7 @@ export class BondApi {
         'BOND-Token': this.bondToken,
         'Bond-UUID': bondUuid,
       },
-      timeout: 1000,
+      timeout: 2000,
     });
   }
 
