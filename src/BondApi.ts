@@ -349,7 +349,7 @@ export class BondApi {
               this.platform.log.error(`A request error occurred: [status] ${response.status} [statusText] ${response.statusText}`);
           }
         } else {
-          this.platform.log.error(`A request error occurred: ${JSON.stringify(error)}`);
+          this.platform.log.error(`A request error to ${uri} occurred: ${JSON.stringify(error)}`);
         }
       });
   }
