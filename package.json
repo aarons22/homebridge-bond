@@ -1,7 +1,7 @@
 {
-  "name": "homebridge-bond",
-  "version": "3.2.11-beta.2",
-  "description": "A homebridge plugin to control your Bond devices over the v2 API.",
+  "name": "homebridge-bond-searls",
+  "version": "3.2.10",
+  "description": "An experimental fork by @searls of homebridge plugin to control your Bond devices over the v2 API.",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
@@ -22,10 +22,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/aarons22/homebridge-bond.git"
+    "url": "git://github.com/searls/homebridge-bond.git"
   },
   "bugs": {
-    "url": "http://github.com/aarons22/homebridge-bond/issues"
+    "url": "http://github.com/searls/homebridge-bond/issues"
   },
   "engines": {
     "node": ">=10.17.0",
@@ -55,6 +55,6 @@
     "biguint-format": "^1.0.2",
     "flake-idgen": "^1.4.0"
   },
-  "homepage": "https://github.com/aarons22/homebridge-bond#readme",
-  "author": "Aaron Sapp"
+  "homepage": "https://github.com/searls/homebridge-bond#readme",
+  "author": "Justin Searls <searls@gmail.com>"
 }
