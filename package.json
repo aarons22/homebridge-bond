@@ -1,6 +1,6 @@
 {
   "name": "homebridge-bond-searls",
-  "version": "3.2.10",
+  "version": "3.2.11",
   "description": "An experimental fork by @searls of homebridge plugin to control your Bond devices over the v2 API.",
   "license": "MIT",
   "main": "dist/index.js",
