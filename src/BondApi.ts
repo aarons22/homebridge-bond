@@ -34,7 +34,23 @@ export class BondApi {
     this.uri = new BondUri(ipAddress);
     this.requestTimeout = platform.config.requestTimeout;
 
-    axiosRetry(axios, { retries: 10, retryDelay: axiosRetry.exponentialDelay });
+    axiosRetry(axios, {
+      retries: 10,
+      retryDelay: axiosRetry.exponentialDelay,
+      shouldResetTimeout: true,
+      retryCondition: (error) => {
+        const shouldRetry = axiosRetry.isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED';
+
+        this.platform.log.debug(`Retrying: ${shouldRetry ? 'YES' : 'NO'}`, {
+          url: error.config?.url,
+          method: error.config?.method,
+          errorCode: error.code,
+          responseStatus: error.response?.status,
+        });
+
+        return shouldRetry;
+      },
+    });
   }
 
   // Bond / Device Info
@@ -309,7 +325,7 @@ export class BondApi {
         'BOND-Token': this.bondToken,
         'Bond-UUID': bondUuid,
       },
-      timeout: 1000,
+      timeout: 2000,
     });
   }
 
