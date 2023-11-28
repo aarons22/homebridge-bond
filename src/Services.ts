@@ -215,7 +215,7 @@ export class FlameService {
     subType?: string) {
     const device: Device = accessory.context.device;
 
-    let service: Service | undefined
+    let service: Service | undefined;
     // If the device has a flame, treat it as a Lightbulb
     if (Device.FPhasFlame(device)) {
       service = accessory.getService(platform.Service.Lightbulb);
