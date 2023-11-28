@@ -23,13 +23,16 @@ const flakeIdGen = new FlakeId();
 export class BondApi {
   private bondToken: string;
   private uri: BondUri;
+  private requestTimeout: number;
 
   constructor(
     private readonly platform: BondPlatform,
     bondToken: string,
-    ipAddress: string) {
+    ipAddress: string,
+    ) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
+    this.requestTimeout = platform.config.requestTimeout;
 
     axiosRetry(axios, {
       retries: 10,
@@ -345,7 +348,7 @@ export class BondApi {
         'Bond-UUID': bondUuid,
       },
       data: body,
-      timeout: 10000,
+      timeout: this.requestTimeout,
     })
       .then(response => {
         this.platform.log.debug(`Response (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(response.data)}`);

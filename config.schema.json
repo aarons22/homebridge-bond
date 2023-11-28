@@ -47,6 +47,20 @@
         "required": false,
         "description": "If dimming is a valid action on a device, it will be included as additional switch on the accessory. Since this is an odd solution to dimming, it's off by default."
       },
+      "request_timeout": {
+        "title": "Timeout for requests to the bond bridge.",
+        "type": "number",
+        "default": 1000,
+        "required": false,
+        "description": "Request timeout for network requests to the bond bridge."
+      },
+      "delay_in_seconds": {
+        "title": "Delay in seconds between commands issued by the bond.",
+        "type": "number",
+        "default": 0,
+        "required": false,
+        "description": "A delay in seconds between commands issued by the bridge. This solves issues with too many commands being issued on automations and signals not getting to devices"
+      },
       "include_toggle_state": {
         "title": "Include toggle switch for fixing device state.",
         "type": "boolean",
