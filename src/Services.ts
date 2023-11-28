@@ -1,7 +1,7 @@
 import { Bond, BondState } from './interface/Bond';
 import { BondPlatform } from './platform';
 import { Device } from './interface/Device';
-import { Characteristic, PlatformAccessory } from 'homebridge';
+import { Characteristic, PlatformAccessory, Service } from 'homebridge';
 import { Observer } from './Observer';
 
 export class FanService {
@@ -213,22 +213,34 @@ export class FlameService {
     accessory: PlatformAccessory,
     name: string,
     subType?: string) {
-    let service = accessory.getService(platform.Service.Lightbulb);
     const device: Device = accessory.context.device;
-    if (subType) {
-      service = accessory.getServiceById(platform.Service.Lightbulb, subType);
-    }
 
-    if (service === undefined) {
-      service = accessory.addService(platform.Service.Lightbulb, name, subType);
-    }
-
-    this.on = service.getCharacteristic(platform.Characteristic.On);
-
+    let service: Service | undefined
+    // If the device has a flame, treat it as a Lightbulb
     if (Device.FPhasFlame(device)) {
+      service = accessory.getService(platform.Service.Lightbulb);
+      if (subType) {
+        service = accessory.getServiceById(platform.Service.Lightbulb, subType);
+      }
+
+      if (service === undefined) {
+        service = accessory.addService(platform.Service.Lightbulb, name, subType);
+      }
+
       const flame = service.getCharacteristic(platform.Characteristic.Brightness);
       this.flame = flame;
+    } else {
+      // Otherwise, treat it as a Switch
+      service = accessory.getService(platform.Service.Switch);
+      if (subType) {
+        service = accessory.getServiceById(platform.Service.Switch, subType);
+      }
+
+      if (service === undefined) {
+        service = accessory.addService(platform.Service.Switch, name, subType);
+      }
     }
+    this.on = service.getCharacteristic(platform.Characteristic.On);
   }
 
   updateState(state: BondState) {
