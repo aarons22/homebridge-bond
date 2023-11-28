@@ -44,7 +44,7 @@ export class LightbulbService {
     if (subType) {
       service = accessory.getServiceById(platform.Service.Lightbulb, subType);
     }
-    
+
     if (service === undefined) {
       service = accessory.addService(platform.Service.Lightbulb, name, subType);
     }
@@ -58,19 +58,19 @@ export class LightbulbService {
       // Fixing bug from 3.1.0 where brightness was added to lights unintentionally
       service.removeCharacteristic(brightness);
     }
-    
+
     this.subType = subType;
   }
 
   updateState(state: BondState) {
-    if(this.subType === 'UpLight') {
+    if (this.subType === 'UpLight') {
       this.on.updateValue(state.up_light === 1 && state.light === 1);
-    } else if(this.subType === 'DownLight') {
+    } else if (this.subType === 'DownLight') {
       this.on.updateValue(state.down_light === 1 && state.light === 1);
     } else {
       this.on.updateValue(state.light === 1);
     }
-    
+
     if (this.brightness && state.brightness) {
       this.brightness.updateValue(state.brightness);
     }
@@ -87,9 +87,9 @@ export class LightbulbService {
       let promise: Promise<void>;
 
       const subtype = this.subType;
-      if(subtype === 'UpLight') {
+      if (subtype === 'UpLight') {
         promise = bond.api.toggleUpLight(device, callback);
-      } else if(subtype === 'DownLight') {
+      } else if (subtype === 'DownLight') {
         promise = bond.api.toggleDownLight(device, callback);
       } else {
         promise = bond.api.toggleLight(device, callback);
@@ -104,7 +104,7 @@ export class LightbulbService {
         });
     });
   }
-  
+
   private observeLightBrightness(platform: BondPlatform, bond: Bond, device: Device, accessory: PlatformAccessory) {
     if (!this.brightness) {
       return;
@@ -172,7 +172,7 @@ export class ButtonService {
     if (service.subtype === undefined) {
       service.subtype = subType;
     }
-    
+
     this.on = service.getCharacteristic(platform.Characteristic.On);
     this.on.setValue(false);
 
@@ -218,11 +218,11 @@ export class FlameService {
     if (subType) {
       service = accessory.getServiceById(platform.Service.Lightbulb, subType);
     }
-    
+
     if (service === undefined) {
       service = accessory.addService(platform.Service.Lightbulb, name, subType);
     }
-    
+
     this.on = service.getCharacteristic(platform.Characteristic.On);
 
     if (Device.FPhasFlame(device)) {
@@ -254,7 +254,7 @@ export class FlameService {
         });
     });
   }
-  
+
   private observeFlame(platform: BondPlatform, bond: Bond, device: Device, accessory: PlatformAccessory) {
     if (!this.flame) {
       return;
