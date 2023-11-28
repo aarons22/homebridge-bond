@@ -42,11 +42,11 @@ export class BondApi {
           url: error.config?.url,
           method: error.config?.method,
           errorCode: error.code,
-          responseStatus: error.response?.status
+          responseStatus: error.response?.status,
         });
 
         return shouldRetry;
-      }
+      },
     });
   }
 
