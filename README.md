@@ -2,7 +2,10 @@
 [![npm](https://badgen.net/npm/v/homebridge-bond)](https://www.npmjs.com/package/homebridge-bond)
 [![npm](https://badgen.net/npm/dt/homebridge-bond)](https://www.npmjs.com/package/homebridge-bond)
 
-# homebridge-bond
+# homebridge-bond-searls
+
+**This is a fork of [homebridge-bond](https://github.com/aarons22/homebridge-bond) that I made with some minor rate limit changes that were necessary to get it to work on my
+network. You probably don't want to use it.**
 
 Bond plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the [Bond V2 API](http://docs-local.appbond.com).
 
