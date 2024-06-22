@@ -8,6 +8,7 @@ import { Properties } from './interface/Properties';
 import { Version } from './interface/Version';
 import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
+import axiosRateLimit, { RateLimitedAxiosInstance } from 'axios-rate-limit';
 import FlakeId from 'flake-idgen';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const intformat = require('biguint-format');
@@ -23,6 +24,7 @@ const flakeIdGen = new FlakeId();
 export class BondApi {
   private bondToken: string;
   private uri: BondUri;
+  private http: RateLimitedAxiosInstance;
 
   constructor(
     private readonly platform: BondPlatform,
@@ -30,24 +32,9 @@ export class BondApi {
     ipAddress: string) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
+    this.http = axiosRateLimit(axios.create(), { maxRequests: 2, perMilliseconds: 1000 });
 
-    axiosRetry(axios, {
-      retries: 10,
-      retryDelay: axiosRetry.exponentialDelay,
-      shouldResetTimeout: true,
-      retryCondition: (error) => {
-        const shouldRetry = axiosRetry.isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED';
-
-        this.platform.log.debug(`Retrying: ${shouldRetry ? 'YES' : 'NO'}`, {
-          url: error.config?.url,
-          method: error.config?.method,
-          errorCode: error.code,
-          responseStatus: error.response?.status,
-        });
-
-        return shouldRetry;
-      },
-    });
+    axiosRetry(this.http, { retries: 10, retryDelay: axiosRetry.exponentialDelay });
   }
 
   // Bond / Device Info
@@ -315,7 +302,7 @@ export class BondApi {
   ping(): Promise<any> {
     const uuid = intformat(flakeIdGen.next(), 'hex', { prefix: '18', padstr: '0', size: 16 }); // avoid duplicate action
     const bondUuid = uuid.substring(0, 13) + uuid.substring(15); // remove '00' used for datacenter/worker in flakeIdGen
-    return axios({
+    return this.http({
       method: HTTPMethod.GET,
       url: this.uri.deviceIds(),
       headers: {
@@ -337,7 +324,7 @@ export class BondApi {
       this.platform.log.debug(`Request (${bondUuid}) [${method} ${uri}]`);
     }
 
-    return axios({
+    return this.http({
       method,
       url: uri,
       headers: {
@@ -362,7 +349,7 @@ export class BondApi {
               this.platform.log.error(`A request error occurred: [status] ${response.status} [statusText] ${response.statusText}`);
           }
         } else {
-          this.platform.log.error(`A request error occurred: ${JSON.stringify(error)}`);
+          this.platform.log.error(`A request error to ${uri} occurred: ${JSON.stringify(error)}`);
         }
       });
   }
