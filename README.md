@@ -36,6 +36,7 @@ You can view the backlog of features [here](https://github.com/aarons22/homebrid
 | `ip_address`   | true   | To get your Bond IP Address, follow the instructions [here](https://github.com/aarons22/homebridge-bond/wiki/Get-Bond-IP-Address). |
 | `token` | true   | This can be found in the Bond app in your Bond Settings. Scroll down until you see `Local Token`. You can tap on the row to copy to your clipboard. |
 | `hide_device_ids` | false  | Array of device ids to ignore (i.e. `["1111", "2222"]`) |
+| `ms_between_actions` | false | Space out actions sent to the Bond by at least this many milliseconds. |
 
 ### Easiest Configuration
 

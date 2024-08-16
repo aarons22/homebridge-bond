@@ -36,6 +36,13 @@
               "items": {
                 "type": "string"
               }
+            },
+            "ms_between_actions": {
+              "title": "Wait between commands",
+              "type": "number",
+              "placeholder": "1000",
+              "required": false,
+              "description": "This will space out commands sent by the Bond by at least this many milliseconds."
             }
           }
         }

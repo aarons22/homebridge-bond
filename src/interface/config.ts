@@ -5,6 +5,7 @@ export interface BondConfig {
   ip_address: string;
   token: string;
   hide_device_ids?: string[];
+  ms_between_actions?: number;
 }
 
 export interface BondPlatformConfig extends PlatformConfig {
@@ -72,7 +73,10 @@ export namespace BondConfig {
         return true;
       }).every(v => v === true);
     }
-    
-    return validIP && validToken && validHideDeviceIds;
+
+    const validSpaceOutActions = config.ms_between_actions === undefined ||
+      (typeof(config.ms_between_actions) === 'number' && Number.isInteger(config.ms_between_actions) && config.ms_between_actions > 0);
+
+    return validIP && validToken && validHideDeviceIds && validSpaceOutActions;
   }
 }
