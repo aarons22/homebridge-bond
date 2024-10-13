@@ -23,13 +23,18 @@ const flakeIdGen = new FlakeId();
 export class BondApi {
   private bondToken: string;
   private uri: BondUri;
+  private ms_between_actions?: number;
+  private queueNextRequest = false;
+  private requestQueue: {device: Device, action: Action, body: unknown}[] = [];
 
   constructor(
     private readonly platform: BondPlatform,
     bondToken: string,
-    ipAddress: string) {
+    ipAddress: string,
+    ms_between_actions?: number) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
+    this.ms_between_actions = ms_between_actions;
 
     axiosRetry(axios, {
       retries: 10,
@@ -101,14 +106,37 @@ export class BondApi {
 
   // Actions
 
-  private action(device: Device, action: Action, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, action))
+  private action(device: Device, action: Action, callback: CharacteristicSetCallback, body: unknown = {}): Promise<void> {
+    return (this.ms_between_actions ? 
+      this.queueRequest(device, action, body) :
+      this.request(HTTPMethod.PUT, this.uri.action(device.id, action), body))
       .then(() => {
         callback(null);
       })
       .catch((error: string) => {
         callback(Error(error));
       });
+  }
+
+  private queueRequest(device: Device, action: Action, body: unknown): Promise<void> {
+    if (this.queueNextRequest) {
+      this.requestQueue.push({device, action, body});
+    } else {
+      this.queueNextRequest = true;
+      this.request(HTTPMethod.PUT, this.uri.action(device.id, action), body);
+      setTimeout(() => this.unQueueRequest(), this.ms_between_actions);
+    }
+    return Promise.resolve();
+  }
+
+  private unQueueRequest() {
+    const next = this.requestQueue.shift();
+    if (next) {
+      this.request(HTTPMethod.PUT, this.uri.action(next.device.id, next.action), next.body);
+      setTimeout(() => this.unQueueRequest(), this.ms_between_actions);
+    } else {
+      this.queueNextRequest = false;
+    }
   }
 
   public toggleLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
@@ -144,29 +172,11 @@ export class BondApi {
   }
 
   public setBrightness(device: Device, value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
-    const body = {
-      argument: value as number,
-    };
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetBrightness), body)
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.SetBrightness, callback, { argument: value as number });
   }
 
   public setFlame(device: Device, value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
-    const body = {
-      argument: value as number,
-    };
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetFlame), body)
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.SetFlame, callback, { argument: value as number });
   }
 
   public turnLightOff(device: Device, callback: CharacteristicSetCallback): Promise<void> {
@@ -209,42 +219,15 @@ export class BondApi {
   }
 
   public setFanSpeed(device: Device, speed: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
-    const body = {
-      argument: speed as number,
-    };
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetSpeed), body)
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.SetSpeed, callback, { argument: speed as number });
   }
 
   public increaseSpeed(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    const body = {
-      argument: 1,
-    };
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.IncreaseSpeed), body)
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.IncreaseSpeed, callback, { argument: 1 });
   }
 
   public decreaseSpeed(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    const body = {
-      argument: 1,
-    };
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.DecreaseSpeed), body)
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+    return this.action(device, Action.DecreaseSpeed, callback, { argument: 1 });
   }
 
   // State

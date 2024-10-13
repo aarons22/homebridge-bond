@@ -18,7 +18,7 @@ export class Bond {
     private readonly platform: BondPlatform,
     config: BondConfig) {
     this.config = config;
-    this.api = new BondApi(platform, config.token, config.ip_address);
+    this.api = new BondApi(platform, config.token, config.ip_address, config.ms_between_actions);
   }
 
   // Helper to sanitze the config object into bond objects
