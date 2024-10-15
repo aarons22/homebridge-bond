@@ -49,7 +49,7 @@
     "typescript": "^4.2.2"
   },
   "dependencies": {
-    "axios": "^0.21.4",
+    "axios": "^0.28.0",
     "axios-retry": "^3.1.8",
     "biguint-format": "^1.0.2",
     "flake-idgen": "^1.4.0"
