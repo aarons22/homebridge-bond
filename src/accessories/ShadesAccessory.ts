@@ -5,6 +5,7 @@ import { Device } from '../interface/Device';
 import { Observer } from '../Observer';
 import { PlatformAccessory } from 'homebridge';
 import { ButtonService, WindowCoveringService } from '../Services';
+import { Action } from '../enum/Action';
 
 export class ShadesAccessory implements BondAccessory  {
   platform: BondPlatform
@@ -24,28 +25,35 @@ export class ShadesAccessory implements BondAccessory  {
     this.windowCoveringService = new WindowCoveringService(platform, accessory);
     if (platform.config.include_toggle_state) {
       this.toggleStateService = new ButtonService(platform, accessory, 'Toggle State', 'ToggleState');
-    } else {  
+    } else {
       this.removeService('Toggle State');
     }
 
     if (Device.MShasPreset(device)) {
       this.presetService = new ButtonService(platform, accessory, 'Preset', 'Preset');
     }
-    
+
     this.observe(bond);
   }
 
   updateState(state: BondState) {
     if (this.windowCoveringService) {
-      // Always return either 0 or 100
-      this.windowCoveringService.currentPosition.updateValue(state.open === 1 ? 100 : 0);
-      this.windowCoveringService.targetPosition.updateValue(state.open === 1 ? 100 : 0);
+      // If position is available, use it, otherwise fall back to open state
+      if (state.position !== undefined) {
+        // Convert Bond's extended percentage (0=open, 100=closed) to HomeKit's open percentage (0=closed, 100=open)
+        const homekitPosition = 100 - state.position;
+        this.windowCoveringService.currentPosition.updateValue(homekitPosition);
+        this.windowCoveringService.targetPosition.updateValue(homekitPosition);
+      } else {
+        this.windowCoveringService.currentPosition.updateValue(state.open === 1 ? 100 : 0);
+        this.windowCoveringService.targetPosition.updateValue(state.open === 1 ? 100 : 0);
+      }
     }
   }
 
   private observe(bond: Bond): void {
     const device: Device = this.accessory.context.device;
-    
+
     this.observeWindowCovering(bond, device);
     this.observePreset(bond, device);
     this.observeToggleState(bond, device);
@@ -61,23 +69,35 @@ export class ShadesAccessory implements BondAccessory  {
     bond.api.getState(device.id).then(state => {
       this.updateState(state);
     });
-    
+
     const props = {
       minValue: 0,
       maxValue: 100,
-      minStep: 100,
+      minStep: Device.MShasPosition(device) ? 1 : 100,
     };
     this.windowCoveringService.targetPosition.setProps(props);
 
     Observer.set(this.windowCoveringService.targetPosition, (value, callback) => {
-      // Since we can't really track state, just toggle open / closed
-      bond.api.toggleOpen(device, callback)
-        .then(() => {
-          this.platform.debug(this.accessory, `Toggled open: ${value}`);
-        })
-        .catch((error: string) => {
-          this.platform.error(this.accessory, `Error toggling open: ${error}`);
-        });
+      if (Device.MShasPosition(device)) {
+        // Convert HomeKit's open percentage (0=closed, 100=open) to Bond's extended percentage (0=open, 100=closed)
+        const bondPosition = 100 - (value as number);
+        bond.api.setPosition(device, bondPosition, callback)
+          .then(() => {
+            this.platform.debug(this.accessory, `Set position: ${bondPosition} (HomeKit: ${value})`);
+          })
+          .catch((error: string) => {
+            this.platform.error(this.accessory, `Error setting position: ${error}`);
+          });
+      } else {
+        // Otherwise, toggle open/closed based on target position
+        bond.api.toggleOpen(device, callback)
+          .then(() => {
+            this.platform.debug(this.accessory, `Toggled open: ${value}`);
+          })
+          .catch((error: string) => {
+            this.platform.error(this.accessory, `Error toggling open: ${error}`);
+          });
+      }
     });
   }
 

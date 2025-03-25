@@ -137,6 +137,7 @@ export interface BondState {
   open?: number;
   brightness?: number;
   flame?: number;
+  position?: number;
 }
 
 export interface BPUPPacket {

@@ -218,6 +218,20 @@ export class BondApi {
       });
   }
 
+  public setPosition(device: Device, position: number, callback?: CharacteristicSetCallback): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetPosition), { argument: position })
+      .then(() => {
+        if (callback) {
+          callback(null);
+        }
+      })
+      .catch((error: string) => {
+        if (callback) {
+          callback(Error(error));
+        }
+      });
+  }
+
   public setFanSpeed(device: Device, speed: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     return this.action(device, Action.SetSpeed, callback, { argument: speed as number });
   }
