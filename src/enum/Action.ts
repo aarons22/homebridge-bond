@@ -21,5 +21,6 @@ export enum Action {
   Open = 'Open',
   Close = 'Close',
   Preset = 'Preset',
-  SetFlame = 'SetFlame'
+  SetFlame = 'SetFlame',
+  SetPosition = 'SetPosition'
 }

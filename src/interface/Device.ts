@@ -139,4 +139,9 @@ export namespace Device {
       return vals.sort();
     }
   }
+
+  export function MShasPosition(device: Device): boolean {
+    const required = [Action.SetPosition];
+    return required.every(r => device.actions.includes(r));
+  }
 }
