@@ -13,6 +13,7 @@ export interface BondPlatformConfig extends PlatformConfig {
   include_dimmer?: boolean;
   fan_speed_values?: boolean;
   include_toggle_state?: boolean;
+  invert_shade_position?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -32,6 +33,7 @@ export namespace BondPlatformConfig {
     const validDimmer = evaluate('boolean', 'include_dimmer');
     const validFanSpeed = evaluate('boolean', 'fan_speed_values');
     const validToggleState = evaluate('boolean', 'include_toggle_state');
+    const validInvertShadePosition = evaluate('boolean', 'invert_shade_position');
 
     if (cast.bonds === undefined || cast.bonds.length === 0) {
       platform.log.error('Missing bonds in config');
@@ -41,7 +43,7 @@ export namespace BondPlatformConfig {
     const bondsValid = cast.bonds.map(bond => {
       return BondConfig.isValid(platform, bond);
     }).every(v => v === true);
-    return validDimmer && validFanSpeed && validToggleState && bondsValid;
+    return validDimmer && validFanSpeed && validToggleState && validInvertShadePosition && bondsValid;
   }
 }
 

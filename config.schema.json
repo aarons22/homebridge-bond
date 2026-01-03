@@ -67,6 +67,13 @@
         "default": false,
         "required": false,
         "description": "Use fan speed values instead of percentages (i.e. Hey Siri set the Office Fan to 2)."
+      },
+      "invert_shade_position": {
+        "title": "Invert shade position",
+        "type": "boolean",
+        "default": false,
+        "required": false,
+        "description": "Enable this if your shades/awnings show backwards in HomeKit (open when closed, closed when open). This is needed for some awnings and shades where 0% means closed instead of open."
       }
     }
   }

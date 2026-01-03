@@ -40,8 +40,11 @@ export class ShadesAccessory implements BondAccessory  {
     if (this.windowCoveringService) {
       // If position is available, use it, otherwise fall back to open state
       if (state.position !== undefined) {
-        // Convert Bond's extended percentage (0=open, 100=closed) to HomeKit's open percentage (0=closed, 100=open)
-        const homekitPosition = 100 - state.position;
+        // Determine if we should invert position values
+        // By default, Bond uses 0=open, 100=closed, so we invert to HomeKit's 0=closed, 100=open
+        // But some devices (like awnings) use 0=closed, 100=open, so inversion should be disabled
+        const shouldInvert = !this.platform.config.invert_shade_position;
+        const homekitPosition = shouldInvert ? 100 - state.position : state.position;
         this.windowCoveringService.currentPosition.updateValue(homekitPosition);
         this.windowCoveringService.targetPosition.updateValue(homekitPosition);
       } else {
@@ -79,8 +82,11 @@ export class ShadesAccessory implements BondAccessory  {
 
     Observer.set(this.windowCoveringService.targetPosition, (value, callback) => {
       if (Device.MShasPosition(device)) {
-        // Convert HomeKit's open percentage (0=closed, 100=open) to Bond's extended percentage (0=open, 100=closed)
-        const bondPosition = 100 - (value as number);
+        // Determine if we should invert position values
+        // By default, we convert HomeKit (0=closed, 100=open) to Bond (0=open, 100=closed) by inverting
+        // But some devices (like awnings) use 0=closed, 100=open, so inversion should be disabled
+        const shouldInvert = !this.platform.config.invert_shade_position;
+        const bondPosition = shouldInvert ? 100 - (value as number) : (value as number);
         bond.api.setPosition(device, bondPosition, callback)
           .then(() => {
             this.platform.debug(this.accessory, `Set position: ${bondPosition} (HomeKit: ${value})`);
