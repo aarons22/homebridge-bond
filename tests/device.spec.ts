@@ -261,3 +261,15 @@ describe('fanSpeeds', () => {
     });
   });
 });
+
+describe('MShasPosition', () => {
+  it('has position', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.SetPosition] });
+    expect(Device.MShasPosition(device)).equal(true);
+  });
+  
+  it('does not have position', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.MShasPosition(device)).equal(false);
+  });
+});
