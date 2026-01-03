@@ -1,0 +1,101 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+      custom-version:
+        description: 'Custom version (optional - overrides version-type)'
+        required: false
+        type: string
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '14.x'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Get current version
+        id: current-version
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      
+      - name: Bump version
+        id: bump-version
+        run: |
+          if [ -n "${{ github.event.inputs.custom-version }}" ]; then
+            echo "Using custom version: ${{ github.event.inputs.custom-version }}"
+            npm version ${{ github.event.inputs.custom-version }} --no-git-tag-version
+            NEW_VERSION="${{ github.event.inputs.custom-version }}"
+          else
+            echo "Bumping version: ${{ github.event.inputs.version-type }}"
+            npm version ${{ github.event.inputs.version-type }} --no-git-tag-version
+            NEW_VERSION=$(node -p "require('./package.json').version")
+          fi
+          echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "branch-name=version-bump-v$NEW_VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Create Pull Request
+        id: create-pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: bump version to ${{ steps.bump-version.outputs.new-version }}"
+          branch: ${{ steps.bump-version.outputs.branch-name }}
+          delete-branch: true
+          title: "chore: release v${{ steps.bump-version.outputs.new-version }}"
+          body: |
+            ## Version Bump
+            
+            This PR bumps the version from `${{ steps.current-version.outputs.version }}` to `${{ steps.bump-version.outputs.new-version }}`.
+            
+            ### Changes
+            - Version bump: ${{ github.event.inputs.version-type }}${{ github.event.inputs.custom-version && ' (custom)' || '' }}
+            
+            ### Next Steps
+            - Review and merge this PR
+            - The release workflow will automatically:
+              - Publish to npm
+              - Create a GitHub release with release notes
+            
+            ---
+            *Automated version bump created by GitHub Actions*
+          labels: |
+            release
+            automated
+      
+      - name: PR Summary
+        run: |
+          echo "### Version Bump Summary :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Previous Version:** ${{ steps.current-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Version:** ${{ steps.bump-version.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pull Request:** #${{ steps.create-pr.outputs.pull-request-number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **PR URL:** ${{ steps.create-pr.outputs.pull-request-url }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'package.json'
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version-changed: ${{ steps.version-check.outputs.changed }}
+      new-version: ${{ steps.version-check.outputs.version }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Check if version changed
+        id: version-check
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          # Get previous version from the commit before
+          git checkout HEAD^1 2>/dev/null || echo "First commit"
+          PREVIOUS_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+          
+          # Return to current commit
+          git checkout -
+          
+          echo "Previous version: $PREVIOUS_VERSION"
+          echo "Current version: $CURRENT_VERSION"
+          
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged"
+          fi
+
+  publish-npm:
+    needs: check-version
+    if: needs.check-version.outputs.version-changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC trusted publishing
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '14.x'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Publish to npm
+        run: npm publish
+        # No NODE_AUTH_TOKEN needed - uses OIDC trusted publishing
+      
+      - name: Publication Summary
+        run: |
+          echo "### NPM Publication :package:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${{ needs.check-version.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Package:** homebridge-bond" >> $GITHUB_STEP_SUMMARY
+          echo "- **NPM URL:** https://www.npmjs.com/package/homebridge-bond/v/${{ needs.check-version.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
+
+  create-github-release:
+    needs: [check-version, publish-npm]
+    if: needs.check-version.outputs.version-changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate Release Notes
+        id: release-notes
+        run: |
+          VERSION="${{ needs.check-version.outputs.new-version }}"
+          
+          # Get the previous tag
+          PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
+          
+          # Generate changelog
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "Generating changelog from $PREVIOUS_TAG to v$VERSION"
+            CHANGELOG=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            echo "No previous tag found, using all commits"
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          fi
+          
+          # Create release notes
+          cat > release_notes.md << EOF
+          ## What's Changed
+          
+          $CHANGELOG
+          
+          ## Installation
+          
+          \`\`\`bash
+          npm install -g homebridge-bond@$VERSION
+          \`\`\`
+          
+          ## Links
+          
+          - [NPM Package](https://www.npmjs.com/package/homebridge-bond/v/$VERSION)
+          - [Changelog](https://github.com/aarons22/homebridge-bond/compare/$PREVIOUS_TAG...v$VERSION)
+          EOF
+      
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ needs.check-version.outputs.new-version }}
+          name: v${{ needs.check-version.outputs.new-version }}
+          bodyFile: release_notes.md
+          draft: false
+          prerelease: ${{ contains(needs.check-version.outputs.new-version, '-') }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Release Summary
+        run: |
+          echo "### GitHub Release Created :tada:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** v${{ needs.check-version.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag:** v${{ needs.check-version.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release URL:** https://github.com/aarons22/homebridge-bond/releases/tag/v${{ needs.check-version.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
