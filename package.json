@@ -1,6 +1,6 @@
 {
   "name": "homebridge-bond",
-  "version": "3.2.12",
+  "version": "3.3.0-beta.1",
   "description": "A homebridge plugin to control your Bond devices over the v2 API.",
   "license": "MIT",
   "main": "dist/index.js",
@@ -28,25 +28,25 @@
     "url": "http://github.com/aarons22/homebridge-bond/issues"
   },
   "engines": {
-    "node": ">=10.17.0",
-    "homebridge": ">=1.3.0"
+    "node": "^18.20.4 || ^20.15.1 || ^22",
+    "homebridge": "^1.6.0 || ^2.0.0-beta.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.14",
     "@types/flake-idgen": "^0.1.30",
     "@types/mocha": "^8.2.0",
-    "@types/node": "^14.14.31",
+    "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",
     "chai": "^4.2.0",
     "eslint": "^7.22.0",
-    "homebridge": "^1.3.1",
+    "homebridge": "^2.0.0-beta.68",
     "mocha": "^9.1.2",
     "nodemon": "^3.1.7",
     "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
     "ts-node": "^10.8.1",
-    "typescript": "^4.2.2"
+    "typescript": "^5.7.2"
   },
   "dependencies": {
     "axios": "^0.28.0",

@@ -49,8 +49,8 @@ export class LightAccessory implements BondAccessory {
       return;
     }
 
-    Observer.set(this.toggleLightService.on, (_, callback) => {
-      bond.api.toggleState(device, 'light', callback)
+    Observer.set(this.toggleLightService.on, async (_) => {
+      await bond.api.toggleState(device, 'light')
         .then(() => {
           this.platform.debug(this.accessory, `${device.name} light state toggled`);
         })
