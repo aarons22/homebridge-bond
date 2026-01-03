@@ -73,7 +73,7 @@
         "type": "boolean",
         "default": false,
         "required": false,
-        "description": "Enable this if your shades/awnings show backwards in HomeKit (open when closed, closed when open). This is needed for devices like some awnings where the Bond API position values already match HomeKit's convention (0=closed, 100=open) and should NOT be inverted."
+        "description": "Enable this to disable position inversion for devices (like some awnings) where Bond API already uses HomeKit's convention (0=closed, 100=open). Leave disabled (default) for typical shades that use inverted values (0=open, 100=closed)."
       }
     }
   }
