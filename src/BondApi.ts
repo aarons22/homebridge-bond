@@ -2,7 +2,7 @@ import { Action } from './enum/Action';
 import { BondPlatform } from './platform';
 import { BondState } from './interface/Bond';
 import { BondUri } from './BondUri';
-import { CharacteristicValue, CharacteristicSetCallback } from 'homebridge';
+import { CharacteristicValue } from 'homebridge';
 import { Command, Device } from './interface/Device';
 import { Properties } from './interface/Properties';
 import { Version } from './interface/Version';
@@ -106,16 +106,10 @@ export class BondApi {
 
   // Actions
 
-  private action(device: Device, action: Action, callback: CharacteristicSetCallback, body: unknown = {}): Promise<void> {
-    return (this.ms_between_actions ? 
+  private action(device: Device, action: Action, body: unknown = {}): Promise<void> {
+    return this.ms_between_actions ? 
       this.queueRequest(device, action, body) :
-      this.request(HTTPMethod.PUT, this.uri.action(device.id, action), body))
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+      this.request(HTTPMethod.PUT, this.uri.action(device.id, action), body);
   }
 
   private queueRequest(device: Device, action: Action, body: unknown): Promise<void> {
@@ -139,137 +133,109 @@ export class BondApi {
     }
   }
 
-  public toggleLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.ToggleLight, callback);
+  public toggleLight(device: Device): Promise<void> {
+    return this.action(device, Action.ToggleLight);
   }
 
-  public toggleUpLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.ToggleUpLight, callback);
+  public toggleUpLight(device: Device): Promise<void> {
+    return this.action(device, Action.ToggleUpLight);
   }
 
-  public toggleDownLight(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.ToggleDownLight, callback);
+  public toggleDownLight(device: Device): Promise<void> {
+    return this.action(device, Action.ToggleDownLight);
   }
 
-  public startDimmer(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.StartDimmer, callback);
+  public startDimmer(device: Device): Promise<void> {
+    return this.action(device, Action.StartDimmer);
   }
 
-  public startUpLightDimmer(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.StartUpLightDimmer, callback);
+  public startUpLightDimmer(device: Device): Promise<void> {
+    return this.action(device, Action.StartUpLightDimmer);
   }
 
-  public startDownLightDimmer(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.StartDownLightDimmer, callback);
+  public startDownLightDimmer(device: Device): Promise<void> {
+    return this.action(device, Action.StartDownLightDimmer);
   }
 
-  public startIncreasingBrightness(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.StartIncreasingBrightness, callback);
+  public startIncreasingBrightness(device: Device): Promise<void> {
+    return this.action(device, Action.StartIncreasingBrightness);
   }
 
-  public startDecreasingBrightness(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.StartDecreasingBrightness, callback);
+  public startDecreasingBrightness(device: Device): Promise<void> {
+    return this.action(device, Action.StartDecreasingBrightness);
   }
 
-  public setBrightness(device: Device, value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.SetBrightness, callback, { argument: value as number });
+  public setBrightness(device: Device, value: CharacteristicValue): Promise<void> {
+    return this.action(device, Action.SetBrightness, { argument: value as number });
   }
 
-  public setFlame(device: Device, value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.SetFlame, callback, { argument: value as number });
+  public setFlame(device: Device, value: CharacteristicValue): Promise<void> {
+    return this.action(device, Action.SetFlame, { argument: value as number });
   }
 
-  public turnLightOff(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.TurnLightOff, callback);
+  public turnLightOff(device: Device): Promise<void> {
+    return this.action(device, Action.TurnLightOff);
   }
 
-  public toggleFan(device: Device, on: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
+  public toggleFan(device: Device, on: CharacteristicValue): Promise<void> {
     const action = on as boolean ? Action.TurnOn : Action.TurnOff;
-    return this.action(device, action, callback);
+    return this.action(device, action);
   }
 
-  public toggleDirection(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.ToggleDirection, callback);
+  public toggleDirection(device: Device): Promise<void> {
+    return this.action(device, Action.ToggleDirection);
   }
 
-  public togglePower(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.TogglePower, callback);
+  public togglePower(device: Device): Promise<void> {
+    return this.action(device, Action.TogglePower);
   }
 
-  public toggleOpen(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.ToggleOpen, callback);
+  public toggleOpen(device: Device): Promise<void> {
+    return this.action(device, Action.ToggleOpen);
   }
 
-  public preset(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.Preset, callback);
+  public preset(device: Device): Promise<void> {
+    return this.action(device, Action.Preset);
   }
 
-  public stop(device: Device, callback?: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Stop))
-      .then(() => {
-        if (callback) {
-          callback(null);
-        }
-      })
-      .catch((error: string) => {
-        if (callback) {
-          callback(Error(error));
-        }
-      });
+  public stop(device: Device): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.Stop));
   }
 
-  public setPosition(device: Device, position: number, callback?: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetPosition), { argument: position })
-      .then(() => {
-        if (callback) {
-          callback(null);
-        }
-      })
-      .catch((error: string) => {
-        if (callback) {
-          callback(Error(error));
-        }
-      });
+  public setPosition(device: Device, position: number): Promise<void> {
+    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetPosition), { argument: position });
   }
 
-  public setFanSpeed(device: Device, speed: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.SetSpeed, callback, { argument: speed as number });
+  public setFanSpeed(device: Device, speed: CharacteristicValue): Promise<void> {
+    return this.action(device, Action.SetSpeed, { argument: speed as number });
   }
 
-  public increaseSpeed(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.IncreaseSpeed, callback, { argument: 1 });
+  public increaseSpeed(device: Device): Promise<void> {
+    return this.action(device, Action.IncreaseSpeed, { argument: 1 });
   }
 
-  public decreaseSpeed(device: Device, callback: CharacteristicSetCallback): Promise<void> {
-    return this.action(device, Action.DecreaseSpeed, callback, { argument: 1 });
+  public decreaseSpeed(device: Device): Promise<void> {
+    return this.action(device, Action.DecreaseSpeed, { argument: 1 });
   }
 
   // State
 
-  public updateState(device: Device, state: BondState, callback: CharacteristicSetCallback): Promise<void> {
-    return this.request(HTTPMethod.PATCH, this.uri.state(device.id), state)
-      .then(() => {
-        callback(null);
-      })
-      .catch((error: string) => {
-        callback(Error(error));
-      });
+  public updateState(device: Device, state: BondState): Promise<void> {
+    return this.request(HTTPMethod.PATCH, this.uri.state(device.id), state);
   }
 
   // PATCH: Toggle state property for a device
-  public toggleState(device: Device, property: string, callback: CharacteristicSetCallback): Promise<void> {
+  public toggleState(device: Device, property: string): Promise<void> {
     return this.getState(device.id)
       .then(state => {
         if(property !== 'open' && property !== 'power' && property !== 'light' ) {
-          callback(null);
           throw Error(`This device does not have ${property} in it's Bond state`);
         }
         if (state[property] !== undefined) {
           const newState: BondState = {};
           newState[property] = state[property] === 1 ? 0 : 1;
-          return this.updateState(device, newState, callback);
+          return this.updateState(device, newState);
         } else {
-          callback(null);
           throw Error(`This device does not have ${property} in it's Bond state`);
         }
       });

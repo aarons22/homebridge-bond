@@ -199,8 +199,8 @@ export class CeilingFanAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(this.fanService.on, (value, callback) => {
-      bond.api.toggleFan(device, value, callback)
+    Observer.set(this.fanService.on, async (value) => {
+      await bond.api.toggleFan(device, value)
         .then(() => { 
           this.platform.debug(this.accessory, `Set fan power: ${value}`);
         })
@@ -221,16 +221,15 @@ export class CeilingFanAccessory implements BondAccessory  {
     };
     this.fanService.rotationSpeed.setProps(props);
 
-    Observer.set(this.fanService.rotationSpeed, (step, callback) => {
+    Observer.set(this.fanService.rotationSpeed, async (step) => {
       if (step === 0) {
         // Step of 0 is the same as turning the fan off. This is handled in the fan power observer
-        callback(null);
         return;
       } 
       const index = step as number / this.minStep - 1;
       const speed = this.values[index];
 
-      bond.api.setFanSpeed(device, speed, callback)
+      await bond.api.setFanSpeed(device, speed)
         .then(() => {
           this.platform.debug(this.accessory, `Set fan speed: ${speed}`);
         })
@@ -245,8 +244,8 @@ export class CeilingFanAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(this.fanService.rotationDirection, (value, callback) => {
-      bond.api.toggleDirection(device, callback)
+    Observer.set(this.fanService.rotationDirection, async (value) => {
+      await bond.api.toggleDirection(device)
         .then(() => {
           this.platform.debug(this.accessory, `Set fan direction: ${value}`);
         })
@@ -261,8 +260,8 @@ export class CeilingFanAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(this.increaseSpeedService.on, (value, callback) => {
-      bond.api.increaseSpeed(device, callback)
+    Observer.set(this.increaseSpeedService.on, async (value) => {
+      await bond.api.increaseSpeed(device)
         .then(() => {
           this.platform.debug(this.accessory, `Increased fan speed: ${value}`);
         })
@@ -277,8 +276,8 @@ export class CeilingFanAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(this.decreaseSpeedService.on, (value, callback) => {
-      bond.api.decreaseSpeed(device, callback)
+    Observer.set(this.decreaseSpeedService.on, async (value) => {
+      await bond.api.decreaseSpeed(device)
         .then(() => {
           this.platform.debug(this.accessory, `Decreased fan speed: ${value}`);
         })
@@ -293,19 +292,19 @@ export class CeilingFanAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(service.on, (_, callback) => {
+    Observer.set(service.on, async (_) => {
       let promise: Promise<void>;
 
       const subtype = service.subType;
       if(subtype === 'UpLight') {
-        promise = bond.api.toggleState(device, 'up_light', callback);
+        promise = bond.api.toggleState(device, 'up_light');
       } else if(subtype === 'DownLight') {
-        promise = bond.api.toggleState(device, 'down_light', callback);
+        promise = bond.api.toggleState(device, 'down_light');
       } else {
-        promise = bond.api.toggleState(device, 'light', callback);
+        promise = bond.api.toggleState(device, 'light');
       }
       
-      promise
+      await promise
         .then(() => {
           this.platform.debug(this.accessory, 'Light state toggled');
         })
@@ -320,23 +319,23 @@ export class CeilingFanAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(service.on, (value, callback) => {
+    Observer.set(service.on, async (value) => {
       let promise: Promise<void>;
 
       if (value === true) {
         const subtype = service.subType;
         if(subtype === 'UpLight') {
-          promise = bond.api.startUpLightDimmer(device, callback);
+          promise = bond.api.startUpLightDimmer(device);
         } else if(subtype === 'DownLight') {
-          promise = bond.api.startDownLightDimmer(device, callback);
+          promise = bond.api.startDownLightDimmer(device);
         } else {
-          promise = bond.api.startDimmer(device, callback);
+          promise = bond.api.startDimmer(device);
         }
       } else {
-        promise = bond.api.stop(device, callback);
+        promise = bond.api.stop(device);
       }
 
-      promise
+      await promise
         .then(() => {
           this.platform.debug(this.accessory, `Toggled dimmer: ${value}`);
         })
@@ -351,7 +350,7 @@ export class CeilingFanAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(this.increaseBrightnessService.on, (value, callback) => {
+    Observer.set(this.increaseBrightnessService.on, async (value) => {
       let promise: Promise<void>;
 
       if (value === true) {
@@ -359,12 +358,12 @@ export class CeilingFanAccessory implements BondAccessory  {
           bond.api.stop(device);
           downService.on.updateValue(false);
         }
-        promise = bond.api.startIncreasingBrightness(device, callback);
+        promise = bond.api.startIncreasingBrightness(device);
       } else {
-        promise = bond.api.stop(device, callback);
+        promise = bond.api.stop(device);
       }
 
-      promise
+      await promise
         .then(() => {
           this.platform.debug(this.accessory, `Increased Brightness: ${value}`);
         })
@@ -379,7 +378,7 @@ export class CeilingFanAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(this.decreaseBrightnessService.on, (value, callback) => {
+    Observer.set(this.decreaseBrightnessService.on, async (value) => {
       let promise: Promise<void>;
 
       if (value === true) {
@@ -387,12 +386,12 @@ export class CeilingFanAccessory implements BondAccessory  {
           bond.api.stop(device);
           upService.on.updateValue(false);
         }
-        promise = bond.api.startDecreasingBrightness(device, callback);
+        promise = bond.api.startDecreasingBrightness(device);
       } else {
-        promise = bond.api.stop(device, callback);
+        promise = bond.api.stop(device);
       }
 
-      promise
+      await promise
         .then(() => {
           this.platform.debug(this.accessory, `Decreased Brightness: ${value}`);
         })

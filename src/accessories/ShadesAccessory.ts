@@ -77,11 +77,11 @@ export class ShadesAccessory implements BondAccessory  {
     };
     this.windowCoveringService.targetPosition.setProps(props);
 
-    Observer.set(this.windowCoveringService.targetPosition, (value, callback) => {
+    Observer.set(this.windowCoveringService.targetPosition, async (value) => {
       if (Device.MShasPosition(device)) {
         // Convert HomeKit's open percentage (0=closed, 100=open) to Bond's extended percentage (0=open, 100=closed)
         const bondPosition = 100 - (value as number);
-        bond.api.setPosition(device, bondPosition, callback)
+        await bond.api.setPosition(device, bondPosition)
           .then(() => {
             this.platform.debug(this.accessory, `Set position: ${bondPosition} (HomeKit: ${value})`);
           })
@@ -90,7 +90,7 @@ export class ShadesAccessory implements BondAccessory  {
           });
       } else {
         // Otherwise, toggle open/closed based on target position
-        bond.api.toggleOpen(device, callback)
+        await bond.api.toggleOpen(device)
           .then(() => {
             this.platform.debug(this.accessory, `Toggled open: ${value}`);
           })
@@ -106,8 +106,8 @@ export class ShadesAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(this.presetService.on, (_, callback) => {
-      bond.api.preset(device, callback)
+    Observer.set(this.presetService.on, async (_) => {
+      await bond.api.preset(device)
         .then(() => {
           this.platform.debug(this.accessory, 'Executed shade preset');
         })
@@ -122,8 +122,8 @@ export class ShadesAccessory implements BondAccessory  {
       return;
     }
 
-    Observer.set(this.toggleStateService.on, (_, callback) => {
-      bond.api.toggleState(device, 'open', callback)
+    Observer.set(this.toggleStateService.on, async (_) => {
+      await bond.api.toggleState(device, 'open')
         .then(() => {
           this.platform.debug(this.accessory, `${device.name} open state toggled`);
         })

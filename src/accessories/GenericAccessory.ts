@@ -45,8 +45,8 @@ export class GenericAccessory implements BondAccessory  {
       this.updateState(state);
     });
 
-    Observer.set(this.switchService.on, (value, callback) => {
-      bond.api.togglePower(device, callback)
+    Observer.set(this.switchService.on, async (value) => {
+      await bond.api.togglePower(device)
         .then(() => {
           this.platform.debug(this.accessory, `Toggled power: ${value}`);
         })
@@ -62,8 +62,8 @@ export class GenericAccessory implements BondAccessory  {
     }
     const device: Device = this.accessory.context.device;
 
-    Observer.set(this.toggleStateService.on, (_, callback) => {
-      bond.api.toggleState(device, 'power', callback)
+    Observer.set(this.toggleStateService.on, async (_) => {
+      await bond.api.toggleState(device, 'power')
         .then(() => {
           this.platform.debug(this.accessory, `${device.name} power state toggled`);
         })
