@@ -83,19 +83,19 @@ export class LightbulbService {
   }
 
   private observeLight(platform: BondPlatform, bond: Bond, device: Device, accessory: PlatformAccessory) {
-    Observer.set(this.on, (value, callback) => {
+    Observer.set(this.on, async (value) => {
       let promise: Promise<void>;
 
       const subtype = this.subType;
       if (subtype === 'UpLight') {
-        promise = bond.api.toggleUpLight(device, callback);
+        promise = bond.api.toggleUpLight(device);
       } else if (subtype === 'DownLight') {
-        promise = bond.api.toggleDownLight(device, callback);
+        promise = bond.api.toggleDownLight(device);
       } else {
-        promise = bond.api.toggleLight(device, callback);
+        promise = bond.api.toggleLight(device);
       }
 
-      promise
+      await promise
         .then(() => {
           platform.debug(accessory, `Set light power: ${value}`);
         })
@@ -110,15 +110,14 @@ export class LightbulbService {
       return;
     }
 
-    Observer.set(this.brightness, (value, callback) => {
+    Observer.set(this.brightness, async (value) => {
       if (value === 0) {
         // Value of 0 is the same as turning the light off. 
-        // Ignore and complete callback.
-        callback(null);
+        // Ignore and return.
         return;
       }
 
-      bond.api.setBrightness(device, value, callback)
+      await bond.api.setBrightness(device, value)
         .then(() => {
           platform.debug(accessory, `Set light brightness: ${value}`);
         })
@@ -256,8 +255,8 @@ export class FlameService {
   }
 
   private observePower(platform: BondPlatform, bond: Bond, device: Device, accessory: PlatformAccessory) {
-    Observer.set(this.on, (value, callback) => {
-      bond.api.togglePower(device, callback)
+    Observer.set(this.on, async (value) => {
+      await bond.api.togglePower(device)
         .then(() => {
           platform.debug(accessory, `Set flame power: ${value}`);
         })
@@ -272,15 +271,14 @@ export class FlameService {
       return;
     }
 
-    Observer.set(this.flame, (value, callback) => {
+    Observer.set(this.flame, async (value) => {
       if (value === 0) {
         // Value of 0 is the same as turning the flame off. 
-        // Ignore and complete callback.
-        callback(null);
+        // Ignore and return.
         return;
       }
 
-      bond.api.setFlame(device, value, callback)
+      await bond.api.setFlame(device, value)
         .then(() => {
           platform.debug(accessory, `Set flame brightness: ${value}`);
         })

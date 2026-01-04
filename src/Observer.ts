@@ -1,18 +1,17 @@
-import { Characteristic, CharacteristicValue, CharacteristicSetCallback } from 'homebridge';
+import { Characteristic, CharacteristicValue } from 'homebridge';
 
 export class Observer {
   public static set(
     characteristic: Characteristic,
-    set: (value: CharacteristicValue, callback: CharacteristicSetCallback) => void) {
+    set: (value: CharacteristicValue) => Promise<void>) {
     characteristic 
-      .on('set', (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
+      .onSet(async (value: CharacteristicValue) => {
         // Avoid doing anything when the device is in the requested state
         if (value === characteristic.value) {
-          callback(null);
           return;
         }
 
-        set(value, callback);
+        await set(value);
       });
   }
 }
