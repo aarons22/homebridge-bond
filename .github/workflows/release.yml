@@ -76,8 +76,7 @@ jobs:
         run: npm test
       
       - name: Publish to npm
-        run: npm publish
-        # No NODE_AUTH_TOKEN needed - uses OIDC trusted publishing
+        run: npm publish --provenance --access public
       
       - name: Publication Summary
         run: |
