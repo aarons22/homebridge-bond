@@ -37,6 +37,8 @@ export class LightbulbService {
   on: Characteristic
   brightness?: Characteristic
   subType?: string
+  // Timeout handle for incremental dimming operations
+  // Note: Cleanup happens automatically when the Node.js process exits or restarts
   private dimmerTimeout?: NodeJS.Timeout
 
   constructor(
