@@ -93,7 +93,15 @@ NOTE: If you have a "Smart by BOND" fan/device, you will need to add a Bond in t
 
 ## Development
 
-I'm more than happy to take PRs if you want to fix a bug you are having or take a shot at adding a new feature you're interested in. To compile the code in realtime, run:
+I'm more than happy to take PRs if you want to fix a bug you are having or take a shot at adding a new feature you're interested in. 
+
+### For AI Coding Assistants
+If you're using GitHub Copilot, Claude, or other AI coding assistants, please review:
+- [AI Coding Instructions](./AI_CODING_INSTRUCTIONS.md) - Comprehensive guide to the codebase architecture and patterns
+- [CLAUDE.md](./CLAUDE.md) - Quick start guide for Claude users
+
+### Building the Code
+To compile the code in realtime, run:
 
 ```
 npm run dev
