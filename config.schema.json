@@ -67,13 +67,6 @@
         "default": false,
         "required": false,
         "description": "Use fan speed values instead of percentages (i.e. Hey Siri set the Office Fan to 2)."
-      },
-      "invert_shade_position": {
-        "title": "Invert shade position",
-        "type": "boolean",
-        "default": false,
-        "required": false,
-        "description": "Enable this to disable position inversion for devices (like some awnings) where Bond API already uses HomeKit's convention (0=closed, 100=open). Leave disabled (default) for typical shades that use inverted values (0=open, 100=closed)."
       }
     }
   }
