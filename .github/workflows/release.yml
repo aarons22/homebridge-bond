@@ -53,8 +53,8 @@ jobs:
     if: needs.check-version.outputs.version-changed == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      id-token: write  # Required for OIDC trusted publishing
+      id-token: write # Required for OIDC authentication
+      contents: read  # Often needed for checkout
     
     steps:
       - name: Checkout repository
@@ -76,7 +76,7 @@ jobs:
         run: npm test
       
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish
       
       - name: Publication Summary
         run: |
