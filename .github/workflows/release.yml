@@ -79,7 +79,15 @@ jobs:
         run: npm test
       
       - name: Publish to npm
-        run: npm publish
+        run: |
+          VERSION="${{ needs.check-version.outputs.new-version }}"
+          if [[ "$VERSION" =~ -beta\. ]] || [[ "$VERSION" =~ -alpha\. ]] || [[ "$VERSION" =~ -rc\. ]]; then
+            echo "Publishing prerelease version $VERSION with 'beta' tag"
+            npm publish --tag beta
+          else
+            echo "Publishing stable version $VERSION"
+            npm publish
+          fi
       
       - name: Publication Summary
         run: |
