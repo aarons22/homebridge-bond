@@ -44,6 +44,15 @@ export namespace Device {
     return required.every(r => device.actions.includes(r));
   }
 
+  export function HasIncrementalBrightness(device: Device): boolean {
+    return HasDimmer(device) || HasSeparateDimmers(device);
+  }
+
+  export function HasBrightnessControl(device: Device): boolean {
+    const hasSetBrightness = device.actions.includes(Action.SetBrightness);
+    return hasSetBrightness || HasIncrementalBrightness(device);
+  }
+
   export function CFhasLightbulb(device: Device): boolean {
     const lightbulb = [Action.ToggleLight];
     return device.actions.some(r => lightbulb.includes(r));
@@ -107,6 +116,12 @@ export namespace Device {
   }
 
   export function LThasBrightness(device: Device): boolean {
+    const required = [Action.SetBrightness, Action.TurnLightOff];
+    const hasAbsoluteBrightness = required.every(r => device.actions.includes(r));
+    return hasAbsoluteBrightness || HasIncrementalBrightness(device);
+  }
+
+  export function LThasAbsoluteBrightness(device: Device): boolean {
     const required = [Action.SetBrightness, Action.TurnLightOff];
     return required.every(r => device.actions.includes(r));
   }

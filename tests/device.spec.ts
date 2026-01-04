@@ -230,6 +230,78 @@ describe('LThasBrightness', () => {
     const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
     expect(Device.LThasBrightness(device)).equal(false);
   });
+
+  it('has brightness with StartDimmer', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.StartDimmer] });
+    expect(Device.LThasBrightness(device)).equal(true);
+  });
+
+  it('has brightness with StartIncreasingBrightness and StartDecreasingBrightness', () => {
+    const device = DeviceFactory.createDevice({ 
+      actions: [Action.Stop, Action.StartIncreasingBrightness, Action.StartDecreasingBrightness] 
+    });
+    expect(Device.LThasBrightness(device)).equal(true);
+  });
+});
+
+describe('HasIncrementalBrightness', () => {
+  it('has incremental brightness with StartDimmer', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.StartDimmer] });
+    expect(Device.HasIncrementalBrightness(device)).equal(true);
+  });
+
+  it('has incremental brightness with separate dimmers', () => {
+    const device = DeviceFactory.createDevice({ 
+      actions: [Action.Stop, Action.StartIncreasingBrightness, Action.StartDecreasingBrightness] 
+    });
+    expect(Device.HasIncrementalBrightness(device)).equal(true);
+  });
+
+  it('does not have incremental brightness', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.SetBrightness] });
+    expect(Device.HasIncrementalBrightness(device)).equal(false);
+  });
+});
+
+describe('HasBrightnessControl', () => {
+  it('has brightness control with SetBrightness', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.SetBrightness] });
+    expect(Device.HasBrightnessControl(device)).equal(true);
+  });
+
+  it('has brightness control with StartDimmer', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.StartDimmer] });
+    expect(Device.HasBrightnessControl(device)).equal(true);
+  });
+
+  it('has brightness control with separate dimmers', () => {
+    const device = DeviceFactory.createDevice({ 
+      actions: [Action.Stop, Action.StartIncreasingBrightness, Action.StartDecreasingBrightness] 
+    });
+    expect(Device.HasBrightnessControl(device)).equal(true);
+  });
+
+  it('does not have brightness control', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.HasBrightnessControl(device)).equal(false);
+  });
+});
+
+describe('LThasAbsoluteBrightness', () => {
+  it('has absolute brightness', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.SetBrightness, Action.TurnLightOff] });
+    expect(Device.LThasAbsoluteBrightness(device)).equal(true);
+  });
+
+  it('does not have absolute brightness with only StartDimmer', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.StartDimmer] });
+    expect(Device.LThasAbsoluteBrightness(device)).equal(false);
+  });
+
+  it('does not have absolute brightness', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.LThasAbsoluteBrightness(device)).equal(false);
+  });
 });
 
 describe('fanSpeeds', () => {

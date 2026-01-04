@@ -52,7 +52,8 @@ export class LightbulbService {
     this.on = service.getCharacteristic(platform.Characteristic.On);
 
     const brightness = service.getCharacteristic(platform.Characteristic.Brightness);
-    if (Device.LThasBrightness(device)) {
+    // Add brightness if device is a Light type with brightness OR if it's any device with brightness control
+    if (Device.LThasBrightness(device) || Device.HasBrightnessControl(device)) {
       this.brightness = brightness;
     } else {
       // Fixing bug from 3.1.0 where brightness was added to lights unintentionally
@@ -110,21 +111,90 @@ export class LightbulbService {
       return;
     }
 
-    Observer.set(this.brightness, async (value) => {
-      if (value === 0) {
-        // Value of 0 is the same as turning the light off. 
-        // Ignore and return.
-        return;
-      }
+    // Check if device has absolute brightness control (SetBrightness)
+    if (Device.LThasAbsoluteBrightness(device)) {
+      // Handle absolute brightness
+      Observer.set(this.brightness, async (value) => {
+        if (value === 0) {
+          // Value of 0 is the same as turning the light off. 
+          // Ignore and return.
+          return;
+        }
 
-      await bond.api.setBrightness(device, value)
-        .then(() => {
-          platform.debug(accessory, `Set light brightness: ${value}`);
-        })
-        .catch((error: string) => {
-          platform.error(accessory, `Error setting light brightness: ${error}`);
-        });
-    });
+        await bond.api.setBrightness(device, value)
+          .then(() => {
+            platform.debug(accessory, `Set light brightness: ${value}`);
+          })
+          .catch((error: string) => {
+            platform.error(accessory, `Error setting light brightness: ${error}`);
+          });
+      });
+    } else if (Device.HasIncrementalBrightness(device)) {
+      // Handle incremental brightness (StartDimmer or StartIncreasing/DecreasingBrightness)
+      Observer.set(this.brightness, async (value) => {
+        if (value === 0) {
+          // Value of 0 is the same as turning the light off. 
+          // Ignore and return.
+          return;
+        }
+
+        const currentBrightness = this.brightness!.value as number;
+        const targetBrightness = value as number;
+        
+        // If already at target, do nothing
+        if (currentBrightness === targetBrightness) {
+          return;
+        }
+
+        // Determine direction
+        const increasing = targetBrightness > currentBrightness;
+        const delta = Math.abs(targetBrightness - currentBrightness);
+        
+        // Start dimming in the appropriate direction
+        let promise: Promise<void>;
+        if (Device.HasSeparateDimmers(device)) {
+          // Use directional dimmers
+          promise = increasing ? 
+            bond.api.startIncreasingBrightness(device) : 
+            bond.api.startDecreasingBrightness(device);
+        } else {
+          // Use StartDimmer (or up/down light specific dimmers)
+          const subtype = this.subType;
+          if (subtype === 'UpLight') {
+            promise = bond.api.startUpLightDimmer(device);
+          } else if (subtype === 'DownLight') {
+            promise = bond.api.startDownLightDimmer(device);
+          } else {
+            promise = bond.api.startDimmer(device);
+          }
+        }
+
+        await promise
+          .then(() => {
+            platform.debug(accessory, `Started dimming light: current=${currentBrightness}, target=${targetBrightness}`);
+            
+            // Estimate time needed: assume ~10% per 100ms for dimming speed
+            // This is a rough estimate and may need adjustment
+            const estimatedTime = delta * 10; // 10ms per 1% brightness change
+            
+            // Stop dimming after estimated time
+            setTimeout(async () => {
+              await bond.api.stop(device)
+                .then(() => {
+                  platform.debug(accessory, 'Stopped dimming light');
+                  // Update to target value - the actual state will come from BPUP
+                  this.brightness!.updateValue(targetBrightness);
+                })
+                .catch((error: string) => {
+                  platform.error(accessory, `Error stopping dimmer: ${error}`);
+                });
+            }, estimatedTime);
+          })
+          .catch((error: string) => {
+            platform.error(accessory, `Error setting light brightness: ${error}`);
+          });
+      });
+    }
   }
 }
 
