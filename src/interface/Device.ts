@@ -45,12 +45,18 @@ export namespace Device {
   }
 
   export function HasIncrementalBrightness(device: Device): boolean {
+    // Only devices with directional dimmers support reliable incremental brightness control
+    return HasSeparateDimmers(device);
+  }
+
+  export function HasDimmerWithBrightnessState(device: Device): boolean {
+    // Devices with any dimmer capability track brightness state, even if toggle-based
     return HasDimmer(device) || HasSeparateDimmers(device);
   }
 
   export function HasBrightnessControl(device: Device): boolean {
     const hasSetBrightness = device.actions.includes(Action.SetBrightness);
-    return hasSetBrightness || HasIncrementalBrightness(device);
+    return hasSetBrightness || HasDimmerWithBrightnessState(device);
   }
 
   export function CFhasLightbulb(device: Device): boolean {
@@ -118,7 +124,7 @@ export namespace Device {
   export function LThasBrightness(device: Device): boolean {
     const required = [Action.SetBrightness, Action.TurnLightOff];
     const hasAbsoluteBrightness = required.every(r => device.actions.includes(r));
-    return hasAbsoluteBrightness || HasIncrementalBrightness(device);
+    return hasAbsoluteBrightness || HasDimmerWithBrightnessState(device);
   }
 
   export function LThasAbsoluteBrightness(device: Device): boolean {

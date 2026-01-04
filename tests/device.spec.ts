@@ -245,9 +245,9 @@ describe('LThasBrightness', () => {
 });
 
 describe('HasIncrementalBrightness', () => {
-  it('has incremental brightness with StartDimmer', () => {
+  it('does not have incremental brightness with only StartDimmer', () => {
     const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.StartDimmer] });
-    expect(Device.HasIncrementalBrightness(device)).equal(true);
+    expect(Device.HasIncrementalBrightness(device)).equal(false);
   });
 
   it('has incremental brightness with separate dimmers', () => {
@@ -257,9 +257,28 @@ describe('HasIncrementalBrightness', () => {
     expect(Device.HasIncrementalBrightness(device)).equal(true);
   });
 
-  it('does not have incremental brightness', () => {
+  it('does not have incremental brightness with SetBrightness', () => {
     const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.SetBrightness] });
     expect(Device.HasIncrementalBrightness(device)).equal(false);
+  });
+});
+
+describe('HasDimmerWithBrightnessState', () => {
+  it('has dimmer with brightness state using StartDimmer', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.StartDimmer] });
+    expect(Device.HasDimmerWithBrightnessState(device)).equal(true);
+  });
+
+  it('has dimmer with brightness state using separate dimmers', () => {
+    const device = DeviceFactory.createDevice({ 
+      actions: [Action.Stop, Action.StartIncreasingBrightness, Action.StartDecreasingBrightness] 
+    });
+    expect(Device.HasDimmerWithBrightnessState(device)).equal(true);
+  });
+
+  it('does not have dimmer with brightness state', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.HasDimmerWithBrightnessState(device)).equal(false);
   });
 });
 
