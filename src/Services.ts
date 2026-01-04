@@ -4,6 +4,10 @@ import { Device } from './interface/Device';
 import { Characteristic, PlatformAccessory, Service } from 'homebridge';
 import { Observer } from './Observer';
 
+// Timing constant for incremental brightness changes
+// Represents milliseconds per 1% brightness change
+const BRIGHTNESS_STEP_TIME_MS = 10;
+
 export class FanService {
   on: Characteristic
   rotationSpeed?: Characteristic
@@ -33,6 +37,7 @@ export class LightbulbService {
   on: Characteristic
   brightness?: Characteristic
   subType?: string
+  private dimmerTimeout?: NodeJS.Timeout
 
   constructor(
     platform: BondPlatform,
@@ -146,6 +151,12 @@ export class LightbulbService {
           return;
         }
 
+        // Clear any existing timeout
+        if (this.dimmerTimeout) {
+          clearTimeout(this.dimmerTimeout);
+          this.dimmerTimeout = undefined;
+        }
+
         // Determine direction
         const increasing = targetBrightness > currentBrightness;
         const delta = Math.abs(targetBrightness - currentBrightness);
@@ -162,12 +173,13 @@ export class LightbulbService {
               `Started dimming light: current=${currentBrightness}, target=${targetBrightness}, increasing=${increasing}`,
             );
             
-            // Estimate time needed: 10ms per 1% brightness change
+            // Estimate time needed based on brightness change
             // This is a rough estimate and may need adjustment based on actual device behavior
-            const estimatedTime = delta * 10;
+            const estimatedTime = delta * BRIGHTNESS_STEP_TIME_MS;
             
             // Stop dimming after estimated time
-            setTimeout(async () => {
+            this.dimmerTimeout = setTimeout(async () => {
+              this.dimmerTimeout = undefined;
               await bond.api.stop(device)
                 .then(() => {
                   platform.debug(accessory, 'Stopped dimming light');
@@ -185,8 +197,8 @@ export class LightbulbService {
     } else if (Device.HasDimmer(device)) {
       // For toggle-based dimmers (StartDimmer), we can only display brightness
       // Setting brightness is not reliable since we can't control direction
-      // Users should use the dimmer switch accessory for manual control
-      platform.log.info(
+      // Log this once during setup
+      platform.log.debug(
         `Device ${device.name} uses toggle-based dimmer. Brightness is read-only. ` +
         'Enable "include_dimmer" in config to add dimmer switch controls.',
       );
