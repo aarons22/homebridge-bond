@@ -151,10 +151,14 @@ export class LightbulbService {
           return;
         }
 
-        // Clear any existing timeout
+        // Clear any existing timeout and stop any in-progress dimming
         if (this.dimmerTimeout) {
           clearTimeout(this.dimmerTimeout);
           this.dimmerTimeout = undefined;
+          // Stop the previous dimming operation
+          await bond.api.stop(device).catch(() => {
+            // Ignore errors from stopping - the new operation will start anyway
+          });
         }
 
         // Determine direction
@@ -174,7 +178,8 @@ export class LightbulbService {
             );
             
             // Estimate time needed based on brightness change
-            // This is a rough estimate and may need adjustment based on actual device behavior
+            // Timing: BRIGHTNESS_STEP_TIME_MS (default 10ms) per 1% brightness change
+            // If dimming is too fast/slow, adjust BRIGHTNESS_STEP_TIME_MS constant
             const estimatedTime = delta * BRIGHTNESS_STEP_TIME_MS;
             
             // Stop dimming after estimated time
