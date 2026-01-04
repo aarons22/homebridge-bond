@@ -40,8 +40,12 @@ export class ShadesAccessory implements BondAccessory  {
     if (this.windowCoveringService) {
       // If position is available, use it, otherwise fall back to open state
       if (state.position !== undefined) {
-        // Convert Bond's extended percentage (0=open, 100=closed) to HomeKit's open percentage (0=closed, 100=open)
-        const homekitPosition = 100 - state.position;
+        const device: Device = this.accessory.context.device;
+        // Determine if we should invert position values based on device subtype
+        // Awnings use 0=closed, 100=open (same as HomeKit), so no inversion needed
+        // Other shades use 0=open, 100=closed (opposite of HomeKit), so inversion is needed
+        const shouldInvert = !Device.MSisAwning(device);
+        const homekitPosition = shouldInvert ? 100 - state.position : state.position;
         this.windowCoveringService.currentPosition.updateValue(homekitPosition);
         this.windowCoveringService.targetPosition.updateValue(homekitPosition);
       } else {
@@ -79,8 +83,11 @@ export class ShadesAccessory implements BondAccessory  {
 
     Observer.set(this.windowCoveringService.targetPosition, async (value) => {
       if (Device.MShasPosition(device)) {
-        // Convert HomeKit's open percentage (0=closed, 100=open) to Bond's extended percentage (0=open, 100=closed)
-        const bondPosition = 100 - (value as number);
+        // Determine if we should invert position values based on device subtype
+        // Awnings use 0=closed, 100=open (same as HomeKit), so no inversion needed
+        // Other shades use 0=open, 100=closed (opposite of HomeKit), so inversion is needed
+        const shouldInvert = !Device.MSisAwning(device);
+        const bondPosition = shouldInvert ? 100 - (value as number) : (value as number);
         await bond.api.setPosition(device, bondPosition)
           .then(() => {
             this.platform.debug(this.accessory, `Set position: ${bondPosition} (HomeKit: ${value})`);

@@ -261,3 +261,32 @@ describe('fanSpeeds', () => {
     });
   });
 });
+
+describe('MShasPosition', () => {
+  it('has position', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.SetPosition] });
+    expect(Device.MShasPosition(device)).equal(true);
+  });
+  
+  it('does not have position', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Stop] });
+    expect(Device.MShasPosition(device)).equal(false);
+  });
+});
+
+describe('MSisAwning', () => {
+  it('is awning when subtype is AWNING', () => {
+    const device = DeviceFactory.createDevice({ type: DeviceType.Shades, subtype: 'AWNING' });
+    expect(Device.MSisAwning(device)).equal(true);
+  });
+  
+  it('is not awning when subtype is different', () => {
+    const device = DeviceFactory.createDevice({ type: DeviceType.Shades, subtype: 'ROLLER' });
+    expect(Device.MSisAwning(device)).equal(false);
+  });
+  
+  it('is not awning when subtype is undefined', () => {
+    const device = DeviceFactory.createDevice({ type: DeviceType.Shades });
+    expect(Device.MSisAwning(device)).equal(false);
+  });
+});

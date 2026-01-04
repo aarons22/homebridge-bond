@@ -7,6 +7,7 @@ export interface Device {
   id: string;
   name: string;
   type: DeviceType;
+  subtype?: string;
   location: string;
   actions: Action[];
   properties: Properties;
@@ -143,5 +144,9 @@ export namespace Device {
   export function MShasPosition(device: Device): boolean {
     const required = [Action.SetPosition];
     return required.every(r => device.actions.includes(r));
+  }
+
+  export function MSisAwning(device: Device): boolean {
+    return device.subtype === 'AWNING';
   }
 }

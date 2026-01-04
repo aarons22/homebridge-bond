@@ -8,6 +8,7 @@ export class DeviceFactory {
       'id': params?.id ?? '1234',
       'name': params?.name ?? 'name',
       'type': params?.type ?? DeviceType.CeilingFan,
+      'subtype': params?.subtype,
       'location': params?.location ?? 'location',
       'actions': params?.actions ?? [Action.StartDimmer, Action.Stop, Action.IncreaseSpeed],
       'properties': {
@@ -40,6 +41,7 @@ interface DeviceParams {
   location?: string
   name?: string
   type?: DeviceType
+  subtype?: string
   actions?: Action[]
   maxSpeed?: number
   commands?: Command[]
