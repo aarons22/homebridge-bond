@@ -173,12 +173,11 @@ export class ButtonService {
     }
 
     this.on = service.getCharacteristic(platform.Characteristic.On);
-    this.on.setValue(false);
+    this.on.updateValue(false);
 
-    this.on.on('set', () => {
-      const timer = setInterval(() => {
+    this.on.onSet(async () => {
+      setTimeout(() => {
         this.on.updateValue(false);
-        clearInterval(timer);
       }, 500);
     });
     this.subType = subType;
