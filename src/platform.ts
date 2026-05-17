@@ -245,7 +245,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
   private setupBPUP(bond: Bond) {
     const PORT = 30007;
-    const HOST = bond.config.ip_address;
+    const HOST = this.bpupHost(bond.config.ip_address);
 
     const message = Buffer.from('');
 
@@ -256,8 +256,8 @@ export class BondPlatform implements DynamicPlatformPlugin {
     function send() {
       client.send(message, 0, message.length, PORT, HOST, (err: any) => {
         if (err) {
-          log.error(`Erorr sending UDP message: ${err}`);
-          throw err;
+          log.error(`Error sending UDP message: ${err}`);
+          return;
         }
         log.debug(`UDP message sent to ${HOST}:${PORT}`);
       });
@@ -281,6 +281,10 @@ export class BondPlatform implements DynamicPlatformPlugin {
     client.on('close', () => {
       this.log('Connection closed');
     });
+  }
+
+  private bpupHost(ipAddress: string): string {
+    return new URL(`http://${ipAddress}`).hostname;
   }
 
   private bondForDevice(device: Device): Bond | undefined {
