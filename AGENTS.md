@@ -3,17 +3,12 @@
 ## External API References
 
 ### Bond Local API (OpenAPI Spec)
-Key spec files are embedded in `docs/bond-api/` for offline reference. Read them directly when you need endpoint details, request/response schemas, or action names:
-- `docs/bond-api/local.yaml` — top-level spec (entry point)
-- `docs/bond-api/local-paths.yaml` — all endpoint paths
-- `docs/bond-api/devices-paths.yaml` — device CRUD, state, actions, properties
-- `docs/bond-api/devices-schemas.yaml` — device object schemas
-- `docs/bond-api/api-bpup.yaml` — BPUP (Bond Push UDP Protocol) spec
+A fully bundled, self-contained OpenAPI 3.0.2 spec is embedded at `docs/bond-api/openapi.json`.
+Read it directly when you need endpoint details, request/response schemas, or action names — all 71 endpoints and 67 schemas are included with no external `$ref` dependencies.
 
-Live canonical source (fetch for the latest or for files not embedded):
+Live canonical source (fetch for the latest):
 - Full repo: https://github.com/bondhome/api-v2
 - Top-level spec: https://raw.githubusercontent.com/bondhome/api-v2/master/local.yaml
-- Any file: `https://raw.githubusercontent.com/bondhome/api-v2/master/<path>`
 
 ### Homebridge Plugin API (TypeScript)
 Homebridge has no OpenAPI spec — its API contract is TypeScript. Fetch these when you need type definitions, interface signatures, or plugin lifecycle APIs:
