@@ -243,6 +243,16 @@ describe('fanSpeeds', () => {
       const device = DeviceFactory.createFanWithSpeeds([1,2,4]);
       expect(Device.fanSpeeds(device)).to.deep.equal([1,2,4]);
     });
+
+    it('sorts commands provided out of order', () => {
+      const device = DeviceFactory.createFanWithSpeeds([3,1,2]);
+      expect(Device.fanSpeeds(device)).to.deep.equal([1,2,3]);
+    });
+
+    it('sorts commands with double-digit speeds correctly (not lexicographic)', () => {
+      const device = DeviceFactory.createFanWithSpeeds([1,2,10,3]);
+      expect(Device.fanSpeeds(device)).to.deep.equal([1,2,3,10]);
+    });
   });
 
   context('does not have commands', () => {

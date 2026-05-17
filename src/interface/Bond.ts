@@ -128,15 +128,25 @@ export class Bond {
 }
 
 export interface BondState {
+  // Power / Speed (CF, GX, FP, MS, LT)
   power?: number;
   speed?: number;
+  direction?: number;
+  breeze?: [number, number, number];
+  timer?: number;
+  // Light (CF, LT)
   light?: number;
   up_light?: number;
   down_light?: number;
-  direction?: number;
-  open?: number;
   brightness?: number;
+  up_light_brightness?: number;
+  down_light_brightness?: number;
+  // Fireplace (FP)
   flame?: number;
+  fpfan_power?: number;
+  fpfan_speed?: number;
+  // Shades (MS)
+  open?: number;
   position?: number;
 }
 
