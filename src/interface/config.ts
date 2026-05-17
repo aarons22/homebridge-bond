@@ -47,6 +47,31 @@ export namespace BondPlatformConfig {
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace BondConfig {
+  function isValidBondHost(ipAddress: string): boolean {
+    if (ipAddress.trim() !== ipAddress || ipAddress.length === 0) {
+      return false;
+    }
+
+    if (/[/?#\\]/.test(ipAddress)) {
+      return false;
+    }
+
+    try {
+      const parsed = new URL(`http://${ipAddress}`);
+      if (parsed.pathname !== '/' || parsed.search.length > 0 || parsed.hash.length > 0) {
+        return false;
+      }
+
+      if (parsed.username.length > 0 || parsed.password.length > 0) {
+        return false;
+      }
+
+      return parsed.hostname.length > 0;
+    } catch (_error) {
+      return false;
+    }
+  }
+
   export function isValid(platform: BondPlatform, config: BondConfig): boolean {
     function evaluate(type: string, key: string, value?: any): boolean {
       if (value === undefined) {
@@ -60,7 +85,11 @@ export namespace BondConfig {
       return true;
     }
 
-    const validIP = evaluate('string', 'ip_address', config.ip_address);
+    const validIPType = evaluate('string', 'ip_address', config.ip_address);
+    const validIP = validIPType && isValidBondHost(config.ip_address);
+    if (validIPType && !validIP) {
+      platform.log.error(`BondConfig ip_address has invalid value: ${config.ip_address}. Expected host or IP with optional port only.`);
+    }
     const validToken = evaluate('string', 'token', config.token);
     let validHideDeviceIds = true;
 

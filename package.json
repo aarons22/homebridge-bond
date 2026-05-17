@@ -53,8 +53,8 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "axios": "^1.6.0",
-    "axios-retry": "^3.1.8",
+    "axios": "1.16.1",
+    "axios-retry": "4.5.0",
     "biguint-format": "^1.0.2",
     "flake-idgen": "^1.4.0"
   },
