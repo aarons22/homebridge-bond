@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bond Simulator</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">homebridge-bond</p>
+          <h1>Bond Simulator</h1>
+        </div>
+        <div class="status" id="connection-status">Connecting</div>
+      </header>
+
+      <section class="panel control-panel">
+        <div>
+          <p class="label">Simulator Light</p>
+          <h2 id="light-state">Unknown</h2>
+        </div>
+        <button class="power-button" id="toggle-light" type="button" aria-pressed="false">
+          <span class="power-icon"></span>
+          <span id="toggle-label">Toggle</span>
+        </button>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Hub</h2>
+          <dl>
+            <div>
+              <dt>Bond ID</dt>
+              <dd id="bond-id">-</dd>
+            </div>
+            <div>
+              <dt>Firmware</dt>
+              <dd id="firmware">-</dd>
+            </div>
+            <div>
+              <dt>Token</dt>
+              <dd id="token">-</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="panel">
+          <h2>Device</h2>
+          <dl>
+            <div>
+              <dt>ID</dt>
+              <dd id="device-id">-</dd>
+            </div>
+            <div>
+              <dt>Name</dt>
+              <dd id="device-name">-</dd>
+            </div>
+            <div>
+              <dt>Location</dt>
+              <dd id="device-location">-</dd>
+            </div>
+            <div>
+              <dt>Type</dt>
+              <dd id="device-type">-</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Homebridge Config</h2>
+        <pre id="homebridge-config">{}</pre>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
