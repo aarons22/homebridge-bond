@@ -203,7 +203,7 @@ export class BondApi {
   }
 
   public setPosition(device: Device, position: number): Promise<void> {
-    return this.request(HTTPMethod.PUT, this.uri.action(device.id, Action.SetPosition), { argument: position });
+    return this.action(device, Action.SetPosition, { argument: position });
   }
 
   public setFanSpeed(device: Device, speed: CharacteristicValue): Promise<void> {
@@ -228,7 +228,7 @@ export class BondApi {
   public toggleState(device: Device, property: string): Promise<void> {
     return this.getState(device.id)
       .then(state => {
-        if(property !== 'open' && property !== 'power' && property !== 'light' ) {
+        if(property !== 'open' && property !== 'power' && property !== 'light' && property !== 'up_light' && property !== 'down_light') {
           throw Error(`This device does not have ${property} in it's Bond state`);
         }
         if (state[property] !== undefined) {

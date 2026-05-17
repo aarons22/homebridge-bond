@@ -119,16 +119,13 @@ export namespace Device {
         // Find all of the commands associated with speed
           return cmd.action === Action.SetSpeed;
         })
-        .sort((a, b) => {
-        // sort them
-          return a.argument! < b.argument! ? 0 : 1;
-        })
+        .sort((a, b) => a.argument! - b.argument!)
         .map(cmd => {
         // map down to the raw argument values from that command
           return cmd.argument || 0;
         });
 
-      return values.sort();
+      return values.sort((a, b) => a - b);
     } else if (device.properties.max_speed === undefined || device.properties.max_speed === null) {
       return [];
     } else {
@@ -137,7 +134,7 @@ export namespace Device {
       const vals = Array(max_speed)
         .fill(1)
         .map((x, y) => x + y);
-      return vals.sort();
+      return vals.sort((a, b) => a - b);
     }
   }
 
