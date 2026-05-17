@@ -336,6 +336,26 @@ describe('BondApi', () => {
       await api.toggleState(device, 'light');
     });
 
+    it('toggles up_light state (1→0)', async () => {
+      nock(`http://${TEST_IP}`)
+        .matchHeader('BOND-Token', TEST_TOKEN)
+        .persist()
+        .get('/v2/devices/fan1/state').reply(200, { up_light: 1 })
+        .patch('/v2/devices/fan1/state', { up_light: 0 }).reply(200, {});
+
+      await api.toggleState(device, 'up_light');
+    });
+
+    it('toggles down_light state (0→1)', async () => {
+      nock(`http://${TEST_IP}`)
+        .matchHeader('BOND-Token', TEST_TOKEN)
+        .persist()
+        .get('/v2/devices/fan1/state').reply(200, { down_light: 0 })
+        .patch('/v2/devices/fan1/state', { down_light: 1 }).reply(200, {});
+
+      await api.toggleState(device, 'down_light');
+    });
+
     it('throws when property is not supported', async () => {
       nock(`http://${TEST_IP}`)
         .matchHeader('BOND-Token', TEST_TOKEN)
@@ -440,6 +460,36 @@ describe('BondApi', () => {
       // Wait long enough for both to fire
       await new Promise(r => setTimeout(r, 200));
       expect(calls).to.include('TurnOn');
+    });
+
+    it('setPosition is queued like other actions (not bypassing ms_between_actions)', async () => {
+      const queuedApi = makeApi(platform, 100);
+      const device = DeviceFactory.createDevice({ id: 'shade1' });
+
+      const calls: string[] = [];
+      nock(`http://${TEST_IP}`)
+        .matchHeader('BOND-Token', TEST_TOKEN)
+        .persist()
+        .put('/v2/devices/shade1/actions/TurnOn').reply(function() {
+          calls.push('TurnOn');
+          return [200, {}];
+        })
+        .put('/v2/devices/shade1/actions/SetPosition').reply(function() {
+          calls.push('SetPosition');
+          return [200, {}];
+        });
+
+      queuedApi.toggleFan(device, true);
+      queuedApi.setPosition(device, 75);
+
+      // Wait one tick for the first action's HTTP call to land, but not long
+      // enough for the 100ms delay to expire — SetPosition must still be pending
+      await new Promise(r => setTimeout(r, 20));
+      expect(calls).to.deep.equal(['TurnOn']);
+
+      // After the full delay both actions should have fired
+      await new Promise(r => setTimeout(r, 300));
+      expect(calls).to.deep.equal(['TurnOn', 'SetPosition']);
     });
   });
 });

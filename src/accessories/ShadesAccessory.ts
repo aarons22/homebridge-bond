@@ -96,7 +96,9 @@ export class ShadesAccessory implements BondAccessory  {
             this.platform.error(this.accessory, `Error setting position: ${error}`);
           });
       } else {
-        // Otherwise, toggle open/closed based on target position
+        // Intentional: RF shade devices without position support typically only
+        // have a single toggle RF code — no discrete Open/Close signals exist.
+        // ToggleOpen is the only available command for these devices.
         await bond.api.toggleOpen(device)
           .then(() => {
             this.platform.debug(this.accessory, `Toggled open: ${value}`);
