@@ -27,6 +27,14 @@ export class BondApi {
   private queueNextRequest = false;
   private requestQueue: {device: Device, action: Action, body: unknown}[] = [];
 
+  private formatAxiosError(error: AxiosError): string {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    const code = error.code ?? '';
+    const message = error.message ?? 'Unknown axios error';
+    return `[status] ${status ?? 'N/A'} [statusText] ${statusText ?? 'N/A'} [code] ${code} [message] ${message}`;
+  }
+
   constructor(
     private readonly platform: BondPlatform,
     bondToken: string,
@@ -322,10 +330,12 @@ export class BondApi {
               this.platform.log.error('Unauthorized. Please check the `token` in your config to see if it is correct.');
               return;
             default:
-              this.platform.log.error(`A request error occurred: [status] ${response.status} [statusText] ${response.statusText}`);
+              this.platform.log.error(`A request error occurred: ${this.formatAxiosError(error)}`);
           }
         } else {
-          this.platform.log.error(`A request error occurred: ${JSON.stringify(error)}`);
+          const code = (error as any).code ?? '';
+          const message = (error as any).message ?? 'Unknown error';
+          this.platform.log.error(`A request error occurred: [code] ${code} [message] ${message}`);
         }
       });
   }

@@ -100,6 +100,30 @@ describe('Bond', () => {
     });
   });
 
+  describe('validate()', () => {
+    it('logs safe non-sensitive fields on non-axios errors', async () => {
+      sinon.stub(bond.api, 'ping').rejects({
+        code: 'EFAIL',
+        message: 'ping failed',
+        config: {
+          headers: {
+            'BOND-Token': TEST_TOKEN,
+          },
+        },
+      });
+
+      await (bond as any).validate();
+      const errorCalls = (platform as any).log.error.args as string[][];
+      const requestError = errorCalls.find(args => args[0]?.includes('A request error occurred'));
+      expect(requestError).to.not.be.undefined;
+      expect(requestError![0]).to.include('[code] EFAIL');
+      expect(requestError![0]).to.include('[message] ping failed');
+      expect(requestError![0]).to.not.include('BOND-Token');
+      expect(requestError![0]).to.not.include('headers');
+      expect(requestError![0]).to.not.include('config');
+    });
+  });
+
   // -------------------------------------------------------------------------
   // receivedBPUPPacket
   // -------------------------------------------------------------------------

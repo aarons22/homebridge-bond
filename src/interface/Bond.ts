@@ -14,6 +14,14 @@ export class Bond {
   public accessories: BondAccessory[] = [];
   public version!: Version;
 
+  private formatAxiosError(error: AxiosError): string {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    const code = error.code ?? '';
+    const message = error.message ?? 'Unknown axios error';
+    return `[status] ${status ?? 'N/A'} [statusText] ${statusText ?? 'N/A'} [code] ${code} [message] ${message}`;
+  }
+
   constructor(
     private readonly platform: BondPlatform,
     config: BondConfig) {
@@ -57,12 +65,12 @@ export class Bond {
               this.platform.log.error('Unauthorized. Please check the `token` in your config to see if it is correct.');
               return;
             default:
-              this.platform.log.error(`A request error occurred: [status] ${response.status} [statusText] ${response.statusText}`);
+              this.platform.log.error(`A request error occurred: ${this.formatAxiosError(error)}`);
           }
         } else if (error.code === 'ECONNABORTED') {
           this.platform.log.error(`Unable to find Bond for IP Address: ${bond.config.ip_address}. Skipping this Bond.`);
         } else {
-          this.platform.log.error(`A request error occurred: ${JSON.stringify(error)} [code] ${error.code ?? ''}`);
+          this.platform.log.error(`A request error occurred: [code] ${error.code ?? ''} [message] ${error.message ?? 'Unknown error'}`);
         }
       });
   }

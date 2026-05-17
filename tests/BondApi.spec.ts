@@ -75,6 +75,21 @@ describe('BondApi', () => {
       const errorCalls = (platform as any).log.error.args as string[][];
       expect(errorCalls.length).to.be.greaterThan(0);
     });
+
+    it('logs safe non-sensitive fields on axios errors', async () => {
+      nock(`http://${TEST_IP}`).get('/v2/sys/version').reply(404, {});
+
+      const result = await api.getVersion();
+      expect(result).to.be.undefined;
+
+      const errorCalls = (platform as any).log.error.args as string[][];
+      const requestError = errorCalls.find(args => args[0]?.includes('A request error occurred'));
+      expect(requestError).to.not.be.undefined;
+      expect(requestError![0]).to.include('[status] 404');
+      expect(requestError![0]).to.not.include('BOND-Token');
+      expect(requestError![0]).to.not.include('headers');
+      expect(requestError![0]).to.not.include('config');
+    });
   });
 
   // -------------------------------------------------------------------------
