@@ -3,6 +3,46 @@ import { Action } from '../../src/enum/Action';
 import { DeviceType } from '../../src/enum/DeviceType';
 
 export class DeviceFactory {
+  static createLight(params?: Omit<DeviceParams, 'type'>): Device {
+    return DeviceFactory.createDevice({
+      type: DeviceType.Light,
+      actions: [Action.ToggleLight],
+      ...params,
+    });
+  }
+
+  static createFireplace(params?: Omit<DeviceParams, 'type'>): Device {
+    return DeviceFactory.createDevice({
+      type: DeviceType.Fireplace,
+      actions: [Action.TogglePower, Action.SetFlame],
+      ...params,
+    });
+  }
+
+  static createShades(params?: Omit<DeviceParams, 'type'>): Device {
+    return DeviceFactory.createDevice({
+      type: DeviceType.Shades,
+      actions: [Action.ToggleOpen],
+      ...params,
+    });
+  }
+
+  static createShadesWithPosition(awning = false): Device {
+    return DeviceFactory.createDevice({
+      type: DeviceType.Shades,
+      actions: [Action.ToggleOpen, Action.SetPosition],
+      subtype: awning ? 'AWNING' : undefined,
+    });
+  }
+
+  static createCeilingFan(maxSpeed = 3, extraActions: Action[] = []): Device {
+    return DeviceFactory.createDevice({
+      type: DeviceType.CeilingFan,
+      actions: [Action.TurnOn, Action.TurnOff, Action.SetSpeed, ...extraActions],
+      maxSpeed,
+    });
+  }
+
   static createDevice(params?: DeviceParams): Device {
     return {
       'id': params?.id ?? '1234',
