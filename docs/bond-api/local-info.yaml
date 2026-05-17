@@ -1,0 +1,7 @@
+---
+title: Bond Local API
+version: "v3.0.0"
+x-logo:
+  url: https://s3.amazonaws.com/docs-cloud.appbond.com/bond.png
+description:
+  $ref: ../common/info.yaml#/description

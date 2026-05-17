@@ -1,0 +1,61 @@
+Schema:
+  type: object
+  properties:
+    broadcast:
+      example: true
+      type: boolean
+      description: |
+        If true, the Bond will broadcast all state updates on port 30007
+        (disabled by default)
+
+Path:
+  patch:
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: ./bpup.yaml#/Schema
+    responses:
+      '200':
+        description: BPUP Reconfigured
+      '401':
+        $ref: ../common/responses.yaml#/Unauthorized
+      '500':
+        $ref: ../common/responses.yaml#/InternalServerError
+    security:
+    - BasicAuth: []
+    summary: Configure BPUP Transport
+    description: |
+      Configure the Bond's BPUP transport.
+    tags:
+    - BPUP
+  get:
+    responses:
+      '200':
+        description: BPUP Configuration
+        content:
+          application/json:
+            schema:
+              $ref: ./bpup.yaml#/Schema
+      '401':
+        $ref: ../common/responses.yaml#/Unauthorized
+      '500':
+        $ref: ../common/responses.yaml#/InternalServerError
+    security:
+    - BasicAuth: []
+    summary: Get BPUP Configuration
+    tags:
+    - BPUP
+  delete:
+    responses:
+      '204':
+        description: BPUP config reset to default
+      '401':
+        $ref: ../common/responses.yaml#/Unauthorized
+      '500':
+        $ref: ../common/responses.yaml#/InternalServerError
+    security:
+    - BasicAuth: []
+    summary: Reset BPUP Config to defaults
+    tags:
+    - BPUP

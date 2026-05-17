@@ -1,12 +1,31 @@
-# Homebridge Bond Plugin - AI Coding Instructions
+# Homebridge Bond Plugin - Agent Coding Instructions
+
+## External API References
+
+### Bond Local API (OpenAPI Spec)
+Key spec files are embedded in `docs/bond-api/` for offline reference. Read them directly when you need endpoint details, request/response schemas, or action names:
+- `docs/bond-api/local.yaml` — top-level spec (entry point)
+- `docs/bond-api/local-paths.yaml` — all endpoint paths
+- `docs/bond-api/devices-paths.yaml` — device CRUD, state, actions, properties
+- `docs/bond-api/devices-schemas.yaml` — device object schemas
+- `docs/bond-api/api-bpup.yaml` — BPUP (Bond Push UDP Protocol) spec
+
+Live canonical source (fetch for the latest or for files not embedded):
+- Full repo: https://github.com/bondhome/api-v2
+- Top-level spec: https://raw.githubusercontent.com/bondhome/api-v2/master/local.yaml
+- Any file: `https://raw.githubusercontent.com/bondhome/api-v2/master/<path>`
+
+### Homebridge Plugin API (TypeScript)
+Homebridge has no OpenAPI spec — its API contract is TypeScript. Fetch these when you need type definitions, interface signatures, or plugin lifecycle APIs:
+- https://raw.githubusercontent.com/homebridge/homebridge/latest/src/index.ts — main plugin exports
+- https://raw.githubusercontent.com/homebridge/homebridge/latest/src/api.ts — API implementation
+- https://raw.githubusercontent.com/homebridge/homebridge/latest/src/platformAccessory.ts — PlatformAccessory class
+- Full repo: https://github.com/homebridge/homebridge
+
+---
 
 ## Project Overview
 A Homebridge plugin that integrates Bond devices (ceiling fans, fireplaces, lights, shades) via the Bond V2 API. This is a **dynamic platform plugin** that discovers and creates HomeKit accessories at runtime.
-
-## External Documentation
-- **Homebridge Developer Docs**: https://developers.homebridge.io
-- **Bond V2 API Documentation**: https://docs-local.appbond.com
-- **Homebridge Verified Plugin**: https://github.com/homebridge/homebridge/wiki/Verified-Plugins
 
 ## Architecture
 
@@ -137,5 +156,5 @@ Defined in `config.schema.json`. Key points:
 1. Always run `npm run lint` before committing
 2. Ensure `npm run build` completes without errors
 3. Run `npm test` to verify tests pass
-4. Update this documentation if adding new patterns or critical information
+4. Update this file if adding new patterns or critical information
 5. Test with actual Bond hardware when possible
