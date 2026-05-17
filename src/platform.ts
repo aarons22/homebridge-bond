@@ -14,6 +14,25 @@ export class BondPlatform implements DynamicPlatformPlugin {
   private accessories: PlatformAccessory[] = [];
   private bonds: Bond[] | undefined;
 
+  private redactConfig(config: PlatformConfig): PlatformConfig {
+    const cast = config as BondPlatformConfig;
+    if (!cast.bonds || !Array.isArray(cast.bonds)) {
+      return config;
+    }
+
+    const redactedBonds = cast.bonds.map(bond => {
+      return {
+        ...bond,
+        token: '[REDACTED]',
+      };
+    });
+
+    return {
+      ...config,
+      bonds: redactedBonds,
+    };
+  }
+
   constructor(
     public log: Logging,
     public config: PlatformConfig,
@@ -25,11 +44,11 @@ export class BondPlatform implements DynamicPlatformPlugin {
     }
 
     if(!BondPlatformConfig.isValid(this)) {
-      this.log.error(`Config: ${JSON.stringify(config, null, 2)}`);
+      this.log.error(`Config: ${JSON.stringify(this.redactConfig(config), null, 2)}`);
       return;
     }
     
-    this.log.debug(`Config: ${JSON.stringify(config, null, 2)}`);
+    this.log.debug(`Config: ${JSON.stringify(this.redactConfig(config), null, 2)}`);
 
     api.on('didFinishLaunching', () => {
       // Delaying the initialization of bonds property because we need to
@@ -250,9 +269,13 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
     client.on('message', (message: Buffer, remote: { address: string; port: string }) => {
       const msg = message.toString().trim();
-      const packet = JSON.parse(msg) as BPUPPacket;
-      log.debug(`UDP Message received from ${remote.address}:${remote.port} - ${msg}`);
-      bond.receivedBPUPPacket(packet);
+      try {
+        const packet = JSON.parse(msg) as BPUPPacket;
+        log.debug(`UDP Message received from ${remote.address}:${remote.port} - ${msg}`);
+        bond.receivedBPUPPacket(packet);
+      } catch (_error) {
+        log.debug(`Malformed UDP payload from ${remote.address}:${remote.port}. Ignoring packet.`);
+      }
     });
 
     client.on('close', () => {
