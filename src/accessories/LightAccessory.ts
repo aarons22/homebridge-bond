@@ -57,7 +57,7 @@ export class LightAccessory implements BondAccessory {
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error toggling light state: ${error}`);
         });
-    });
+    }, { resetToFalse: true });
   }
 
   private removeService(serviceName: string) {

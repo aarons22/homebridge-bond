@@ -174,13 +174,6 @@ export class ButtonService {
 
     this.on = service.getCharacteristic(platform.Characteristic.On);
     this.on.setValue(false);
-
-    this.on.on('set', () => {
-      const timer = setInterval(() => {
-        this.on.updateValue(false);
-        clearInterval(timer);
-      }, 500);
-    });
     this.subType = subType;
   }
 }
@@ -243,7 +236,10 @@ export class FlameService {
   }
 
   updateState(state: BondState) {
-    if (this.flame && state.flame) {
+    if (state.power !== undefined) {
+      this.on.updateValue(state.power === 1);
+    }
+    if (this.flame && state.flame !== undefined) {
       this.flame.updateValue(state.flame);
     }
   }

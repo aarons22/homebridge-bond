@@ -74,17 +74,39 @@ describe('FireplaceAccessory', () => {
 
   // -------------------------------------------------------------------------
   // updateState
-  // FlameService.updateState only updates the flame brightness characteristic;
-  // the power (on) characteristic is driven by observer callbacks, not state updates.
   // -------------------------------------------------------------------------
 
   describe('updateState()', () => {
+    it('updates switch power when power value present', () => {
+      const { acc, accessory } = buildFireplace([Action.TogglePower]);
+      acc.updateState({ power: 1 });
+      const svc = accessory.getServiceById(ServiceTokens.Switch, 'Flame');
+      const on = svc!.getCharacteristic(CharacteristicTokens.On) as MockCharacteristic;
+      expect(on.value).to.equal(true);
+    });
+
+    it('updates lightbulb power when power value present', () => {
+      const { acc, accessory } = buildFireplace([Action.TogglePower, Action.SetFlame]);
+      acc.updateState({ power: 0 });
+      const svc = accessory.getServiceById(ServiceTokens.Lightbulb, 'Flame');
+      const on = svc!.getCharacteristic(CharacteristicTokens.On) as MockCharacteristic;
+      expect(on.value).to.equal(false);
+    });
+
     it('updates flame brightness when flame value present', () => {
       const { acc, accessory } = buildFireplace([Action.TogglePower, Action.SetFlame]);
       acc.updateState({ power: 1, flame: 60 });
       const svc = accessory.getServiceById(ServiceTokens.Lightbulb, 'Flame');
       const brightness = svc!.getCharacteristic(CharacteristicTokens.Brightness) as MockCharacteristic;
       expect(brightness.value).to.equal(60);
+    });
+
+    it('updates flame brightness when flame value is 0', () => {
+      const { acc, accessory } = buildFireplace([Action.TogglePower, Action.SetFlame]);
+      acc.updateState({ flame: 0 });
+      const svc = accessory.getServiceById(ServiceTokens.Lightbulb, 'Flame');
+      const brightness = svc!.getCharacteristic(CharacteristicTokens.Brightness) as MockCharacteristic;
+      expect(brightness.value).to.equal(0);
     });
 
     it('updates flame brightness to a different value', () => {

@@ -61,7 +61,7 @@ export class FireplaceAccessory implements BondAccessory {
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error toggling power state: ${error}`);
         });
-    });
+    }, { resetToFalse: true });
   }
 
   private removeService(serviceName: string) {

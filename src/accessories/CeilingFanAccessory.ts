@@ -268,7 +268,7 @@ export class CeilingFanAccessory implements BondAccessory  {
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error increasing fan speed: ${error}`);
         });
-    });
+    }, { resetToFalse: true });
   }
 
   private observeFanDecreaseSpeed(bond: Bond, device: Device) {
@@ -284,7 +284,7 @@ export class CeilingFanAccessory implements BondAccessory  {
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error decreasing fan speed: ${error}`);
         });
-    });
+    }, { resetToFalse: true });
   }
 
   private observeLightToggle(bond: Bond, device: Device, service?: ButtonService) {
@@ -296,9 +296,9 @@ export class CeilingFanAccessory implements BondAccessory  {
       let promise: Promise<void>;
 
       const subtype = service.subType;
-      if(subtype === 'UpLight') {
+      if(subtype === 'UpLight' || subtype === 'ToggleUpLight') {
         promise = bond.api.toggleState(device, 'up_light');
-      } else if(subtype === 'DownLight') {
+      } else if(subtype === 'DownLight' || subtype === 'ToggleDownLight') {
         promise = bond.api.toggleState(device, 'down_light');
       } else {
         promise = bond.api.toggleState(device, 'light');
@@ -311,7 +311,7 @@ export class CeilingFanAccessory implements BondAccessory  {
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error toggling light state: ${error}`);
         });
-    });
+    }, { resetToFalse: true });
   }
 
   private observeLightDimmer(bond: Bond, device: Device, service?: SwitchService) {

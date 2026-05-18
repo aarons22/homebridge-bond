@@ -3,7 +3,8 @@ import { Characteristic, CharacteristicValue } from 'homebridge';
 export class Observer {
   public static set(
     characteristic: Characteristic,
-    set: (value: CharacteristicValue) => Promise<void>) {
+    set: (value: CharacteristicValue) => Promise<void>,
+    options: { resetToFalse?: boolean } = {}) {
     characteristic 
       .onSet(async (value: CharacteristicValue) => {
         // Avoid doing anything when the device is in the requested state
@@ -11,7 +12,17 @@ export class Observer {
           return;
         }
 
+        if (options.resetToFalse && value !== true) {
+          return;
+        }
+
         await set(value);
+
+        if (options.resetToFalse) {
+          setTimeout(() => {
+            characteristic.updateValue(false);
+          }, 500);
+        }
       });
   }
 }
