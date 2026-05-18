@@ -5,6 +5,7 @@ import {
   BondSimulatorServer,
   BpupPacket,
   DEFAULT_BOND_ID,
+  DEFAULT_DEVICE_LOCATION,
   DEFAULT_TOKEN,
   SIM_BASIC_FIREPLACE_ID,
   SIM_BASIC_FAN_ID,
@@ -119,14 +120,14 @@ describe('Bond simulator', () => {
     expect(simpleLight.statusCode).to.equal(200);
     expect(simpleLight.body).to.deep.include({
       name: 'Toggle Light',
-      location: 'Simulator',
+      location: DEFAULT_DEVICE_LOCATION,
       type: 'LT',
     });
     expect(simpleLight.body.actions).to.deep.equal(['ToggleLight']);
     expect(dimmableLight.statusCode).to.equal(200);
     expect(dimmableLight.body).to.deep.include({
       name: 'Dimmable Light',
-      location: 'Simulator',
+      location: DEFAULT_DEVICE_LOCATION,
       type: 'LT',
     });
     expect(dimmableLight.body.actions).to.deep.equal(['ToggleLight', 'SetBrightness', 'TurnLightOff']);
@@ -153,7 +154,7 @@ describe('Bond simulator', () => {
     );
     expect(basicFan.body).to.deep.include({
       name: 'Basic Fan',
-      location: 'Simulator',
+      location: DEFAULT_DEVICE_LOCATION,
       type: 'CF',
     });
     expect(basicFan.body.actions).to.deep.equal(['TurnOn', 'TurnOff', 'SetSpeed']);
@@ -175,14 +176,14 @@ describe('Bond simulator', () => {
     );
     expect(toggleShade.body).to.deep.include({
       name: 'Toggle Shade',
-      location: 'Simulator',
+      location: DEFAULT_DEVICE_LOCATION,
       type: 'MS',
     });
     expect(toggleShade.body.actions).to.deep.equal(['ToggleOpen']);
     expect(positionShade.body.actions).to.deep.equal(['ToggleOpen', 'SetPosition']);
     expect(awningShade.body).to.deep.include({
       name: 'Awning Shade With Preset',
-      location: 'Simulator',
+      location: DEFAULT_DEVICE_LOCATION,
       type: 'MS',
       subtype: 'AWNING',
     });
@@ -200,13 +201,13 @@ describe('Bond simulator', () => {
     );
     expect(basicFireplace.body).to.deep.include({
       name: 'Basic Fireplace',
-      location: 'Simulator',
+      location: DEFAULT_DEVICE_LOCATION,
       type: 'FP',
     });
     expect(basicFireplace.body.actions).to.deep.equal(['TogglePower']);
     expect(flameFireplace.body).to.deep.include({
       name: 'Flame Fireplace',
-      location: 'Simulator',
+      location: DEFAULT_DEVICE_LOCATION,
       type: 'FP',
     });
     expect(flameFireplace.body.actions).to.deep.equal(['TogglePower', 'SetFlame']);

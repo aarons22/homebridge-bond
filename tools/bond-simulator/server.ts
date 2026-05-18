@@ -7,6 +7,7 @@ export const DEFAULT_HTTP_PORT = 18080;
 export const DEFAULT_BPUP_PORT = 30007;
 export const DEFAULT_TOKEN = 'sim-token';
 export const DEFAULT_BOND_ID = 'SIMBOND000001';
+export const DEFAULT_DEVICE_LOCATION = '';
 export const SIM_LIGHT_ID = '00000001';
 export const SIM_DIMMABLE_LIGHT_ID = '00000002';
 export const SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID = '00000003';
@@ -99,7 +100,7 @@ export class BondSimulatorServer {
       {
         id: SIM_LIGHT_ID,
         name: 'Toggle Light',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'LT',
         actions: ['ToggleLight'],
         properties: {
@@ -113,7 +114,7 @@ export class BondSimulatorServer {
       {
         id: SIM_DIMMABLE_LIGHT_ID,
         name: 'Dimmable Light',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'LT',
         actions: ['ToggleLight', 'SetBrightness', 'TurnLightOff'],
         properties: {
@@ -128,7 +129,7 @@ export class BondSimulatorServer {
       {
         id: SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID,
         name: 'Set Brightness Only Light',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'LT',
         actions: ['ToggleLight', 'SetBrightness'],
         properties: {
@@ -143,7 +144,7 @@ export class BondSimulatorServer {
       {
         id: SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID,
         name: 'Turn Light Off Only Light',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'LT',
         actions: ['ToggleLight', 'TurnLightOff'],
         properties: {
@@ -157,7 +158,7 @@ export class BondSimulatorServer {
       {
         id: SIM_BASIC_FAN_ID,
         name: 'Basic Fan',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'CF',
         actions: ['TurnOn', 'TurnOff', 'SetSpeed'],
         properties: {
@@ -172,7 +173,7 @@ export class BondSimulatorServer {
       {
         id: SIM_DIRECTION_FAN_ID,
         name: 'Direction Fan',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'CF',
         actions: ['TurnOn', 'TurnOff', 'SetSpeed', 'ToggleDirection'],
         properties: {
@@ -188,7 +189,7 @@ export class BondSimulatorServer {
       {
         id: SIM_SPEED_BUTTON_FAN_ID,
         name: 'Speed Button Fan',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'CF',
         actions: ['TurnOn', 'TurnOff', 'IncreaseSpeed', 'DecreaseSpeed'],
         properties: {
@@ -202,7 +203,7 @@ export class BondSimulatorServer {
       {
         id: SIM_LIGHT_FAN_ID,
         name: 'Fan With Light',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'CF',
         actions: ['TurnOn', 'TurnOff', 'SetSpeed', 'ToggleLight'],
         properties: {
@@ -218,7 +219,7 @@ export class BondSimulatorServer {
       {
         id: SIM_UP_DOWN_LIGHT_FAN_ID,
         name: 'Fan With Up Down Lights',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'CF',
         actions: ['TurnOn', 'TurnOff', 'SetSpeed', 'ToggleUpLight', 'ToggleDownLight'],
         properties: {
@@ -236,7 +237,7 @@ export class BondSimulatorServer {
       {
         id: SIM_DIMMER_FAN_ID,
         name: 'Fan Light Dimmer',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'CF',
         actions: ['TurnOn', 'TurnOff', 'SetSpeed', 'ToggleLight', 'StartDimmer', 'Stop'],
         properties: {
@@ -252,7 +253,7 @@ export class BondSimulatorServer {
       {
         id: SIM_UP_DOWN_DIMMER_FAN_ID,
         name: 'Fan Up Down Dimmer',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'CF',
         actions: [
           'TurnOn',
@@ -280,7 +281,7 @@ export class BondSimulatorServer {
       {
         id: SIM_BRIGHTNESS_BUTTON_FAN_ID,
         name: 'Fan Brightness Buttons',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'CF',
         actions: [
           'TurnOn',
@@ -305,7 +306,7 @@ export class BondSimulatorServer {
       {
         id: SIM_TOGGLE_SHADE_ID,
         name: 'Toggle Shade',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'MS',
         actions: ['ToggleOpen'],
         properties: {
@@ -318,7 +319,7 @@ export class BondSimulatorServer {
       {
         id: SIM_POSITION_SHADE_ID,
         name: 'Position Shade',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'MS',
         actions: ['ToggleOpen', 'SetPosition'],
         properties: {
@@ -332,7 +333,7 @@ export class BondSimulatorServer {
       {
         id: SIM_AWNING_SHADE_ID,
         name: 'Awning Shade With Preset',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'MS',
         subtype: 'AWNING',
         actions: ['ToggleOpen', 'SetPosition', 'Preset'],
@@ -347,7 +348,7 @@ export class BondSimulatorServer {
       {
         id: SIM_BASIC_FIREPLACE_ID,
         name: 'Basic Fireplace',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'FP',
         actions: ['TogglePower'],
         properties: {
@@ -360,7 +361,7 @@ export class BondSimulatorServer {
       {
         id: SIM_FLAME_FIREPLACE_ID,
         name: 'Flame Fireplace',
-        location: 'Simulator',
+        location: DEFAULT_DEVICE_LOCATION,
         type: 'FP',
         actions: ['TogglePower', 'SetFlame'],
         properties: {

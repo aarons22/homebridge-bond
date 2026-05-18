@@ -138,7 +138,7 @@ function renderDeviceControl(device) {
   return `
     <article class="panel control-panel">
       <div class="device-heading">
-        <p class="label">${device.location}</p>
+        ${device.location ? `<p class="label">${device.location}</p>` : ''}
         <h2>${device.name}</h2>
         <p class="device-meta">${device.id} · ${device.type}</p>
       </div>
