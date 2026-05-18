@@ -8,6 +8,8 @@ import {
   DEFAULT_TOKEN,
   SIM_DIMMABLE_LIGHT_ID,
   SIM_LIGHT_ID,
+  SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID,
+  SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID,
   getServerPort,
 } from '../tools/bond-simulator/server';
 
@@ -93,24 +95,30 @@ describe('Bond simulator', () => {
     const list = await request(port, 'GET', '/v2/devices', undefined, DEFAULT_TOKEN);
     const simpleLight = await request(port, 'GET', `/v2/devices/${SIM_LIGHT_ID}`, undefined, DEFAULT_TOKEN);
     const dimmableLight = await request(port, 'GET', `/v2/devices/${SIM_DIMMABLE_LIGHT_ID}`, undefined, DEFAULT_TOKEN);
+    const setBrightnessOnly = await request(port, 'GET', `/v2/devices/${SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID}`, undefined, DEFAULT_TOKEN);
+    const turnLightOffOnly = await request(port, 'GET', `/v2/devices/${SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID}`, undefined, DEFAULT_TOKEN);
 
     expect(list.statusCode).to.equal(200);
     expect(list.body).to.have.property(SIM_LIGHT_ID);
     expect(list.body).to.have.property(SIM_DIMMABLE_LIGHT_ID);
+    expect(list.body).to.have.property(SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID);
+    expect(list.body).to.have.property(SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID);
     expect(simpleLight.statusCode).to.equal(200);
     expect(simpleLight.body).to.deep.include({
-      name: 'Sim Light',
+      name: 'Toggle Light',
       location: 'Simulator',
       type: 'LT',
     });
     expect(simpleLight.body.actions).to.deep.equal(['ToggleLight']);
     expect(dimmableLight.statusCode).to.equal(200);
     expect(dimmableLight.body).to.deep.include({
-      name: 'Dimmer Light',
+      name: 'Dimmable Light',
       location: 'Simulator',
       type: 'LT',
     });
     expect(dimmableLight.body.actions).to.deep.equal(['ToggleLight', 'SetBrightness', 'TurnLightOff']);
+    expect(setBrightnessOnly.body.actions).to.deep.equal(['ToggleLight', 'SetBrightness']);
+    expect(turnLightOffOnly.body.actions).to.deep.equal(['ToggleLight', 'TurnLightOff']);
   });
 
   it('rejects protected endpoints without the simulator token', async () => {
@@ -201,5 +209,31 @@ describe('Bond simulator', () => {
         b: { light: 0, brightness: 35 },
       },
     ]);
+  });
+
+  it('supports SetBrightness on the partial brightness light for negative HomeKit capability testing', async () => {
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID}/actions/SetBrightness`,
+      { argument: 62 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ light: 1, brightness: 62 });
+  });
+
+  it('rejects SetBrightness on a light that does not advertise it', async () => {
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID}/actions/SetBrightness`,
+      { argument: 62 },
+      DEFAULT_TOKEN,
+    );
+
+    expect(response.statusCode).to.equal(404);
   });
 });

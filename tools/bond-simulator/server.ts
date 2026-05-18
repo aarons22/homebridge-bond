@@ -9,6 +9,8 @@ export const DEFAULT_TOKEN = 'sim-token';
 export const DEFAULT_BOND_ID = 'SIMBOND000001';
 export const SIM_LIGHT_ID = '00000001';
 export const SIM_DIMMABLE_LIGHT_ID = '00000002';
+export const SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID = '00000003';
+export const SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID = '00000004';
 
 type JsonObject = Record<string, unknown>;
 
@@ -74,7 +76,7 @@ export class BondSimulatorServer {
     this.devices = [
       {
         id: SIM_LIGHT_ID,
-        name: 'Sim Light',
+        name: 'Toggle Light',
         location: 'Simulator',
         type: 'LT',
         actions: ['ToggleLight'],
@@ -88,7 +90,7 @@ export class BondSimulatorServer {
       },
       {
         id: SIM_DIMMABLE_LIGHT_ID,
-        name: 'Dimmer Light',
+        name: 'Dimmable Light',
         location: 'Simulator',
         type: 'LT',
         actions: ['ToggleLight', 'SetBrightness', 'TurnLightOff'],
@@ -99,6 +101,35 @@ export class BondSimulatorServer {
         state: {
           light: 0,
           brightness: 50,
+        },
+      },
+      {
+        id: SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID,
+        name: 'Set Brightness Only Light',
+        location: 'Simulator',
+        type: 'LT',
+        actions: ['ToggleLight', 'SetBrightness'],
+        properties: {
+          trust_state: true,
+          max_speed: null,
+        },
+        state: {
+          light: 0,
+          brightness: 50,
+        },
+      },
+      {
+        id: SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID,
+        name: 'Turn Light Off Only Light',
+        location: 'Simulator',
+        type: 'LT',
+        actions: ['ToggleLight', 'TurnLightOff'],
+        properties: {
+          trust_state: true,
+          max_speed: null,
+        },
+        state: {
+          light: 0,
         },
       },
     ];
@@ -299,6 +330,11 @@ export class BondSimulatorServer {
   }
 
   private handleAction(deviceId: string, actionName: string, body: JsonObject) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || !device.actions.includes(actionName)) {
+      return false;
+    }
+
     if (actionName === 'ToggleLight') {
       return this.toggleLight(deviceId);
     }
