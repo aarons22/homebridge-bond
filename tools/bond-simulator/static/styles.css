@@ -101,8 +101,8 @@ h2 {
 
 .control-panel {
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 16px;
   min-height: 178px;
 }
@@ -140,6 +140,19 @@ h2 {
 .power-button:disabled {
   cursor: wait;
   opacity: 0.68;
+}
+
+.secondary-button {
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--accent-dark);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: 10px;
 }
 
 .slider-control {
@@ -252,6 +265,10 @@ pre {
   .masthead,
   .device-grid,
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .control-panel {
     grid-template-columns: 1fr;
   }
 

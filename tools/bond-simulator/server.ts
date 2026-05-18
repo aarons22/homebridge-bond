@@ -11,6 +11,14 @@ export const SIM_LIGHT_ID = '00000001';
 export const SIM_DIMMABLE_LIGHT_ID = '00000002';
 export const SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID = '00000003';
 export const SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID = '00000004';
+export const SIM_BASIC_FAN_ID = '00000101';
+export const SIM_DIRECTION_FAN_ID = '00000102';
+export const SIM_SPEED_BUTTON_FAN_ID = '00000103';
+export const SIM_LIGHT_FAN_ID = '00000104';
+export const SIM_UP_DOWN_LIGHT_FAN_ID = '00000105';
+export const SIM_DIMMER_FAN_ID = '00000106';
+export const SIM_UP_DOWN_DIMMER_FAN_ID = '00000107';
+export const SIM_BRIGHTNESS_BUTTON_FAN_ID = '00000108';
 
 type JsonObject = Record<string, unknown>;
 
@@ -40,11 +48,16 @@ interface SimulatorDevice {
   actions: string[];
   properties: {
     trust_state: boolean;
-    max_speed: null;
+    max_speed?: number | null;
   };
   state: {
-    light: number;
+    light?: number;
     brightness?: number;
+    power?: number;
+    speed?: number;
+    direction?: number;
+    up_light?: number;
+    down_light?: number;
   };
 }
 
@@ -130,6 +143,154 @@ export class BondSimulatorServer {
         },
         state: {
           light: 0,
+        },
+      },
+      {
+        id: SIM_BASIC_FAN_ID,
+        name: 'Basic Fan',
+        location: 'Simulator',
+        type: 'CF',
+        actions: ['TurnOn', 'TurnOff', 'SetSpeed'],
+        properties: {
+          trust_state: true,
+          max_speed: 3,
+        },
+        state: {
+          power: 0,
+          speed: 1,
+        },
+      },
+      {
+        id: SIM_DIRECTION_FAN_ID,
+        name: 'Direction Fan',
+        location: 'Simulator',
+        type: 'CF',
+        actions: ['TurnOn', 'TurnOff', 'SetSpeed', 'ToggleDirection'],
+        properties: {
+          trust_state: true,
+          max_speed: 3,
+        },
+        state: {
+          power: 0,
+          speed: 1,
+          direction: 1,
+        },
+      },
+      {
+        id: SIM_SPEED_BUTTON_FAN_ID,
+        name: 'Speed Button Fan',
+        location: 'Simulator',
+        type: 'CF',
+        actions: ['TurnOn', 'TurnOff', 'IncreaseSpeed', 'DecreaseSpeed'],
+        properties: {
+          trust_state: true,
+        },
+        state: {
+          power: 0,
+          speed: 1,
+        },
+      },
+      {
+        id: SIM_LIGHT_FAN_ID,
+        name: 'Fan With Light',
+        location: 'Simulator',
+        type: 'CF',
+        actions: ['TurnOn', 'TurnOff', 'SetSpeed', 'ToggleLight'],
+        properties: {
+          trust_state: true,
+          max_speed: 3,
+        },
+        state: {
+          power: 0,
+          speed: 1,
+          light: 0,
+        },
+      },
+      {
+        id: SIM_UP_DOWN_LIGHT_FAN_ID,
+        name: 'Fan With Up Down Lights',
+        location: 'Simulator',
+        type: 'CF',
+        actions: ['TurnOn', 'TurnOff', 'SetSpeed', 'ToggleUpLight', 'ToggleDownLight'],
+        properties: {
+          trust_state: true,
+          max_speed: 3,
+        },
+        state: {
+          power: 0,
+          speed: 1,
+          light: 1,
+          up_light: 0,
+          down_light: 0,
+        },
+      },
+      {
+        id: SIM_DIMMER_FAN_ID,
+        name: 'Fan Light Dimmer',
+        location: 'Simulator',
+        type: 'CF',
+        actions: ['TurnOn', 'TurnOff', 'SetSpeed', 'ToggleLight', 'StartDimmer', 'Stop'],
+        properties: {
+          trust_state: true,
+          max_speed: 3,
+        },
+        state: {
+          power: 0,
+          speed: 1,
+          light: 0,
+        },
+      },
+      {
+        id: SIM_UP_DOWN_DIMMER_FAN_ID,
+        name: 'Fan Up Down Dimmer',
+        location: 'Simulator',
+        type: 'CF',
+        actions: [
+          'TurnOn',
+          'TurnOff',
+          'SetSpeed',
+          'ToggleUpLight',
+          'ToggleDownLight',
+          'StartDimmer',
+          'StartUpLightDimmer',
+          'StartDownLightDimmer',
+          'Stop',
+        ],
+        properties: {
+          trust_state: true,
+          max_speed: 3,
+        },
+        state: {
+          power: 0,
+          speed: 1,
+          light: 1,
+          up_light: 0,
+          down_light: 0,
+        },
+      },
+      {
+        id: SIM_BRIGHTNESS_BUTTON_FAN_ID,
+        name: 'Fan Brightness Buttons',
+        location: 'Simulator',
+        type: 'CF',
+        actions: [
+          'TurnOn',
+          'TurnOff',
+          'SetSpeed',
+          'ToggleLight',
+          'StartIncreasingBrightness',
+          'StartDecreasingBrightness',
+          'Stop',
+        ],
+        properties: {
+          trust_state: true,
+          max_speed: 3,
+        },
+        state: {
+          power: 0,
+          speed: 1,
+          light: 0,
+          brightness: 50,
         },
       },
     ];
@@ -250,6 +411,20 @@ export class BondSimulatorServer {
       return;
     }
 
+    if (request.method === 'PUT' && pathname === '/simulator/action') {
+      const body = await this.readJsonBody(request);
+      const id = typeof body.id === 'string' ? body.id : undefined;
+      const action = typeof body.action === 'string' ? body.action : undefined;
+      if (!id || !action) {
+        this.sendJson(response, 400, { error: 'missing_action' });
+        return;
+      }
+
+      const handled = this.handleAction(id, action, body);
+      this.sendJson(response, handled ? 200 : 404, handled ? this.simulatorStatus() : { error: 'not_found' });
+      return;
+    }
+
     this.sendJson(response, 404, { error: 'not_found' });
   }
 
@@ -347,6 +522,42 @@ export class BondSimulatorServer {
       return this.setLight(deviceId, 0);
     }
 
+    if (actionName === 'TurnOn') {
+      return this.setFanPower(deviceId, 1);
+    }
+
+    if (actionName === 'TurnOff') {
+      return this.setFanPower(deviceId, 0);
+    }
+
+    if (actionName === 'SetSpeed' && typeof body.argument === 'number') {
+      return this.setFanSpeed(deviceId, body.argument);
+    }
+
+    if (actionName === 'IncreaseSpeed') {
+      return this.stepFanSpeed(deviceId, 1);
+    }
+
+    if (actionName === 'DecreaseSpeed') {
+      return this.stepFanSpeed(deviceId, -1);
+    }
+
+    if (actionName === 'ToggleDirection') {
+      return this.toggleDirection(deviceId);
+    }
+
+    if (actionName === 'ToggleUpLight') {
+      return this.toggleLightField(deviceId, 'up_light');
+    }
+
+    if (actionName === 'ToggleDownLight') {
+      return this.toggleLightField(deviceId, 'down_light');
+    }
+
+    if (this.isHoldAction(actionName)) {
+      return true;
+    }
+
     return false;
   }
 
@@ -356,21 +567,9 @@ export class BondSimulatorServer {
       return false;
     }
 
-    let changed = false;
-    if ((body.light === 0 || body.light === 1) && device.state.light !== body.light) {
-      device.state.light = body.light;
-      changed = true;
-    }
-
-    if (typeof body.brightness === 'number' && device.state.brightness !== undefined) {
-      const brightness = this.normalizeBrightness(body.brightness);
-      if (device.state.brightness !== brightness) {
-        device.state.brightness = brightness;
-        changed = true;
-      }
-    }
-
-    return changed;
+    return Object.entries(body).reduce((changed, [key, value]) => (
+      this.patchStateField(device, key, value) || changed
+    ), false);
   }
 
   private toggleLight(deviceId: string) {
@@ -384,7 +583,7 @@ export class BondSimulatorServer {
 
   private setLight(deviceId: string, value: number) {
     const device = this.getSimulatorDevice(deviceId);
-    if (!device) {
+    if (!device || device.state.light === undefined) {
       return false;
     }
 
@@ -405,6 +604,96 @@ export class BondSimulatorServer {
     return true;
   }
 
+  private setFanPower(deviceId: string, value: number) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state.power === undefined) {
+      return false;
+    }
+
+    device.state.power = value;
+    this.broadcastState(device.id);
+    return true;
+  }
+
+  private setFanSpeed(deviceId: string, value: number) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state.speed === undefined) {
+      return false;
+    }
+
+    device.state.speed = this.normalizeSpeed(device, value);
+    if (device.state.power !== undefined) {
+      device.state.power = 1;
+    }
+    this.broadcastState(device.id);
+    return true;
+  }
+
+  private stepFanSpeed(deviceId: string, direction: number) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state.speed === undefined) {
+      return false;
+    }
+
+    return this.setFanSpeed(deviceId, device.state.speed + direction);
+  }
+
+  private toggleDirection(deviceId: string) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state.direction === undefined) {
+      return false;
+    }
+
+    device.state.direction = device.state.direction === 1 ? -1 : 1;
+    this.broadcastState(device.id);
+    return true;
+  }
+
+  private toggleLightField(deviceId: string, field: 'up_light' | 'down_light') {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state[field] === undefined) {
+      return false;
+    }
+
+    device.state.light = 1;
+    device.state[field] = device.state[field] === 1 ? 0 : 1;
+    this.broadcastState(device.id);
+    return true;
+  }
+
+  private patchStateField(device: SimulatorDevice, key: string, value: unknown) {
+    if (key === 'brightness' && typeof value === 'number' && device.state.brightness !== undefined) {
+      return this.setStateNumber(device, key, this.normalizeBrightness(value));
+    }
+
+    if (key === 'speed' && typeof value === 'number' && device.state.speed !== undefined) {
+      return this.setStateNumber(device, key, this.normalizeSpeed(device, value));
+    }
+
+    if (
+      (key === 'light' || key === 'power' || key === 'up_light' || key === 'down_light')
+      && (value === 0 || value === 1)
+      && device.state[key] !== undefined
+    ) {
+      return this.setStateNumber(device, key, value);
+    }
+
+    if (key === 'direction' && (value === 1 || value === -1) && device.state.direction !== undefined) {
+      return this.setStateNumber(device, key, value);
+    }
+
+    return false;
+  }
+
+  private setStateNumber(device: SimulatorDevice, key: keyof SimulatorDevice['state'], value: number) {
+    if (device.state[key] === value) {
+      return false;
+    }
+
+    device.state[key] = value;
+    return true;
+  }
+
   private broadcastState(deviceId: string) {
     this.broadcaster.broadcast({
       B: this.bondId,
@@ -420,6 +709,22 @@ export class BondSimulatorServer {
 
   private normalizeBrightness(value: number) {
     return Math.min(100, Math.max(1, Math.round(value)));
+  }
+
+  private normalizeSpeed(device: SimulatorDevice, value: number) {
+    const maxSpeed = typeof device.properties.max_speed === 'number' ? device.properties.max_speed : 6;
+    return Math.min(maxSpeed, Math.max(1, Math.round(value)));
+  }
+
+  private isHoldAction(actionName: string) {
+    return [
+      'StartDimmer',
+      'StartUpLightDimmer',
+      'StartDownLightDimmer',
+      'StartIncreasingBrightness',
+      'StartDecreasingBrightness',
+      'Stop',
+    ].includes(actionName);
   }
 
   private versionBody() {
@@ -445,6 +750,8 @@ export class BondSimulatorServer {
       })),
       homebridgeConfig: {
         platform: 'Bond',
+        include_dimmer: true,
+        include_toggle_state: true,
         bonds: [
           {
             ip_address: this.displayAddress(),

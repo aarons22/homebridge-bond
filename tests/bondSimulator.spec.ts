@@ -6,10 +6,18 @@ import {
   BpupPacket,
   DEFAULT_BOND_ID,
   DEFAULT_TOKEN,
+  SIM_BASIC_FAN_ID,
+  SIM_BRIGHTNESS_BUTTON_FAN_ID,
+  SIM_DIMMER_FAN_ID,
   SIM_DIMMABLE_LIGHT_ID,
+  SIM_DIRECTION_FAN_ID,
   SIM_LIGHT_ID,
+  SIM_LIGHT_FAN_ID,
   SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID,
+  SIM_SPEED_BUTTON_FAN_ID,
   SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID,
+  SIM_UP_DOWN_DIMMER_FAN_ID,
+  SIM_UP_DOWN_LIGHT_FAN_ID,
   getServerPort,
 } from '../tools/bond-simulator/server';
 
@@ -119,6 +127,34 @@ describe('Bond simulator', () => {
     expect(dimmableLight.body.actions).to.deep.equal(['ToggleLight', 'SetBrightness', 'TurnLightOff']);
     expect(setBrightnessOnly.body.actions).to.deep.equal(['ToggleLight', 'SetBrightness']);
     expect(turnLightOffOnly.body.actions).to.deep.equal(['ToggleLight', 'TurnLightOff']);
+  });
+
+  it('returns the fan permutation catalog with expected capability shapes', async () => {
+    const list = await request(port, 'GET', '/v2/devices', undefined, DEFAULT_TOKEN);
+    const basicFan = await request(port, 'GET', `/v2/devices/${SIM_BASIC_FAN_ID}`, undefined, DEFAULT_TOKEN);
+    const speedButtonFan = await request(port, 'GET', `/v2/devices/${SIM_SPEED_BUTTON_FAN_ID}`, undefined, DEFAULT_TOKEN);
+    const upDownDimmerFan = await request(port, 'GET', `/v2/devices/${SIM_UP_DOWN_DIMMER_FAN_ID}`, undefined, DEFAULT_TOKEN);
+    const brightnessButtonFan = await request(port, 'GET', `/v2/devices/${SIM_BRIGHTNESS_BUTTON_FAN_ID}`, undefined, DEFAULT_TOKEN);
+
+    expect(list.body).to.include.keys(
+      SIM_BASIC_FAN_ID,
+      SIM_DIRECTION_FAN_ID,
+      SIM_SPEED_BUTTON_FAN_ID,
+      SIM_LIGHT_FAN_ID,
+      SIM_UP_DOWN_LIGHT_FAN_ID,
+      SIM_DIMMER_FAN_ID,
+      SIM_UP_DOWN_DIMMER_FAN_ID,
+      SIM_BRIGHTNESS_BUTTON_FAN_ID,
+    );
+    expect(basicFan.body).to.deep.include({
+      name: 'Basic Fan',
+      location: 'Simulator',
+      type: 'CF',
+    });
+    expect(basicFan.body.actions).to.deep.equal(['TurnOn', 'TurnOff', 'SetSpeed']);
+    expect(speedButtonFan.body.actions).to.deep.equal(['TurnOn', 'TurnOff', 'IncreaseSpeed', 'DecreaseSpeed']);
+    expect(upDownDimmerFan.body.actions).to.include.members(['ToggleUpLight', 'ToggleDownLight', 'StartDimmer']);
+    expect(brightnessButtonFan.body.actions).to.include.members(['StartIncreasingBrightness', 'StartDecreasingBrightness']);
   });
 
   it('rejects protected endpoints without the simulator token', async () => {
@@ -235,5 +271,99 @@ describe('Bond simulator', () => {
     );
 
     expect(response.statusCode).to.equal(404);
+  });
+
+  it('turns a fan on and off through Bond actions', async () => {
+    const turnOn = await request(port, 'PUT', `/v2/devices/${SIM_BASIC_FAN_ID}/actions/TurnOn`, {}, DEFAULT_TOKEN);
+    const onState = await request(port, 'GET', `/v2/devices/${SIM_BASIC_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+    const turnOff = await request(port, 'PUT', `/v2/devices/${SIM_BASIC_FAN_ID}/actions/TurnOff`, {}, DEFAULT_TOKEN);
+    const offState = await request(port, 'GET', `/v2/devices/${SIM_BASIC_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(turnOn.statusCode).to.equal(200);
+    expect(onState.body).to.deep.equal({ power: 1, speed: 1 });
+    expect(turnOff.statusCode).to.equal(200);
+    expect(offState.body).to.deep.equal({ power: 0, speed: 1 });
+    expect(bpupPackets.map(packet => packet.b)).to.deep.equal([
+      { power: 1, speed: 1 },
+      { power: 0, speed: 1 },
+    ]);
+  });
+
+  it('sets fan speed and broadcasts the updated fan state', async () => {
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_BASIC_FAN_ID}/actions/SetSpeed`,
+      { argument: 3 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_BASIC_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 1, speed: 3 });
+    expect(bpupPackets).to.deep.equal([
+      {
+        B: DEFAULT_BOND_ID,
+        t: `devices/${SIM_BASIC_FAN_ID}/state`,
+        m: 4,
+        b: { power: 1, speed: 3 },
+      },
+    ]);
+  });
+
+  it('supports fan speed increase and decrease actions', async () => {
+    const increase = await request(port, 'PUT', `/v2/devices/${SIM_SPEED_BUTTON_FAN_ID}/actions/IncreaseSpeed`, {}, DEFAULT_TOKEN);
+    const decrease = await request(port, 'PUT', `/v2/devices/${SIM_SPEED_BUTTON_FAN_ID}/actions/DecreaseSpeed`, {}, DEFAULT_TOKEN);
+    const state = await request(port, 'GET', `/v2/devices/${SIM_SPEED_BUTTON_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(increase.statusCode).to.equal(200);
+    expect(decrease.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 1, speed: 1 });
+  });
+
+  it('toggles fan direction when advertised', async () => {
+    const response = await request(port, 'PUT', `/v2/devices/${SIM_DIRECTION_FAN_ID}/actions/ToggleDirection`, {}, DEFAULT_TOKEN);
+    const state = await request(port, 'GET', `/v2/devices/${SIM_DIRECTION_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 0, speed: 1, direction: -1 });
+  });
+
+  it('toggles up and down fan lights independently', async () => {
+    const up = await request(port, 'PUT', `/v2/devices/${SIM_UP_DOWN_LIGHT_FAN_ID}/actions/ToggleUpLight`, {}, DEFAULT_TOKEN);
+    const down = await request(port, 'PUT', `/v2/devices/${SIM_UP_DOWN_LIGHT_FAN_ID}/actions/ToggleDownLight`, {}, DEFAULT_TOKEN);
+    const state = await request(port, 'GET', `/v2/devices/${SIM_UP_DOWN_LIGHT_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(up.statusCode).to.equal(200);
+    expect(down.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({
+      power: 0,
+      speed: 1,
+      light: 1,
+      up_light: 1,
+      down_light: 1,
+    });
+  });
+
+  it('patches fan state and broadcasts the changed fields', async () => {
+    const response = await request(
+      port,
+      'PATCH',
+      `/v2/devices/${SIM_LIGHT_FAN_ID}/state`,
+      { power: 1, speed: 2, light: 1 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_LIGHT_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 1, speed: 2, light: 1 });
+    expect(bpupPackets).to.deep.equal([
+      {
+        B: DEFAULT_BOND_ID,
+        t: `devices/${SIM_LIGHT_FAN_ID}/state`,
+        m: 4,
+        b: { power: 1, speed: 2, light: 1 },
+      },
+    ]);
   });
 });

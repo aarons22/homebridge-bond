@@ -18,14 +18,81 @@ async function request(path, options) {
 
 function deviceCapabilities(device) {
   return {
+    fan: device.type === 'CF',
+    speed: device.actions.includes('SetSpeed'),
+    speedButtons: device.actions.includes('IncreaseSpeed') && device.actions.includes('DecreaseSpeed'),
+    direction: device.actions.includes('ToggleDirection'),
+    light: device.actions.includes('ToggleLight'),
+    upDownLight: device.actions.includes('ToggleUpLight') && device.actions.includes('ToggleDownLight'),
     brightness: device.actions.includes('SetBrightness') && device.actions.includes('TurnLightOff'),
   };
 }
 
-function renderDeviceControl(device) {
+function renderActionButton(device, action, label, pressed = false, extraClass = '') {
+  return `
+    <button class="power-button ${extraClass}" data-action="bond-action" data-bond-action="${action}" data-device-id="${device.id}" type="button" aria-pressed="${pressed}">
+      <span>${label}</span>
+    </button>
+  `;
+}
+
+function renderLightControls(device, capabilities) {
   const lightOn = device.state.light === 1;
-  const capabilities = deviceCapabilities(device);
   const brightness = device.state.brightness ?? 0;
+
+  if (capabilities.upDownLight) {
+    return `
+      <div class="button-row">
+        ${renderActionButton(device, 'ToggleUpLight', device.state.up_light === 1 ? 'Up Light Off' : 'Up Light On', device.state.up_light === 1)}
+        ${renderActionButton(device, 'ToggleDownLight', device.state.down_light === 1 ? 'Down Light Off' : 'Down Light On', device.state.down_light === 1)}
+      </div>
+    `;
+  }
+
+  if (!capabilities.light) {
+    return '';
+  }
+
+  return `
+    ${renderActionButton(device, 'ToggleLight', lightOn ? 'Light Off' : 'Light On', lightOn)}
+    ${capabilities.brightness ? `
+      <label class="slider-control">
+        <span>Brightness</span>
+        <strong>${brightness}%</strong>
+        <input data-action="brightness" data-device-id="${device.id}" type="range" min="1" max="100" value="${brightness}">
+      </label>
+    ` : ''}
+  `;
+}
+
+function renderFanControls(device, capabilities) {
+  const powerOn = device.state.power === 1;
+  const speed = device.state.speed ?? 1;
+  const maxSpeed = device.properties.max_speed ?? 6;
+
+  return `
+    ${renderActionButton(device, powerOn ? 'TurnOff' : 'TurnOn', powerOn ? 'Turn Off' : 'Turn On', powerOn)}
+    ${capabilities.speed ? `
+      <label class="slider-control">
+        <span>Speed</span>
+        <strong>${speed} / ${maxSpeed}</strong>
+        <input data-action="speed" data-device-id="${device.id}" type="range" min="1" max="${maxSpeed}" value="${speed}">
+      </label>
+    ` : ''}
+    ${capabilities.speedButtons ? `
+      <div class="button-row">
+        ${renderActionButton(device, 'DecreaseSpeed', 'Speed Down', false, 'secondary-button')}
+        ${renderActionButton(device, 'IncreaseSpeed', 'Speed Up', false, 'secondary-button')}
+      </div>
+    ` : ''}
+    ${capabilities.direction ? renderActionButton(device, 'ToggleDirection', device.state.direction === 1 ? 'Reverse' : 'Forward', false, 'secondary-button') : ''}
+    ${renderLightControls(device, capabilities)}
+  `;
+}
+
+function renderDeviceControl(device) {
+  const capabilities = deviceCapabilities(device);
+  const controls = capabilities.fan ? renderFanControls(device, capabilities) : renderLightControls(device, capabilities);
 
   return `
     <article class="panel control-panel">
@@ -34,17 +101,7 @@ function renderDeviceControl(device) {
         <h2>${device.name}</h2>
         <p class="device-meta">${device.id} · ${device.type}</p>
       </div>
-      <button class="power-button" data-action="toggle" data-device-id="${device.id}" type="button" aria-pressed="${lightOn}">
-        <span class="power-icon"></span>
-        <span>${lightOn ? 'Turn Off' : 'Turn On'}</span>
-      </button>
-      ${capabilities.brightness ? `
-        <label class="slider-control">
-          <span>Brightness</span>
-          <strong>${brightness}%</strong>
-          <input data-action="brightness" data-device-id="${device.id}" type="range" min="1" max="100" value="${brightness}">
-        </label>
-      ` : ''}
+      ${controls}
     </article>
   `;
 }
@@ -85,14 +142,23 @@ async function refresh() {
 }
 
 elements.deviceControls.addEventListener('click', async (event) => {
-  const button = event.target.closest('[data-action="toggle"]');
+  const button = event.target.closest('[data-action="bond-action"]');
   if (!button) {
     return;
   }
 
   button.disabled = true;
   try {
-    render(await request(`/simulator/toggle?id=${button.dataset.deviceId}`, { method: 'PUT' }));
+    render(await request('/simulator/action', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: button.dataset.deviceId,
+        action: button.dataset.bondAction,
+      }),
+    }));
   } finally {
     button.disabled = false;
   }
@@ -114,6 +180,30 @@ elements.deviceControls.addEventListener('change', async (event) => {
       body: JSON.stringify({
         id: slider.dataset.deviceId,
         brightness: Number(slider.value),
+      }),
+    }));
+  } finally {
+    slider.disabled = false;
+  }
+});
+
+elements.deviceControls.addEventListener('change', async (event) => {
+  const slider = event.target.closest('[data-action="speed"]');
+  if (!slider) {
+    return;
+  }
+
+  slider.disabled = true;
+  try {
+    render(await request('/simulator/action', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: slider.dataset.deviceId,
+        action: 'SetSpeed',
+        argument: Number(slider.value),
       }),
     }));
   } finally {
