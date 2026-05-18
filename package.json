@@ -5,7 +5,8 @@
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
-    "lint": "eslint src/**.ts",
+    "lint": "eslint src/**.ts tools/bond-simulator/*.ts",
+    "simulator": "ts-node tools/bond-simulator/cli.ts",
     "watch": "npm run build && npm link && nodemon",
     "dev": "tsc --watch & nodemon dist",
     "build": "rimraf ./dist && tsc -p tsconfig-build.json",

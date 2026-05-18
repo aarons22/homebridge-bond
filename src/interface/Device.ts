@@ -27,7 +27,7 @@ export interface Command {
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Device {
   export function displayName(device: Device): string {
-    return `${device.location} ${device.name}`;
+    return device.location ? `${device.location} ${device.name}` : device.name;
   }
 
   export function isSupported(device: Device): boolean {

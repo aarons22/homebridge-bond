@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bond Simulator</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">homebridge-bond</p>
+          <h1>Bond Simulator</h1>
+        </div>
+        <div class="status" id="connection-status">Connecting</div>
+      </header>
+
+      <section class="device-groups" id="device-controls"></section>
+
+      <section class="panel hub-panel">
+        <h2>Hub</h2>
+        <dl>
+          <div>
+            <dt>IP Address</dt>
+            <dd id="ip-address">-</dd>
+          </div>
+          <div>
+            <dt>Bond ID</dt>
+            <dd id="bond-id">-</dd>
+          </div>
+          <div>
+            <dt>Firmware</dt>
+            <dd id="firmware">-</dd>
+          </div>
+          <div>
+            <dt>Token</dt>
+            <dd id="token">-</dd>
+          </div>
+        </dl>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

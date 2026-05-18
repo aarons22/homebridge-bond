@@ -18,7 +18,7 @@ export class LightAccessory implements BondAccessory {
     bond: Bond) {
     this.platform = platform;
     this.accessory = accessory;
-    this.lightService = new LightbulbService(platform, accessory, `${accessory.displayName} Light`);
+    this.lightService = new LightbulbService(platform, accessory, accessory.displayName);
     if (platform.config.include_toggle_state) {
       this.toggleLightService = new ButtonService(platform, accessory, 'Toggle Light State', 'ToggleState');
     } else {
