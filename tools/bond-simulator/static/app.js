@@ -7,6 +7,17 @@ const elements = {
   deviceList: document.getElementById('device-list'),
   homebridgeConfig: document.getElementById('homebridge-config'),
 };
+const previousExternalUpdates = new Map();
+let hasRendered = false;
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
 async function request(path, options) {
   const response = await fetch(path, options);
@@ -64,7 +75,7 @@ function renderLightControls(device, capabilities) {
       <label class="slider-control">
         <span>Brightness</span>
         <strong>${brightness}%</strong>
-        <input data-action="brightness" data-device-id="${device.id}" type="range" min="1" max="100" value="${brightness}">
+        <input data-action="brightness" data-device-id="${device.id}" type="range" min="0" max="100" value="${brightness}">
       </label>
     ` : ''}
   `;
@@ -81,7 +92,7 @@ function renderFanControls(device, capabilities) {
       <label class="slider-control">
         <span>Speed</span>
         <strong>${speed} / ${maxSpeed}</strong>
-        <input data-action="speed" data-device-id="${device.id}" type="range" min="1" max="${maxSpeed}" value="${speed}">
+        <input data-action="speed" data-device-id="${device.id}" type="range" min="0" max="${maxSpeed}" value="${speed}">
       </label>
     ` : ''}
     ${capabilities.speedButtons ? `
@@ -122,13 +133,30 @@ function renderFireplaceControls(device, capabilities) {
       <label class="slider-control">
         <span>Flame</span>
         <strong>${flame}%</strong>
-        <input data-action="flame" data-device-id="${device.id}" type="range" min="1" max="100" value="${flame}">
+        <input data-action="flame" data-device-id="${device.id}" type="range" min="0" max="100" value="${flame}">
       </label>
     ` : ''}
   `;
 }
 
-function renderDeviceControl(device) {
+function deviceTypeLabel(type) {
+  return {
+    LT: 'Lights',
+    CF: 'Fans',
+    MS: 'Shades',
+    FP: 'Fireplaces',
+  }[type] ?? 'Other';
+}
+
+function renderDeviceState(device) {
+  const state = Object.entries(device.state)
+    .map(([key, value]) => `<span><b>${escapeHtml(key)}</b>${escapeHtml(value)}</span>`)
+    .join('');
+
+  return `<div class="state-pills">${state}</div>`;
+}
+
+function renderDeviceControl(device, highlight) {
   const capabilities = deviceCapabilities(device);
   const controls = capabilities.shade
     ? renderShadeControls(device, capabilities)
@@ -136,14 +164,28 @@ function renderDeviceControl(device) {
     : capabilities.fan ? renderFanControls(device, capabilities) : renderLightControls(device, capabilities);
 
   return `
-    <article class="panel control-panel">
+    <article class="panel control-panel ${highlight ? 'external-update' : ''}" data-device-id="${device.id}">
       <div class="device-heading">
-        ${device.location ? `<p class="label">${device.location}</p>` : ''}
         <h2>${device.name}</h2>
-        <p class="device-meta">${device.id} · ${device.type}</p>
+        <p class="device-meta">${device.id} · ${device.type}${device.subtype ? ` · ${device.subtype}` : ''}</p>
+        ${renderDeviceState(device)}
       </div>
       ${controls}
     </article>
+  `;
+}
+
+function renderDeviceGroup(type, devices, highlights) {
+  return `
+    <section class="device-section">
+      <div class="section-heading">
+        <h2>${deviceTypeLabel(type)}</h2>
+        <span>${devices.length}</span>
+      </div>
+      <div class="device-grid">
+        ${devices.map(device => renderDeviceControl(device, highlights.has(device.id))).join('')}
+      </div>
+    </section>
   `;
 }
 
@@ -163,14 +205,40 @@ function renderDeviceSummary(device) {
 }
 
 function render(status) {
+  const highlights = new Set();
+  const grouped = status.devices.reduce((acc, device) => {
+    if (!acc.has(device.type)) {
+      acc.set(device.type, []);
+    }
+    acc.get(device.type).push(device);
+
+    if (
+      hasRendered
+      && device.lastUpdatedBy === 'external'
+      && device.lastUpdatedAt > (previousExternalUpdates.get(device.id) ?? 0)
+    ) {
+      highlights.add(device.id);
+    }
+    if (device.lastUpdatedBy === 'external') {
+      previousExternalUpdates.set(device.id, device.lastUpdatedAt);
+    }
+
+    return acc;
+  }, new Map());
+  const typeOrder = ['LT', 'CF', 'MS', 'FP'];
+
   elements.status.textContent = 'Online';
   elements.status.className = 'status online';
   elements.bondId.textContent = status.version.bondid;
   elements.firmware.textContent = status.version.fw_ver;
   elements.token.textContent = status.token;
-  elements.deviceControls.innerHTML = status.devices.map(renderDeviceControl).join('');
+  elements.deviceControls.innerHTML = typeOrder
+    .filter(type => grouped.has(type))
+    .map(type => renderDeviceGroup(type, grouped.get(type), highlights))
+    .join('');
   elements.deviceList.innerHTML = status.devices.map(renderDeviceSummary).join('');
   elements.homebridgeConfig.textContent = JSON.stringify(status.homebridgeConfig, null, 2);
+  hasRendered = true;
 }
 
 async function refresh() {

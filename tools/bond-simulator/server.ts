@@ -72,6 +72,8 @@ interface SimulatorDevice {
     position?: number;
     flame?: number;
   };
+  lastUpdatedAt?: number;
+  lastUpdatedBy?: 'external' | 'ui';
 }
 
 const NOOP_BROADCASTER: BpupBroadcaster = {
@@ -479,7 +481,9 @@ export class BondSimulatorServer {
 
     if (request.method === 'PUT' && pathname === '/simulator/toggle') {
       const id = requestUrl.searchParams.get('id') ?? SIM_LIGHT_ID;
-      this.toggleLight(id);
+      if (this.toggleLight(id)) {
+        this.markDeviceUpdated(id, 'ui');
+      }
       this.sendJson(response, 200, this.simulatorStatus());
       return;
     }
@@ -493,6 +497,9 @@ export class BondSimulatorServer {
         return;
       }
       const handled = this.setBrightness(id, brightness);
+      if (handled) {
+        this.markDeviceUpdated(id, 'ui');
+      }
       this.sendJson(response, handled ? 200 : 404, handled ? this.simulatorStatus() : { error: 'not_found' });
       return;
     }
@@ -507,6 +514,9 @@ export class BondSimulatorServer {
       }
 
       const handled = this.handleAction(id, action, body);
+      if (handled) {
+        this.markDeviceUpdated(id, 'ui');
+      }
       this.sendJson(response, handled ? 200 : 404, handled ? this.simulatorStatus() : { error: 'not_found' });
       return;
     }
@@ -575,6 +585,7 @@ export class BondSimulatorServer {
       const changed = this.patchState(device.id, body);
       this.logDeviceEvent(device, `PATCH state ${JSON.stringify(body)}${changed ? '' : ' (no change)'}`);
       if (changed) {
+        this.markDeviceUpdated(device.id, 'external');
         this.broadcastState(device.id);
       }
       this.sendJson(response, 200, {});
@@ -585,6 +596,9 @@ export class BondSimulatorServer {
       const body = await this.readJsonBody(request);
       this.logDeviceEvent(device, `received PUT action ${actionName}${this.formatBody(body)}`);
       const handled = this.handleAction(device.id, actionName, body);
+      if (handled) {
+        this.markDeviceUpdated(device.id, 'external');
+      }
       if (!handled) {
         this.logDeviceEvent(device, `unsupported PUT action ${actionName}${this.formatBody(body)}`);
       }
@@ -710,7 +724,7 @@ export class BondSimulatorServer {
     }
 
     device.state.brightness = this.normalizeBrightness(value);
-    device.state.light = 1;
+    device.state.light = device.state.brightness > 0 ? 1 : 0;
     this.broadcastState(device.id);
     return true;
   }
@@ -734,7 +748,7 @@ export class BondSimulatorServer {
 
     device.state.speed = this.normalizeSpeed(device, value);
     if (device.state.power !== undefined) {
-      device.state.power = 1;
+      device.state.power = device.state.speed > 0 ? 1 : 0;
     }
     this.broadcastState(device.id);
     return true;
@@ -817,7 +831,7 @@ export class BondSimulatorServer {
     }
 
     device.state.flame = this.normalizePercent(value);
-    device.state.power = 1;
+    device.state.power = device.state.flame > 0 ? 1 : 0;
     this.broadcastState(device.id);
     return true;
   }
@@ -896,11 +910,11 @@ export class BondSimulatorServer {
 
   private normalizeSpeed(device: SimulatorDevice, value: number) {
     const maxSpeed = typeof device.properties.max_speed === 'number' ? device.properties.max_speed : 6;
-    return Math.min(maxSpeed, Math.max(1, Math.round(value)));
+    return Math.min(maxSpeed, Math.max(0, Math.round(value)));
   }
 
   private normalizePercent(value: number) {
-    return Math.min(100, Math.max(1, Math.round(value)));
+    return Math.min(100, Math.max(0, Math.round(value)));
   }
 
   private shadePositionForOpen(device: SimulatorDevice, open: number) {
@@ -950,6 +964,8 @@ export class BondSimulatorServer {
         ...this.getDevice(device.id),
         properties: device.properties,
         state: this.getState(device.id),
+        lastUpdatedAt: device.lastUpdatedAt ?? 0,
+        lastUpdatedBy: device.lastUpdatedBy ?? null,
       })),
       homebridgeConfig: {
         platform: 'Bond',
@@ -968,6 +984,16 @@ export class BondSimulatorServer {
   private displayAddress() {
     const host = this.httpHost === '0.0.0.0' ? '127.0.0.1' : this.httpHost;
     return `${host}:${this.httpPort}`;
+  }
+
+  private markDeviceUpdated(deviceId: string, updatedBy: 'external' | 'ui') {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device) {
+      return;
+    }
+
+    device.lastUpdatedAt = Date.now();
+    device.lastUpdatedBy = updatedBy;
   }
 
   private hash() {

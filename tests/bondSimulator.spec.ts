@@ -309,6 +309,27 @@ describe('Bond simulator', () => {
     ]);
   });
 
+  it('sets brightness to 0 and turns off a dimmable light', async () => {
+    await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_DIMMABLE_LIGHT_ID}/actions/SetBrightness`,
+      { argument: 72 },
+      DEFAULT_TOKEN,
+    );
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_DIMMABLE_LIGHT_ID}/actions/SetBrightness`,
+      { argument: 0 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_DIMMABLE_LIGHT_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ light: 0, brightness: 0 });
+  });
+
   it('patches dimmable light brightness and broadcasts BPUP when changed', async () => {
     const response = await request(
       port,
@@ -393,6 +414,27 @@ describe('Bond simulator', () => {
         b: { power: 1, speed: 3 },
       },
     ]);
+  });
+
+  it('sets fan speed to 0 and turns the fan off', async () => {
+    await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_BASIC_FAN_ID}/actions/SetSpeed`,
+      { argument: 2 },
+      DEFAULT_TOKEN,
+    );
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_BASIC_FAN_ID}/actions/SetSpeed`,
+      { argument: 0 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_BASIC_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 0, speed: 0 });
   });
 
   it('supports fan speed increase and decrease actions', async () => {
@@ -551,6 +593,27 @@ describe('Bond simulator', () => {
         b: { power: 1, flame: 68 },
       },
     ]);
+  });
+
+  it('sets flame to 0 and turns off the flame fireplace', async () => {
+    await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_FLAME_FIREPLACE_ID}/actions/SetFlame`,
+      { argument: 68 },
+      DEFAULT_TOKEN,
+    );
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_FLAME_FIREPLACE_ID}/actions/SetFlame`,
+      { argument: 0 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_FLAME_FIREPLACE_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 0, flame: 0 });
   });
 
   it('patches flame fireplace state and broadcasts the changed fields', async () => {
