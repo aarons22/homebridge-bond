@@ -6,11 +6,13 @@ import {
   BpupPacket,
   DEFAULT_BOND_ID,
   DEFAULT_TOKEN,
+  SIM_BASIC_FIREPLACE_ID,
   SIM_BASIC_FAN_ID,
   SIM_BRIGHTNESS_BUTTON_FAN_ID,
   SIM_DIMMER_FAN_ID,
   SIM_DIMMABLE_LIGHT_ID,
   SIM_DIRECTION_FAN_ID,
+  SIM_FLAME_FIREPLACE_ID,
   SIM_LIGHT_ID,
   SIM_LIGHT_FAN_ID,
   SIM_AWNING_SHADE_ID,
@@ -185,6 +187,29 @@ describe('Bond simulator', () => {
       subtype: 'AWNING',
     });
     expect(awningShade.body.actions).to.deep.equal(['ToggleOpen', 'SetPosition', 'Preset']);
+  });
+
+  it('returns the fireplace permutation catalog with expected capability shapes', async () => {
+    const list = await request(port, 'GET', '/v2/devices', undefined, DEFAULT_TOKEN);
+    const basicFireplace = await request(port, 'GET', `/v2/devices/${SIM_BASIC_FIREPLACE_ID}`, undefined, DEFAULT_TOKEN);
+    const flameFireplace = await request(port, 'GET', `/v2/devices/${SIM_FLAME_FIREPLACE_ID}`, undefined, DEFAULT_TOKEN);
+
+    expect(list.body).to.include.keys(
+      SIM_BASIC_FIREPLACE_ID,
+      SIM_FLAME_FIREPLACE_ID,
+    );
+    expect(basicFireplace.body).to.deep.include({
+      name: 'Basic Fireplace',
+      location: 'Simulator',
+      type: 'FP',
+    });
+    expect(basicFireplace.body.actions).to.deep.equal(['TogglePower']);
+    expect(flameFireplace.body).to.deep.include({
+      name: 'Flame Fireplace',
+      location: 'Simulator',
+      type: 'FP',
+    });
+    expect(flameFireplace.body.actions).to.deep.equal(['TogglePower', 'SetFlame']);
   });
 
   it('rejects protected endpoints without the simulator token', async () => {
@@ -459,5 +484,77 @@ describe('Bond simulator', () => {
 
     expect(response.statusCode).to.equal(200);
     expect(state.body).to.deep.equal({ open: 1, position: 50 });
+  });
+
+  it('toggles fireplace power through TogglePower', async () => {
+    const response = await request(port, 'PUT', `/v2/devices/${SIM_BASIC_FIREPLACE_ID}/actions/TogglePower`, {}, DEFAULT_TOKEN);
+    const state = await request(port, 'GET', `/v2/devices/${SIM_BASIC_FIREPLACE_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 1 });
+    expect(bpupPackets).to.deep.equal([
+      {
+        B: DEFAULT_BOND_ID,
+        t: `devices/${SIM_BASIC_FIREPLACE_ID}/state`,
+        m: 4,
+        b: { power: 1 },
+      },
+    ]);
+  });
+
+  it('sets flame level and turns on the flame fireplace through SetFlame', async () => {
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_FLAME_FIREPLACE_ID}/actions/SetFlame`,
+      { argument: 68 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_FLAME_FIREPLACE_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 1, flame: 68 });
+    expect(bpupPackets).to.deep.equal([
+      {
+        B: DEFAULT_BOND_ID,
+        t: `devices/${SIM_FLAME_FIREPLACE_ID}/state`,
+        m: 4,
+        b: { power: 1, flame: 68 },
+      },
+    ]);
+  });
+
+  it('patches flame fireplace state and broadcasts the changed fields', async () => {
+    const response = await request(
+      port,
+      'PATCH',
+      `/v2/devices/${SIM_FLAME_FIREPLACE_ID}/state`,
+      { power: 1, flame: 35 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_FLAME_FIREPLACE_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 1, flame: 35 });
+    expect(bpupPackets).to.deep.equal([
+      {
+        B: DEFAULT_BOND_ID,
+        t: `devices/${SIM_FLAME_FIREPLACE_ID}/state`,
+        m: 4,
+        b: { power: 1, flame: 35 },
+      },
+    ]);
+  });
+
+  it('rejects SetFlame on a fireplace that does not advertise it', async () => {
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_BASIC_FIREPLACE_ID}/actions/SetFlame`,
+      { argument: 68 },
+      DEFAULT_TOKEN,
+    );
+
+    expect(response.statusCode).to.equal(404);
   });
 });

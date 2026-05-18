@@ -22,6 +22,8 @@ export const SIM_BRIGHTNESS_BUTTON_FAN_ID = '00000108';
 export const SIM_TOGGLE_SHADE_ID = '00000201';
 export const SIM_POSITION_SHADE_ID = '00000202';
 export const SIM_AWNING_SHADE_ID = '00000203';
+export const SIM_BASIC_FIREPLACE_ID = '00000301';
+export const SIM_FLAME_FIREPLACE_ID = '00000302';
 
 type JsonObject = Record<string, unknown>;
 
@@ -64,6 +66,7 @@ interface SimulatorDevice {
     down_light?: number;
     open?: number;
     position?: number;
+    flame?: number;
   };
 }
 
@@ -341,6 +344,33 @@ export class BondSimulatorServer {
           position: 0,
         },
       },
+      {
+        id: SIM_BASIC_FIREPLACE_ID,
+        name: 'Basic Fireplace',
+        location: 'Simulator',
+        type: 'FP',
+        actions: ['TogglePower'],
+        properties: {
+          trust_state: true,
+        },
+        state: {
+          power: 0,
+        },
+      },
+      {
+        id: SIM_FLAME_FIREPLACE_ID,
+        name: 'Flame Fireplace',
+        location: 'Simulator',
+        type: 'FP',
+        actions: ['TogglePower', 'SetFlame'],
+        properties: {
+          trust_state: true,
+        },
+        state: {
+          power: 0,
+          flame: 50,
+        },
+      },
     ];
   }
 
@@ -615,6 +645,14 @@ export class BondSimulatorServer {
       return this.setPosition(deviceId, 50);
     }
 
+    if (actionName === 'TogglePower') {
+      return this.togglePower(deviceId);
+    }
+
+    if (actionName === 'SetFlame' && typeof body.argument === 'number') {
+      return this.setFlame(deviceId, body.argument);
+    }
+
     if (this.isHoldAction(actionName)) {
       return true;
     }
@@ -749,9 +787,36 @@ export class BondSimulatorServer {
     return true;
   }
 
+  private togglePower(deviceId: string) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state.power === undefined) {
+      return false;
+    }
+
+    device.state.power = device.state.power === 1 ? 0 : 1;
+    this.broadcastState(device.id);
+    return true;
+  }
+
+  private setFlame(deviceId: string, value: number) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state.flame === undefined) {
+      return false;
+    }
+
+    device.state.flame = this.normalizePercent(value);
+    device.state.power = 1;
+    this.broadcastState(device.id);
+    return true;
+  }
+
   private patchStateField(device: SimulatorDevice, key: string, value: unknown) {
     if (key === 'brightness' && typeof value === 'number' && device.state.brightness !== undefined) {
       return this.setStateNumber(device, key, this.normalizeBrightness(value));
+    }
+
+    if (key === 'flame' && typeof value === 'number' && device.state.flame !== undefined) {
+      return this.setStateNumber(device, key, this.normalizePercent(value));
     }
 
     if (key === 'speed' && typeof value === 'number' && device.state.speed !== undefined) {
@@ -800,7 +865,7 @@ export class BondSimulatorServer {
   }
 
   private normalizeBrightness(value: number) {
-    return Math.min(100, Math.max(1, Math.round(value)));
+    return this.normalizePercent(value);
   }
 
   private normalizePosition(value: number) {
@@ -810,6 +875,10 @@ export class BondSimulatorServer {
   private normalizeSpeed(device: SimulatorDevice, value: number) {
     const maxSpeed = typeof device.properties.max_speed === 'number' ? device.properties.max_speed : 6;
     return Math.min(maxSpeed, Math.max(1, Math.round(value)));
+  }
+
+  private normalizePercent(value: number) {
+    return Math.min(100, Math.max(1, Math.round(value)));
   }
 
   private shadePositionForOpen(device: SimulatorDevice, open: number) {

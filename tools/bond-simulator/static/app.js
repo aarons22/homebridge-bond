@@ -20,6 +20,7 @@ function deviceCapabilities(device) {
   return {
     fan: device.type === 'CF',
     shade: device.type === 'MS',
+    fireplace: device.type === 'FP',
     speed: device.actions.includes('SetSpeed'),
     speedButtons: device.actions.includes('IncreaseSpeed') && device.actions.includes('DecreaseSpeed'),
     direction: device.actions.includes('ToggleDirection'),
@@ -28,6 +29,7 @@ function deviceCapabilities(device) {
     brightness: device.actions.includes('SetBrightness') && device.actions.includes('TurnLightOff'),
     position: device.actions.includes('SetPosition'),
     preset: device.actions.includes('Preset'),
+    flame: device.actions.includes('SetFlame'),
   };
 }
 
@@ -110,10 +112,27 @@ function renderShadeControls(device, capabilities) {
   `;
 }
 
+function renderFireplaceControls(device, capabilities) {
+  const powerOn = device.state.power === 1;
+  const flame = device.state.flame ?? 0;
+
+  return `
+    ${renderActionButton(device, 'TogglePower', powerOn ? 'Turn Off' : 'Turn On', powerOn)}
+    ${capabilities.flame ? `
+      <label class="slider-control">
+        <span>Flame</span>
+        <strong>${flame}%</strong>
+        <input data-action="flame" data-device-id="${device.id}" type="range" min="1" max="100" value="${flame}">
+      </label>
+    ` : ''}
+  `;
+}
+
 function renderDeviceControl(device) {
   const capabilities = deviceCapabilities(device);
   const controls = capabilities.shade
     ? renderShadeControls(device, capabilities)
+    : capabilities.fireplace ? renderFireplaceControls(device, capabilities)
     : capabilities.fan ? renderFanControls(device, capabilities) : renderLightControls(device, capabilities);
 
   return `
@@ -249,6 +268,30 @@ elements.deviceControls.addEventListener('change', async (event) => {
       body: JSON.stringify({
         id: slider.dataset.deviceId,
         action: 'SetPosition',
+        argument: Number(slider.value),
+      }),
+    }));
+  } finally {
+    slider.disabled = false;
+  }
+});
+
+elements.deviceControls.addEventListener('change', async (event) => {
+  const slider = event.target.closest('[data-action="flame"]');
+  if (!slider) {
+    return;
+  }
+
+  slider.disabled = true;
+  try {
+    render(await request('/simulator/action', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: slider.dataset.deviceId,
+        action: 'SetFlame',
         argument: Number(slider.value),
       }),
     }));
