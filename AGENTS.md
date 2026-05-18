@@ -94,6 +94,7 @@ npm run lint       # ESLint TypeScript files
 1. `npm link` in plugin directory to symlink globally
 2. Homebridge will use local build from `dist/`
 3. Check logs at `~/.homebridge/` (platform logs via Homebridge API)
+4. Do not start or restart the user's existing simulator on port 30007. If UI or API verification needs a simulator, start a temporary HTTP-only simulator on a separate port and stop it when finished.
 
 ### Common Issues
 - **Accessories not updating**: Check BPUP socket setup - UDP port 30007 must be open

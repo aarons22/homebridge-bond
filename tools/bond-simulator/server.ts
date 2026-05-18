@@ -25,6 +25,7 @@ export const SIM_POSITION_SHADE_ID = '00000202';
 export const SIM_AWNING_SHADE_ID = '00000203';
 export const SIM_BASIC_FIREPLACE_ID = '00000301';
 export const SIM_FLAME_FIREPLACE_ID = '00000302';
+export const SIM_GENERIC_ID = '00000401';
 
 type JsonObject = Record<string, unknown>;
 
@@ -71,10 +72,13 @@ interface SimulatorDevice {
     open?: number;
     position?: number;
     flame?: number;
+    active_hold?: string;
   };
   lastUpdatedAt?: number;
   lastUpdatedBy?: 'external' | 'ui';
 }
+
+type SimulatorNumericStateKey = Exclude<keyof SimulatorDevice['state'], 'active_hold'>;
 
 const NOOP_BROADCASTER: BpupBroadcaster = {
   broadcast: () => undefined,
@@ -308,7 +312,6 @@ export class BondSimulatorServer {
           power: 0,
           speed: 1,
           light: 0,
-          brightness: 50,
         },
       },
       {
@@ -378,6 +381,19 @@ export class BondSimulatorServer {
         state: {
           power: 0,
           flame: 50,
+        },
+      },
+      {
+        id: SIM_GENERIC_ID,
+        name: 'Generic Toggle',
+        location: DEFAULT_DEVICE_LOCATION,
+        type: 'GX',
+        actions: ['TogglePower'],
+        properties: {
+          trust_state: true,
+        },
+        state: {
+          power: 0,
         },
       },
     ];
@@ -680,7 +696,7 @@ export class BondSimulatorServer {
     }
 
     if (this.isHoldAction(actionName)) {
-      return true;
+      return this.setHoldAction(deviceId, actionName);
     }
 
     return false;
@@ -824,6 +840,26 @@ export class BondSimulatorServer {
     return true;
   }
 
+  private setHoldAction(deviceId: string, actionName: string) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device) {
+      return false;
+    }
+
+    if (actionName === 'Stop') {
+      if (device.state.active_hold === undefined) {
+        return true;
+      }
+      delete device.state.active_hold;
+      this.broadcastState(device.id);
+      return true;
+    }
+
+    device.state.active_hold = actionName;
+    this.broadcastState(device.id);
+    return true;
+  }
+
   private setFlame(deviceId: string, value: number) {
     const device = this.getSimulatorDevice(deviceId);
     if (!device || device.state.flame === undefined) {
@@ -868,7 +904,7 @@ export class BondSimulatorServer {
     return false;
   }
 
-  private setStateNumber(device: SimulatorDevice, key: keyof SimulatorDevice['state'], value: number) {
+  private setStateNumber(device: SimulatorDevice, key: SimulatorNumericStateKey, value: number) {
     if (device.state[key] === value) {
       return false;
     }

@@ -14,6 +14,7 @@ import {
   SIM_DIMMABLE_LIGHT_ID,
   SIM_DIRECTION_FAN_ID,
   SIM_FLAME_FIREPLACE_ID,
+  SIM_GENERIC_ID,
   SIM_LIGHT_ID,
   SIM_LIGHT_FAN_ID,
   SIM_AWNING_SHADE_ID,
@@ -211,6 +212,19 @@ describe('Bond simulator', () => {
       type: 'FP',
     });
     expect(flameFireplace.body.actions).to.deep.equal(['TogglePower', 'SetFlame']);
+  });
+
+  it('returns the generic device catalog with expected capability shapes', async () => {
+    const list = await request(port, 'GET', '/v2/devices', undefined, DEFAULT_TOKEN);
+    const generic = await request(port, 'GET', `/v2/devices/${SIM_GENERIC_ID}`, undefined, DEFAULT_TOKEN);
+
+    expect(list.body).to.include.keys(SIM_GENERIC_ID);
+    expect(generic.body).to.deep.include({
+      name: 'Generic Toggle',
+      location: DEFAULT_DEVICE_LOCATION,
+      type: 'GX',
+    });
+    expect(generic.body.actions).to.deep.equal(['TogglePower']);
   });
 
   it('rejects protected endpoints without the simulator token', async () => {
@@ -447,6 +461,53 @@ describe('Bond simulator', () => {
     expect(state.body).to.deep.equal({ power: 1, speed: 1 });
   });
 
+  it('accepts brightness button fan hold actions without exposing discrete brightness state', async () => {
+    const increase = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_BRIGHTNESS_BUTTON_FAN_ID}/actions/StartIncreasingBrightness`,
+      {},
+      DEFAULT_TOKEN,
+    );
+    const activeState = await request(port, 'GET', `/v2/devices/${SIM_BRIGHTNESS_BUTTON_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+    const stop = await request(port, 'PUT', `/v2/devices/${SIM_BRIGHTNESS_BUTTON_FAN_ID}/actions/Stop`, {}, DEFAULT_TOKEN);
+    const state = await request(port, 'GET', `/v2/devices/${SIM_BRIGHTNESS_BUTTON_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(increase.statusCode).to.equal(200);
+    expect(activeState.body).to.deep.equal({
+      power: 0,
+      speed: 1,
+      light: 0,
+      active_hold: 'StartIncreasingBrightness',
+    });
+    expect(stop.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({
+      power: 0,
+      speed: 1,
+      light: 0,
+    });
+  });
+
+  it('tracks up and down light dimmer hold actions until Stop', async () => {
+    const start = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_UP_DOWN_DIMMER_FAN_ID}/actions/StartUpLightDimmer`,
+      {},
+      DEFAULT_TOKEN,
+    );
+    const activeState = await request(port, 'GET', `/v2/devices/${SIM_UP_DOWN_DIMMER_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+    const stop = await request(port, 'PUT', `/v2/devices/${SIM_UP_DOWN_DIMMER_FAN_ID}/actions/Stop`, {}, DEFAULT_TOKEN);
+    const stoppedState = await request(port, 'GET', `/v2/devices/${SIM_UP_DOWN_DIMMER_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(start.statusCode).to.equal(200);
+    expect(activeState.body).to.deep.include({
+      active_hold: 'StartUpLightDimmer',
+    });
+    expect(stop.statusCode).to.equal(200);
+    expect(stoppedState.body).not.to.have.property('active_hold');
+  });
+
   it('toggles fan direction when advertised', async () => {
     const response = await request(port, 'PUT', `/v2/devices/${SIM_DIRECTION_FAN_ID}/actions/ToggleDirection`, {}, DEFAULT_TOKEN);
     const state = await request(port, 'GET', `/v2/devices/${SIM_DIRECTION_FAN_ID}/state`, undefined, DEFAULT_TOKEN);
@@ -567,6 +628,22 @@ describe('Bond simulator', () => {
       {
         B: DEFAULT_BOND_ID,
         t: `devices/${SIM_BASIC_FIREPLACE_ID}/state`,
+        m: 4,
+        b: { power: 1 },
+      },
+    ]);
+  });
+
+  it('toggles generic power through TogglePower', async () => {
+    const response = await request(port, 'PUT', `/v2/devices/${SIM_GENERIC_ID}/actions/TogglePower`, {}, DEFAULT_TOKEN);
+    const state = await request(port, 'GET', `/v2/devices/${SIM_GENERIC_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ power: 1 });
+    expect(bpupPackets).to.deep.equal([
+      {
+        B: DEFAULT_BOND_ID,
+        t: `devices/${SIM_GENERIC_ID}/state`,
         m: 4,
         b: { power: 1 },
       },
