@@ -29,7 +29,7 @@ body {
 }
 
 .masthead,
-.control-panel,
+.device-grid,
 .grid {
   display: grid;
   gap: 16px;
@@ -94,10 +94,27 @@ h2 {
   padding: 20px;
 }
 
+.device-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
 .control-panel {
+  display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  margin-bottom: 16px;
+  gap: 16px;
+  min-height: 178px;
+}
+
+.device-heading {
+  min-width: 0;
+}
+
+.device-meta {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .power-button {
@@ -125,6 +142,26 @@ h2 {
   opacity: 0.68;
 }
 
+.slider-control {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.slider-control span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.slider-control input {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--accent);
+}
+
 .power-icon {
   width: 17px;
   height: 17px;
@@ -149,6 +186,30 @@ h2 {
 .grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 16px;
+}
+
+.device-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.device-summary {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.device-summary:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.device-summary span {
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 dl {
@@ -189,7 +250,7 @@ pre {
 
 @media (max-width: 720px) {
   .masthead,
-  .control-panel,
+  .device-grid,
   .grid {
     grid-template-columns: 1fr;
   }
@@ -204,5 +265,9 @@ pre {
 
   .power-button {
     width: 100%;
+  }
+
+  .control-panel {
+    grid-template-columns: 1fr;
   }
 }

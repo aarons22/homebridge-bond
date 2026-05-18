@@ -1,15 +1,10 @@
 const elements = {
   status: document.getElementById('connection-status'),
-  lightState: document.getElementById('light-state'),
-  toggleLight: document.getElementById('toggle-light'),
-  toggleLabel: document.getElementById('toggle-label'),
   bondId: document.getElementById('bond-id'),
   firmware: document.getElementById('firmware'),
   token: document.getElementById('token'),
-  deviceId: document.getElementById('device-id'),
-  deviceName: document.getElementById('device-name'),
-  deviceLocation: document.getElementById('device-location'),
-  deviceType: document.getElementById('device-type'),
+  deviceControls: document.getElementById('device-controls'),
+  deviceList: document.getElementById('device-list'),
   homebridgeConfig: document.getElementById('homebridge-config'),
 };
 
@@ -21,20 +16,62 @@ async function request(path, options) {
   return response.json();
 }
 
+function deviceCapabilities(device) {
+  return {
+    brightness: device.actions.includes('SetBrightness') && device.actions.includes('TurnLightOff'),
+  };
+}
+
+function renderDeviceControl(device) {
+  const lightOn = device.state.light === 1;
+  const capabilities = deviceCapabilities(device);
+  const brightness = device.state.brightness ?? 0;
+
+  return `
+    <article class="panel control-panel">
+      <div class="device-heading">
+        <p class="label">${device.location}</p>
+        <h2>${device.name}</h2>
+        <p class="device-meta">${device.id} · ${device.type}</p>
+      </div>
+      <button class="power-button" data-action="toggle" data-device-id="${device.id}" type="button" aria-pressed="${lightOn}">
+        <span class="power-icon"></span>
+        <span>${lightOn ? 'Turn Off' : 'Turn On'}</span>
+      </button>
+      ${capabilities.brightness ? `
+        <label class="slider-control">
+          <span>Brightness</span>
+          <strong>${brightness}%</strong>
+          <input data-action="brightness" data-device-id="${device.id}" type="range" min="1" max="100" value="${brightness}">
+        </label>
+      ` : ''}
+    </article>
+  `;
+}
+
+function renderDeviceSummary(device) {
+  const actions = device.actions.join(', ');
+  const state = Object.entries(device.state)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(', ');
+
+  return `
+    <div class="device-summary">
+      <strong>${device.name}</strong>
+      <span>${device.id} · ${actions}</span>
+      <span>${state}</span>
+    </div>
+  `;
+}
+
 function render(status) {
-  const lightOn = status.device.state.light === 1;
   elements.status.textContent = 'Online';
   elements.status.className = 'status online';
-  elements.lightState.textContent = lightOn ? 'On' : 'Off';
-  elements.toggleLight.setAttribute('aria-pressed', String(lightOn));
-  elements.toggleLabel.textContent = lightOn ? 'Turn Off' : 'Turn On';
   elements.bondId.textContent = status.version.bondid;
   elements.firmware.textContent = status.version.fw_ver;
   elements.token.textContent = status.token;
-  elements.deviceId.textContent = status.device.id;
-  elements.deviceName.textContent = status.device.name;
-  elements.deviceLocation.textContent = status.device.location;
-  elements.deviceType.textContent = status.device.type;
+  elements.deviceControls.innerHTML = status.devices.map(renderDeviceControl).join('');
+  elements.deviceList.innerHTML = status.devices.map(renderDeviceSummary).join('');
   elements.homebridgeConfig.textContent = JSON.stringify(status.homebridgeConfig, null, 2);
 }
 
@@ -47,12 +84,40 @@ async function refresh() {
   }
 }
 
-elements.toggleLight.addEventListener('click', async () => {
-  elements.toggleLight.disabled = true;
+elements.deviceControls.addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-action="toggle"]');
+  if (!button) {
+    return;
+  }
+
+  button.disabled = true;
   try {
-    render(await request('/simulator/toggle', { method: 'PUT' }));
+    render(await request(`/simulator/toggle?id=${button.dataset.deviceId}`, { method: 'PUT' }));
   } finally {
-    elements.toggleLight.disabled = false;
+    button.disabled = false;
+  }
+});
+
+elements.deviceControls.addEventListener('change', async (event) => {
+  const slider = event.target.closest('[data-action="brightness"]');
+  if (!slider) {
+    return;
+  }
+
+  slider.disabled = true;
+  try {
+    render(await request('/simulator/brightness', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: slider.dataset.deviceId,
+        brightness: Number(slider.value),
+      }),
+    }));
+  } finally {
+    slider.disabled = false;
   }
 });
 

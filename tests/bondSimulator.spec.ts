@@ -6,6 +6,7 @@ import {
   BpupPacket,
   DEFAULT_BOND_ID,
   DEFAULT_TOKEN,
+  SIM_DIMMABLE_LIGHT_ID,
   SIM_LIGHT_ID,
   getServerPort,
 } from '../tools/bond-simulator/server';
@@ -88,19 +89,28 @@ describe('Bond simulator', () => {
     expect(response.body.api).to.equal(2);
   });
 
-  it('returns a Bond-style device list and light detail', async () => {
+  it('returns a Bond-style device list and light details', async () => {
     const list = await request(port, 'GET', '/v2/devices', undefined, DEFAULT_TOKEN);
-    const detail = await request(port, 'GET', `/v2/devices/${SIM_LIGHT_ID}`, undefined, DEFAULT_TOKEN);
+    const simpleLight = await request(port, 'GET', `/v2/devices/${SIM_LIGHT_ID}`, undefined, DEFAULT_TOKEN);
+    const dimmableLight = await request(port, 'GET', `/v2/devices/${SIM_DIMMABLE_LIGHT_ID}`, undefined, DEFAULT_TOKEN);
 
     expect(list.statusCode).to.equal(200);
     expect(list.body).to.have.property(SIM_LIGHT_ID);
-    expect(detail.statusCode).to.equal(200);
-    expect(detail.body).to.deep.include({
+    expect(list.body).to.have.property(SIM_DIMMABLE_LIGHT_ID);
+    expect(simpleLight.statusCode).to.equal(200);
+    expect(simpleLight.body).to.deep.include({
       name: 'Sim Light',
       location: 'Simulator',
       type: 'LT',
     });
-    expect(detail.body.actions).to.deep.equal(['ToggleLight']);
+    expect(simpleLight.body.actions).to.deep.equal(['ToggleLight']);
+    expect(dimmableLight.statusCode).to.equal(200);
+    expect(dimmableLight.body).to.deep.include({
+      name: 'Dimmer Light',
+      location: 'Simulator',
+      type: 'LT',
+    });
+    expect(dimmableLight.body.actions).to.deep.equal(['ToggleLight', 'SetBrightness', 'TurnLightOff']);
   });
 
   it('rejects protected endpoints without the simulator token', async () => {
@@ -147,5 +157,49 @@ describe('Bond simulator', () => {
 
     expect(response.statusCode).to.equal(200);
     expect(bpupPackets).to.deep.equal([]);
+  });
+
+  it('sets brightness and turns on the dimmable light through SetBrightness', async () => {
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_DIMMABLE_LIGHT_ID}/actions/SetBrightness`,
+      { argument: 72 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_DIMMABLE_LIGHT_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ light: 1, brightness: 72 });
+    expect(bpupPackets).to.deep.equal([
+      {
+        B: DEFAULT_BOND_ID,
+        t: `devices/${SIM_DIMMABLE_LIGHT_ID}/state`,
+        m: 4,
+        b: { light: 1, brightness: 72 },
+      },
+    ]);
+  });
+
+  it('patches dimmable light brightness and broadcasts BPUP when changed', async () => {
+    const response = await request(
+      port,
+      'PATCH',
+      `/v2/devices/${SIM_DIMMABLE_LIGHT_ID}/state`,
+      { brightness: 35 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_DIMMABLE_LIGHT_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ light: 0, brightness: 35 });
+    expect(bpupPackets).to.deep.equal([
+      {
+        B: DEFAULT_BOND_ID,
+        t: `devices/${SIM_DIMMABLE_LIGHT_ID}/state`,
+        m: 4,
+        b: { light: 0, brightness: 35 },
+      },
+    ]);
   });
 });

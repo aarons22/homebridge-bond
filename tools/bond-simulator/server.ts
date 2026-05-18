@@ -8,6 +8,7 @@ export const DEFAULT_BPUP_PORT = 30007;
 export const DEFAULT_TOKEN = 'sim-token';
 export const DEFAULT_BOND_ID = 'SIMBOND000001';
 export const SIM_LIGHT_ID = '00000001';
+export const SIM_DIMMABLE_LIGHT_ID = '00000002';
 
 type JsonObject = Record<string, unknown>;
 
@@ -41,6 +42,7 @@ interface SimulatorDevice {
   };
   state: {
     light: number;
+    brightness?: number;
   };
 }
 
@@ -60,7 +62,7 @@ export class BondSimulatorServer {
   public readonly token: string;
   public readonly staticDir: string;
   private readonly broadcaster: BpupBroadcaster;
-  private readonly device: SimulatorDevice;
+  private readonly devices: SimulatorDevice[];
   private httpHost = '127.0.0.1';
   private httpPort = DEFAULT_HTTP_PORT;
 
@@ -69,20 +71,37 @@ export class BondSimulatorServer {
     this.token = options.token ?? DEFAULT_TOKEN;
     this.staticDir = options.staticDir ?? join(__dirname, 'static');
     this.broadcaster = options.broadcaster ?? NOOP_BROADCASTER;
-    this.device = {
-      id: SIM_LIGHT_ID,
-      name: 'Sim Light',
-      location: 'Simulator',
-      type: 'LT',
-      actions: ['ToggleLight'],
-      properties: {
-        trust_state: true,
-        max_speed: null,
+    this.devices = [
+      {
+        id: SIM_LIGHT_ID,
+        name: 'Sim Light',
+        location: 'Simulator',
+        type: 'LT',
+        actions: ['ToggleLight'],
+        properties: {
+          trust_state: true,
+          max_speed: null,
+        },
+        state: {
+          light: 0,
+        },
       },
-      state: {
-        light: 0,
+      {
+        id: SIM_DIMMABLE_LIGHT_ID,
+        name: 'Dimmer Light',
+        location: 'Simulator',
+        type: 'LT',
+        actions: ['ToggleLight', 'SetBrightness', 'TurnLightOff'],
+        properties: {
+          trust_state: true,
+          max_speed: null,
+        },
+        state: {
+          light: 0,
+          brightness: 50,
+        },
       },
-    };
+    ];
   }
 
   public createHttpServer() {
@@ -111,16 +130,21 @@ export class BondSimulatorServer {
     return server;
   }
 
-  public getState() {
-    return { ...this.device.state };
+  public getState(id = SIM_LIGHT_ID) {
+    return { ...this.getSimulatorDevice(id)?.state };
   }
 
-  public getDevice() {
+  public getDevice(id = SIM_LIGHT_ID) {
+    const device = this.getSimulatorDevice(id);
+    if (!device) {
+      return undefined;
+    }
+
     return {
-      name: this.device.name,
-      location: this.device.location,
-      type: this.device.type,
-      actions: [...this.device.actions],
+      name: device.name,
+      location: device.location,
+      type: device.type,
+      actions: [...device.actions],
       properties: {},
       state: {},
     };
@@ -151,38 +175,17 @@ export class BondSimulatorServer {
     }
 
     if (request.method === 'GET' && pathname === '/v2/devices') {
-      this.sendJson(response, 200, { _: this.hash(), [this.device.id]: { _: this.hash() } });
+      const body: JsonObject = { _: this.hash() };
+      this.devices.forEach(device => {
+        body[device.id] = { _: this.hash() };
+      });
+      this.sendJson(response, 200, body);
       return;
     }
 
-    if (request.method === 'GET' && pathname === `/v2/devices/${this.device.id}`) {
-      this.sendJson(response, 200, this.getDevice());
-      return;
-    }
-
-    if (request.method === 'GET' && pathname === `/v2/devices/${this.device.id}/properties`) {
-      this.sendJson(response, 200, this.device.properties);
-      return;
-    }
-
-    if (request.method === 'GET' && pathname === `/v2/devices/${this.device.id}/state`) {
-      this.sendJson(response, 200, this.device.state);
-      return;
-    }
-
-    if (request.method === 'PATCH' && pathname === `/v2/devices/${this.device.id}/state`) {
-      const body = await this.readJsonBody(request);
-      const changed = this.patchState(body);
-      if (changed) {
-        this.broadcastState();
-      }
-      this.sendJson(response, 200, {});
-      return;
-    }
-
-    if (request.method === 'PUT' && pathname === `/v2/devices/${this.device.id}/actions/ToggleLight`) {
-      this.setLight(this.device.state.light === 1 ? 0 : 1);
-      this.sendJson(response, 200, {});
+    const devicePath = pathname.match(/^\/v2\/devices\/([^/]+)(?:\/([^/]+)(?:\/([^/]+))?)?$/);
+    if (devicePath) {
+      await this.handleDeviceRequest(request, response, devicePath[1], devicePath[2], devicePath[3]);
       return;
     }
 
@@ -197,8 +200,22 @@ export class BondSimulatorServer {
     }
 
     if (request.method === 'PUT' && pathname === '/simulator/toggle') {
-      this.setLight(this.device.state.light === 1 ? 0 : 1);
+      const id = requestUrl.searchParams.get('id') ?? SIM_LIGHT_ID;
+      this.toggleLight(id);
       this.sendJson(response, 200, this.simulatorStatus());
+      return;
+    }
+
+    if (request.method === 'PUT' && pathname === '/simulator/brightness') {
+      const body = await this.readJsonBody(request);
+      const id = typeof body.id === 'string' ? body.id : SIM_DIMMABLE_LIGHT_ID;
+      const brightness = typeof body.brightness === 'number' ? body.brightness : undefined;
+      if (brightness === undefined) {
+        this.sendJson(response, 400, { error: 'missing_brightness' });
+        return;
+      }
+      const handled = this.setBrightness(id, brightness);
+      this.sendJson(response, handled ? 200 : 404, handled ? this.simulatorStatus() : { error: 'not_found' });
       return;
     }
 
@@ -233,28 +250,140 @@ export class BondSimulatorServer {
     this.sendJson(response, 405, { error: 'method_not_allowed' });
   }
 
-  private patchState(body: JsonObject) {
-    const current = this.device.state.light;
-    if (body.light !== 0 && body.light !== 1) {
+  private async handleDeviceRequest(
+    request: IncomingMessage,
+    response: ServerResponse,
+    deviceId: string,
+    child?: string,
+    actionName?: string,
+  ) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device) {
+      this.sendJson(response, 404, { error: 'not_found' });
+      return;
+    }
+
+    if (request.method === 'GET' && child === undefined) {
+      this.sendJson(response, 200, this.getDevice(device.id));
+      return;
+    }
+
+    if (request.method === 'GET' && child === 'properties') {
+      this.sendJson(response, 200, device.properties);
+      return;
+    }
+
+    if (request.method === 'GET' && child === 'state') {
+      this.sendJson(response, 200, device.state);
+      return;
+    }
+
+    if (request.method === 'PATCH' && child === 'state') {
+      const body = await this.readJsonBody(request);
+      const changed = this.patchState(device.id, body);
+      if (changed) {
+        this.broadcastState(device.id);
+      }
+      this.sendJson(response, 200, {});
+      return;
+    }
+
+    if (request.method === 'PUT' && child === 'actions' && actionName) {
+      const body = await this.readJsonBody(request);
+      const handled = this.handleAction(device.id, actionName, body);
+      this.sendJson(response, handled ? 200 : 404, handled ? {} : { error: 'not_found' });
+      return;
+    }
+
+    this.sendJson(response, 404, { error: 'not_found' });
+  }
+
+  private handleAction(deviceId: string, actionName: string, body: JsonObject) {
+    if (actionName === 'ToggleLight') {
+      return this.toggleLight(deviceId);
+    }
+
+    if (actionName === 'SetBrightness' && typeof body.argument === 'number') {
+      return this.setBrightness(deviceId, body.argument);
+    }
+
+    if (actionName === 'TurnLightOff') {
+      return this.setLight(deviceId, 0);
+    }
+
+    return false;
+  }
+
+  private patchState(deviceId: string, body: JsonObject) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device) {
       return false;
     }
 
-    this.device.state.light = body.light;
-    return current !== body.light;
+    let changed = false;
+    if ((body.light === 0 || body.light === 1) && device.state.light !== body.light) {
+      device.state.light = body.light;
+      changed = true;
+    }
+
+    if (typeof body.brightness === 'number' && device.state.brightness !== undefined) {
+      const brightness = this.normalizeBrightness(body.brightness);
+      if (device.state.brightness !== brightness) {
+        device.state.brightness = brightness;
+        changed = true;
+      }
+    }
+
+    return changed;
   }
 
-  private setLight(value: number) {
-    this.device.state.light = value;
-    this.broadcastState();
+  private toggleLight(deviceId: string) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device) {
+      return false;
+    }
+
+    return this.setLight(device.id, device.state.light === 1 ? 0 : 1);
   }
 
-  private broadcastState() {
+  private setLight(deviceId: string, value: number) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device) {
+      return false;
+    }
+
+    device.state.light = value;
+    this.broadcastState(device.id);
+    return true;
+  }
+
+  private setBrightness(deviceId: string, value: number) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state.brightness === undefined) {
+      return false;
+    }
+
+    device.state.brightness = this.normalizeBrightness(value);
+    device.state.light = 1;
+    this.broadcastState(device.id);
+    return true;
+  }
+
+  private broadcastState(deviceId: string) {
     this.broadcaster.broadcast({
       B: this.bondId,
-      t: `devices/${this.device.id}/state`,
+      t: `devices/${deviceId}/state`,
       m: 4,
-      b: this.getState(),
+      b: this.getState(deviceId),
     });
+  }
+
+  private getSimulatorDevice(id: string) {
+    return this.devices.find(device => device.id === id);
+  }
+
+  private normalizeBrightness(value: number) {
+    return Math.min(100, Math.max(1, Math.round(value)));
   }
 
   private versionBody() {
@@ -272,12 +401,12 @@ export class BondSimulatorServer {
     return {
       version: this.versionBody(),
       token: this.token,
-      device: {
-        id: this.device.id,
-        ...this.getDevice(),
-        properties: this.device.properties,
-        state: this.getState(),
-      },
+      devices: this.devices.map(device => ({
+        id: device.id,
+        ...this.getDevice(device.id),
+        properties: device.properties,
+        state: this.getState(device.id),
+      })),
       homebridgeConfig: {
         platform: 'Bond',
         bonds: [
