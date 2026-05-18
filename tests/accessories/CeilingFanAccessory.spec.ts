@@ -346,6 +346,42 @@ describe('CeilingFanAccessory', () => {
       sinon.assert.calledWith(bond.api.toggleState as sinon.SinonStub, device, 'light');
     });
 
+    it('calls toggleState for up_light when toggle up light button pressed', async () => {
+      const { accessory, bond, device } = buildFan(
+        FAN_ACTIONS_WITH_UPDOWN, 3, { include_toggle_state: true },
+      );
+      const toggleSvc = accessory.getServiceById(ServiceTokens.Switch, 'ToggleUpLight');
+      const on = toggleSvc!.getCharacteristic(CharacteristicTokens.On) as MockCharacteristic;
+      on.value = false;
+      await on.simulateSet(true);
+      sinon.assert.calledWith(bond.api.toggleState as sinon.SinonStub, device, 'up_light');
+    });
+
+    it('calls toggleState for down_light when toggle down light button pressed', async () => {
+      const { accessory, bond, device } = buildFan(
+        FAN_ACTIONS_WITH_UPDOWN, 3, { include_toggle_state: true },
+      );
+      const toggleSvc = accessory.getServiceById(ServiceTokens.Switch, 'ToggleDownLight');
+      const on = toggleSvc!.getCharacteristic(CharacteristicTokens.On) as MockCharacteristic;
+      on.value = false;
+      await on.simulateSet(true);
+      sinon.assert.calledWith(bond.api.toggleState as sinon.SinonStub, device, 'down_light');
+    });
+
+    it('resets button services after a press', async () => {
+      const clock = sinon.useFakeTimers();
+      const { accessory, bond } = buildFan(FAN_ACTIONS_INC_DEC);
+      const svc = accessory.getServiceById(ServiceTokens.Switch, 'IncreaseSpeed');
+      const on = svc!.getCharacteristic(CharacteristicTokens.On) as MockCharacteristic;
+      on.value = false;
+
+      await on.simulateSet(true);
+      await clock.tickAsync(500);
+
+      expect(on.value).to.equal(false);
+      sinon.assert.calledOnce(bond.api.increaseSpeed as sinon.SinonStub);
+    });
+
     it('calls startDimmer when dimmer turned on', async () => {
       const { accessory, bond, device } = buildFan(
         [...FAN_ACTIONS_WITH_LIGHT, Action.StartDimmer], 3, { include_dimmer: true },

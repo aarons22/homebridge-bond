@@ -123,7 +123,7 @@ export class ShadesAccessory implements BondAccessory  {
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error executing preset: ${error}`);
         });
-    });
+    }, { resetToFalse: true });
   }
 
   private observeToggleState(bond: Bond, device: Device) {
@@ -139,7 +139,7 @@ export class ShadesAccessory implements BondAccessory  {
         .catch((error: string) => {
           this.platform.error(this.accessory, `Error toggling open state: ${error}`);
         });
-    });
+    }, { resetToFalse: true });
   }
 
   private removeService(serviceName: string) {
