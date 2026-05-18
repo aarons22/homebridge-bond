@@ -19,6 +19,9 @@ export const SIM_UP_DOWN_LIGHT_FAN_ID = '00000105';
 export const SIM_DIMMER_FAN_ID = '00000106';
 export const SIM_UP_DOWN_DIMMER_FAN_ID = '00000107';
 export const SIM_BRIGHTNESS_BUTTON_FAN_ID = '00000108';
+export const SIM_TOGGLE_SHADE_ID = '00000201';
+export const SIM_POSITION_SHADE_ID = '00000202';
+export const SIM_AWNING_SHADE_ID = '00000203';
 
 type JsonObject = Record<string, unknown>;
 
@@ -45,6 +48,7 @@ interface SimulatorDevice {
   name: string;
   location: string;
   type: string;
+  subtype?: string;
   actions: string[];
   properties: {
     trust_state: boolean;
@@ -58,6 +62,8 @@ interface SimulatorDevice {
     direction?: number;
     up_light?: number;
     down_light?: number;
+    open?: number;
+    position?: number;
   };
 }
 
@@ -293,6 +299,48 @@ export class BondSimulatorServer {
           brightness: 50,
         },
       },
+      {
+        id: SIM_TOGGLE_SHADE_ID,
+        name: 'Toggle Shade',
+        location: 'Simulator',
+        type: 'MS',
+        actions: ['ToggleOpen'],
+        properties: {
+          trust_state: true,
+        },
+        state: {
+          open: 0,
+        },
+      },
+      {
+        id: SIM_POSITION_SHADE_ID,
+        name: 'Position Shade',
+        location: 'Simulator',
+        type: 'MS',
+        actions: ['ToggleOpen', 'SetPosition'],
+        properties: {
+          trust_state: true,
+        },
+        state: {
+          open: 0,
+          position: 100,
+        },
+      },
+      {
+        id: SIM_AWNING_SHADE_ID,
+        name: 'Awning Shade With Preset',
+        location: 'Simulator',
+        type: 'MS',
+        subtype: 'AWNING',
+        actions: ['ToggleOpen', 'SetPosition', 'Preset'],
+        properties: {
+          trust_state: true,
+        },
+        state: {
+          open: 0,
+          position: 0,
+        },
+      },
     ];
   }
 
@@ -336,6 +384,7 @@ export class BondSimulatorServer {
       name: device.name,
       location: device.location,
       type: device.type,
+      ...(device.subtype ? { subtype: device.subtype } : {}),
       actions: [...device.actions],
       properties: {},
       state: {},
@@ -554,6 +603,18 @@ export class BondSimulatorServer {
       return this.toggleLightField(deviceId, 'down_light');
     }
 
+    if (actionName === 'ToggleOpen') {
+      return this.toggleOpen(deviceId);
+    }
+
+    if (actionName === 'SetPosition' && typeof body.argument === 'number') {
+      return this.setPosition(deviceId, body.argument);
+    }
+
+    if (actionName === 'Preset') {
+      return this.setPosition(deviceId, 50);
+    }
+
     if (this.isHoldAction(actionName)) {
       return true;
     }
@@ -661,6 +722,33 @@ export class BondSimulatorServer {
     return true;
   }
 
+  private toggleOpen(deviceId: string) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state.open === undefined) {
+      return false;
+    }
+
+    device.state.open = device.state.open === 1 ? 0 : 1;
+    if (device.state.position !== undefined) {
+      device.state.position = this.shadePositionForOpen(device, device.state.open);
+    }
+    this.broadcastState(device.id);
+    return true;
+  }
+
+  private setPosition(deviceId: string, value: number) {
+    const device = this.getSimulatorDevice(deviceId);
+    if (!device || device.state.position === undefined) {
+      return false;
+    }
+
+    const position = this.normalizePosition(value);
+    device.state.position = position;
+    device.state.open = this.shadeOpenForPosition(device, position);
+    this.broadcastState(device.id);
+    return true;
+  }
+
   private patchStateField(device: SimulatorDevice, key: string, value: unknown) {
     if (key === 'brightness' && typeof value === 'number' && device.state.brightness !== undefined) {
       return this.setStateNumber(device, key, this.normalizeBrightness(value));
@@ -670,8 +758,12 @@ export class BondSimulatorServer {
       return this.setStateNumber(device, key, this.normalizeSpeed(device, value));
     }
 
+    if (key === 'position' && typeof value === 'number' && device.state.position !== undefined) {
+      return this.setStateNumber(device, key, this.normalizePosition(value));
+    }
+
     if (
-      (key === 'light' || key === 'power' || key === 'up_light' || key === 'down_light')
+      (key === 'light' || key === 'power' || key === 'up_light' || key === 'down_light' || key === 'open')
       && (value === 0 || value === 1)
       && device.state[key] !== undefined
     ) {
@@ -711,9 +803,29 @@ export class BondSimulatorServer {
     return Math.min(100, Math.max(1, Math.round(value)));
   }
 
+  private normalizePosition(value: number) {
+    return Math.min(100, Math.max(0, Math.round(value)));
+  }
+
   private normalizeSpeed(device: SimulatorDevice, value: number) {
     const maxSpeed = typeof device.properties.max_speed === 'number' ? device.properties.max_speed : 6;
     return Math.min(maxSpeed, Math.max(1, Math.round(value)));
+  }
+
+  private shadePositionForOpen(device: SimulatorDevice, open: number) {
+    if (device.subtype === 'AWNING') {
+      return open === 1 ? 100 : 0;
+    }
+
+    return open === 1 ? 0 : 100;
+  }
+
+  private shadeOpenForPosition(device: SimulatorDevice, position: number) {
+    if (device.subtype === 'AWNING') {
+      return position > 0 ? 1 : 0;
+    }
+
+    return position < 100 ? 1 : 0;
   }
 
   private isHoldAction(actionName: string) {

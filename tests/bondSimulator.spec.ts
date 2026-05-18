@@ -13,8 +13,11 @@ import {
   SIM_DIRECTION_FAN_ID,
   SIM_LIGHT_ID,
   SIM_LIGHT_FAN_ID,
+  SIM_AWNING_SHADE_ID,
+  SIM_POSITION_SHADE_ID,
   SIM_SET_BRIGHTNESS_ONLY_LIGHT_ID,
   SIM_SPEED_BUTTON_FAN_ID,
+  SIM_TOGGLE_SHADE_ID,
   SIM_TURN_LIGHT_OFF_ONLY_LIGHT_ID,
   SIM_UP_DOWN_DIMMER_FAN_ID,
   SIM_UP_DOWN_LIGHT_FAN_ID,
@@ -155,6 +158,33 @@ describe('Bond simulator', () => {
     expect(speedButtonFan.body.actions).to.deep.equal(['TurnOn', 'TurnOff', 'IncreaseSpeed', 'DecreaseSpeed']);
     expect(upDownDimmerFan.body.actions).to.include.members(['ToggleUpLight', 'ToggleDownLight', 'StartDimmer']);
     expect(brightnessButtonFan.body.actions).to.include.members(['StartIncreasingBrightness', 'StartDecreasingBrightness']);
+  });
+
+  it('returns the shade permutation catalog with expected capability shapes', async () => {
+    const list = await request(port, 'GET', '/v2/devices', undefined, DEFAULT_TOKEN);
+    const toggleShade = await request(port, 'GET', `/v2/devices/${SIM_TOGGLE_SHADE_ID}`, undefined, DEFAULT_TOKEN);
+    const positionShade = await request(port, 'GET', `/v2/devices/${SIM_POSITION_SHADE_ID}`, undefined, DEFAULT_TOKEN);
+    const awningShade = await request(port, 'GET', `/v2/devices/${SIM_AWNING_SHADE_ID}`, undefined, DEFAULT_TOKEN);
+
+    expect(list.body).to.include.keys(
+      SIM_TOGGLE_SHADE_ID,
+      SIM_POSITION_SHADE_ID,
+      SIM_AWNING_SHADE_ID,
+    );
+    expect(toggleShade.body).to.deep.include({
+      name: 'Toggle Shade',
+      location: 'Simulator',
+      type: 'MS',
+    });
+    expect(toggleShade.body.actions).to.deep.equal(['ToggleOpen']);
+    expect(positionShade.body.actions).to.deep.equal(['ToggleOpen', 'SetPosition']);
+    expect(awningShade.body).to.deep.include({
+      name: 'Awning Shade With Preset',
+      location: 'Simulator',
+      type: 'MS',
+      subtype: 'AWNING',
+    });
+    expect(awningShade.body.actions).to.deep.equal(['ToggleOpen', 'SetPosition', 'Preset']);
   });
 
   it('rejects protected endpoints without the simulator token', async () => {
@@ -365,5 +395,69 @@ describe('Bond simulator', () => {
         b: { power: 1, speed: 2, light: 1 },
       },
     ]);
+  });
+
+  it('toggles a shade open state through ToggleOpen', async () => {
+    const response = await request(port, 'PUT', `/v2/devices/${SIM_TOGGLE_SHADE_ID}/actions/ToggleOpen`, {}, DEFAULT_TOKEN);
+    const state = await request(port, 'GET', `/v2/devices/${SIM_TOGGLE_SHADE_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ open: 1 });
+    expect(bpupPackets).to.deep.equal([
+      {
+        B: DEFAULT_BOND_ID,
+        t: `devices/${SIM_TOGGLE_SHADE_ID}/state`,
+        m: 4,
+        b: { open: 1 },
+      },
+    ]);
+  });
+
+  it('sets normal shade position using Bond-inverted position semantics', async () => {
+    const response = await request(
+      port,
+      'PUT',
+      `/v2/devices/${SIM_POSITION_SHADE_ID}/actions/SetPosition`,
+      { argument: 25 },
+      DEFAULT_TOKEN,
+    );
+    const state = await request(port, 'GET', `/v2/devices/${SIM_POSITION_SHADE_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ open: 1, position: 25 });
+    expect(bpupPackets[0]).to.deep.include({
+      B: DEFAULT_BOND_ID,
+      t: `devices/${SIM_POSITION_SHADE_ID}/state`,
+      m: 4,
+    });
+    expect(bpupPackets[0].b).to.deep.equal({ open: 1, position: 25 });
+  });
+
+  it('toggles normal position shade between Bond closed and open positions', async () => {
+    await request(port, 'PUT', `/v2/devices/${SIM_POSITION_SHADE_ID}/actions/ToggleOpen`, {}, DEFAULT_TOKEN);
+    const openState = await request(port, 'GET', `/v2/devices/${SIM_POSITION_SHADE_ID}/state`, undefined, DEFAULT_TOKEN);
+    await request(port, 'PUT', `/v2/devices/${SIM_POSITION_SHADE_ID}/actions/ToggleOpen`, {}, DEFAULT_TOKEN);
+    const closedState = await request(port, 'GET', `/v2/devices/${SIM_POSITION_SHADE_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(openState.body).to.deep.equal({ open: 1, position: 0 });
+    expect(closedState.body).to.deep.equal({ open: 0, position: 100 });
+  });
+
+  it('uses non-inverted position semantics for awnings', async () => {
+    await request(port, 'PUT', `/v2/devices/${SIM_AWNING_SHADE_ID}/actions/ToggleOpen`, {}, DEFAULT_TOKEN);
+    const openState = await request(port, 'GET', `/v2/devices/${SIM_AWNING_SHADE_ID}/state`, undefined, DEFAULT_TOKEN);
+    await request(port, 'PUT', `/v2/devices/${SIM_AWNING_SHADE_ID}/actions/ToggleOpen`, {}, DEFAULT_TOKEN);
+    const closedState = await request(port, 'GET', `/v2/devices/${SIM_AWNING_SHADE_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(openState.body).to.deep.equal({ open: 1, position: 100 });
+    expect(closedState.body).to.deep.equal({ open: 0, position: 0 });
+  });
+
+  it('executes shade preset by moving to a middle position', async () => {
+    const response = await request(port, 'PUT', `/v2/devices/${SIM_AWNING_SHADE_ID}/actions/Preset`, {}, DEFAULT_TOKEN);
+    const state = await request(port, 'GET', `/v2/devices/${SIM_AWNING_SHADE_ID}/state`, undefined, DEFAULT_TOKEN);
+
+    expect(response.statusCode).to.equal(200);
+    expect(state.body).to.deep.equal({ open: 1, position: 50 });
   });
 });

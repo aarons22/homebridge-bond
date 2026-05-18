@@ -19,12 +19,15 @@ async function request(path, options) {
 function deviceCapabilities(device) {
   return {
     fan: device.type === 'CF',
+    shade: device.type === 'MS',
     speed: device.actions.includes('SetSpeed'),
     speedButtons: device.actions.includes('IncreaseSpeed') && device.actions.includes('DecreaseSpeed'),
     direction: device.actions.includes('ToggleDirection'),
     light: device.actions.includes('ToggleLight'),
     upDownLight: device.actions.includes('ToggleUpLight') && device.actions.includes('ToggleDownLight'),
     brightness: device.actions.includes('SetBrightness') && device.actions.includes('TurnLightOff'),
+    position: device.actions.includes('SetPosition'),
+    preset: device.actions.includes('Preset'),
   };
 }
 
@@ -90,9 +93,28 @@ function renderFanControls(device, capabilities) {
   `;
 }
 
+function renderShadeControls(device, capabilities) {
+  const open = device.state.open === 1;
+  const position = device.state.position ?? (open ? 0 : 100);
+
+  return `
+    ${renderActionButton(device, 'ToggleOpen', open ? 'Close' : 'Open', open)}
+    ${capabilities.position ? `
+      <label class="slider-control">
+        <span>Position</span>
+        <strong>${position}%</strong>
+        <input data-action="position" data-device-id="${device.id}" type="range" min="0" max="100" value="${position}">
+      </label>
+    ` : ''}
+    ${capabilities.preset ? renderActionButton(device, 'Preset', 'Preset', false, 'secondary-button') : ''}
+  `;
+}
+
 function renderDeviceControl(device) {
   const capabilities = deviceCapabilities(device);
-  const controls = capabilities.fan ? renderFanControls(device, capabilities) : renderLightControls(device, capabilities);
+  const controls = capabilities.shade
+    ? renderShadeControls(device, capabilities)
+    : capabilities.fan ? renderFanControls(device, capabilities) : renderLightControls(device, capabilities);
 
   return `
     <article class="panel control-panel">
@@ -203,6 +225,30 @@ elements.deviceControls.addEventListener('change', async (event) => {
       body: JSON.stringify({
         id: slider.dataset.deviceId,
         action: 'SetSpeed',
+        argument: Number(slider.value),
+      }),
+    }));
+  } finally {
+    slider.disabled = false;
+  }
+});
+
+elements.deviceControls.addEventListener('change', async (event) => {
+  const slider = event.target.closest('[data-action="position"]');
+  if (!slider) {
+    return;
+  }
+
+  slider.disabled = true;
+  try {
+    render(await request('/simulator/action', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: slider.dataset.deviceId,
+        action: 'SetPosition',
         argument: Number(slider.value),
       }),
     }));
