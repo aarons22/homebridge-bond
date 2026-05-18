@@ -39,11 +39,14 @@ export interface BpupBroadcaster {
   broadcast(packet: BpupPacket): void;
 }
 
+export type SimulatorLogger = (message: string) => void;
+
 export interface BondSimulatorOptions {
   bondId?: string;
   token?: string;
   staticDir?: string;
   broadcaster?: BpupBroadcaster;
+  logger?: SimulatorLogger;
 }
 
 interface SimulatorDevice {
@@ -74,6 +77,7 @@ interface SimulatorDevice {
 const NOOP_BROADCASTER: BpupBroadcaster = {
   broadcast: () => undefined,
 };
+const NOOP_LOGGER: SimulatorLogger = () => undefined;
 
 const MIME_TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
@@ -87,6 +91,7 @@ export class BondSimulatorServer {
   public readonly token: string;
   public readonly staticDir: string;
   private readonly broadcaster: BpupBroadcaster;
+  private readonly logger: SimulatorLogger;
   private readonly devices: SimulatorDevice[];
   private httpHost = '127.0.0.1';
   private httpPort = DEFAULT_HTTP_PORT;
@@ -96,6 +101,7 @@ export class BondSimulatorServer {
     this.token = options.token ?? DEFAULT_TOKEN;
     this.staticDir = options.staticDir ?? join(__dirname, 'static');
     this.broadcaster = options.broadcaster ?? NOOP_BROADCASTER;
+    this.logger = options.logger ?? NOOP_LOGGER;
     this.devices = [
       {
         id: SIM_LIGHT_ID,
@@ -567,6 +573,7 @@ export class BondSimulatorServer {
     if (request.method === 'PATCH' && child === 'state') {
       const body = await this.readJsonBody(request);
       const changed = this.patchState(device.id, body);
+      this.logDeviceEvent(device, `PATCH state ${JSON.stringify(body)}${changed ? '' : ' (no change)'}`);
       if (changed) {
         this.broadcastState(device.id);
       }
@@ -576,7 +583,11 @@ export class BondSimulatorServer {
 
     if (request.method === 'PUT' && child === 'actions' && actionName) {
       const body = await this.readJsonBody(request);
+      this.logDeviceEvent(device, `received PUT action ${actionName}${this.formatBody(body)}`);
       const handled = this.handleAction(device.id, actionName, body);
+      if (!handled) {
+        this.logDeviceEvent(device, `unsupported PUT action ${actionName}${this.formatBody(body)}`);
+      }
       this.sendJson(response, handled ? 200 : 404, handled ? {} : { error: 'not_found' });
       return;
     }
@@ -853,12 +864,22 @@ export class BondSimulatorServer {
   }
 
   private broadcastState(deviceId: string) {
-    this.broadcaster.broadcast({
+    const packet = {
       B: this.bondId,
       t: `devices/${deviceId}/state`,
       m: 4,
       b: this.getState(deviceId),
-    });
+    };
+    this.logger(`BPUP broadcast ${packet.t} ${JSON.stringify(packet.b)}`);
+    this.broadcaster.broadcast(packet);
+  }
+
+  private logDeviceEvent(device: SimulatorDevice, message: string) {
+    this.logger(`${device.name} (${device.id}) ${message}; state=${JSON.stringify(device.state)}`);
+  }
+
+  private formatBody(body: JsonObject) {
+    return Object.keys(body).length === 0 ? '' : ` ${JSON.stringify(body)}`;
   }
 
   private getSimulatorDevice(id: string) {

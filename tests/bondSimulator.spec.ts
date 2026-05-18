@@ -237,6 +237,34 @@ describe('Bond simulator', () => {
     ]);
   });
 
+  it('logs received actions and BPUP broadcasts', async () => {
+    const logs: string[] = [];
+    await new Promise<void>((resolve, reject) => {
+      server.close(error => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+
+    simulator = new BondSimulatorServer({
+      logger: message => logs.push(message),
+      broadcaster: {
+        broadcast: packet => bpupPackets.push(packet),
+      },
+    });
+    server = await simulator.listen(0);
+    port = getServerPort(server);
+
+    const action = await request(port, 'PUT', `/v2/devices/${SIM_LIGHT_ID}/actions/ToggleLight`, {}, DEFAULT_TOKEN);
+
+    expect(action.statusCode).to.equal(200);
+    expect(logs.some(log => log.includes('Toggle Light (00000001) received PUT action ToggleLight'))).to.equal(true);
+    expect(logs.some(log => log.includes('BPUP broadcast devices/00000001/state {"light":1}'))).to.equal(true);
+  });
+
   it('updates light state through PATCH and broadcasts BPUP when changed', async () => {
     const response = await request(port, 'PATCH', `/v2/devices/${SIM_LIGHT_ID}/state`, { light: 1 }, DEFAULT_TOKEN);
     const state = await request(port, 'GET', `/v2/devices/${SIM_LIGHT_ID}/state`, undefined, DEFAULT_TOKEN);
