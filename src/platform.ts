@@ -269,11 +269,11 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
     client.on('message', (message: Buffer, remote: { address: string; port: string }) => {
       const msg = message.toString().trim();
-      try {
-        const packet = JSON.parse(msg) as BPUPPacket;
+      const packet = this.parseBPUPPacket(msg);
+      if (packet) {
         log.debug(`UDP Message received from ${remote.address}:${remote.port} - ${msg}`);
         bond.receivedBPUPPacket(packet);
-      } catch (_error) {
+      } else {
         log.debug(`Malformed UDP payload from ${remote.address}:${remote.port}. Ignoring packet.`);
       }
     });
@@ -285,6 +285,19 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
   private bpupHost(ipAddress: string): string {
     return new URL(`http://${ipAddress}`).hostname;
+  }
+
+  private parseBPUPPacket(message: string): BPUPPacket | undefined {
+    const jsonStart = message.indexOf('{');
+    if (jsonStart === -1) {
+      return undefined;
+    }
+
+    try {
+      return JSON.parse(message.slice(jsonStart)) as BPUPPacket;
+    } catch (_error) {
+      return undefined;
+    }
   }
 
   private bondForDevice(device: Device): Bond | undefined {
