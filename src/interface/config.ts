@@ -6,6 +6,7 @@ export interface BondConfig {
   token: string;
   hide_device_ids?: string[];
   ms_between_actions?: number;
+  max_concurrent_requests?: number;
 }
 
 export interface BondPlatformConfig extends PlatformConfig {
@@ -105,7 +106,11 @@ export namespace BondConfig {
 
     const validSpaceOutActions = config.ms_between_actions === undefined ||
       (typeof(config.ms_between_actions) === 'number' && Number.isInteger(config.ms_between_actions) && config.ms_between_actions > 0);
+    const validMaxConcurrentRequests = config.max_concurrent_requests === undefined ||
+      (typeof(config.max_concurrent_requests) === 'number'
+        && Number.isInteger(config.max_concurrent_requests)
+        && config.max_concurrent_requests > 0);
 
-    return validIP && validToken && validHideDeviceIds && validSpaceOutActions;
+    return validIP && validToken && validHideDeviceIds && validSpaceOutActions && validMaxConcurrentRequests;
   }
 }

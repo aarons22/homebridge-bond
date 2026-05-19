@@ -15,8 +15,8 @@ function makePlatform() {
   return createMockPlatform() as unknown as BondPlatform;
 }
 
-function makeApi(platform: BondPlatform, ms?: number) {
-  return new BondApi(platform, TEST_TOKEN, TEST_IP, ms);
+function makeApi(platform: BondPlatform, ms?: number, maxConcurrentRequests?: number) {
+  return new BondApi(platform, TEST_TOKEN, TEST_IP, ms, maxConcurrentRequests);
 }
 
 describe('BondApi', () => {
@@ -210,6 +210,41 @@ describe('BondApi', () => {
       const [device] = await api.getDevices(['fan1']);
       expect(device.commands).to.have.length(1);
       expect(device.commands![0].action).to.equal(Action.SetSpeed);
+    });
+
+    it('limits concurrent startup requests', async () => {
+      api = makeApi(platform, undefined, 1);
+      let fan1Returned = false;
+      let fan2StartedBeforeFan1Returned = false;
+
+      nock(`http://${TEST_IP}`)
+        .matchHeader('BOND-Token', TEST_TOKEN)
+        .get('/v2/devices/fan1').reply(async () => {
+          await new Promise(resolve => setTimeout(resolve, 25));
+          fan1Returned = true;
+          return [200, {
+            name: 'Fan 1',
+            type: DeviceType.CeilingFan,
+            location: 'Room',
+            actions: [],
+          }];
+        })
+        .get('/v2/devices/fan1/properties').reply(200, { trust_state: null, max_speed: 6 })
+        .get('/v2/devices/fan2').reply(() => {
+          fan2StartedBeforeFan1Returned = !fan1Returned;
+          return [200, {
+            name: 'Fan 2',
+            type: DeviceType.CeilingFan,
+            location: 'Room',
+            actions: [],
+          }];
+        })
+        .get('/v2/devices/fan2/properties').reply(200, { trust_state: null, max_speed: 6 });
+
+      const devices = await api.getDevices(['fan1', 'fan2']);
+
+      expect(devices).to.have.length(2);
+      expect(fan2StartedBeforeFan1Returned).to.equal(false);
     });
   });
 

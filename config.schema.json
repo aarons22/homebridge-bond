@@ -43,6 +43,13 @@
               "placeholder": "1000",
               "required": false,
               "description": "This will space out commands sent by the Bond by at least this many milliseconds."
+            },
+            "max_concurrent_requests": {
+              "title": "Max concurrent requests",
+              "type": "number",
+              "placeholder": "5",
+              "required": false,
+              "description": "Maximum number of HTTP requests to send to this Bond at the same time. Lower this if startup device discovery times out on large installations."
             }
           }
         }
