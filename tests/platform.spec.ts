@@ -114,6 +114,53 @@ describe('BondPlatform security hardening', () => {
     expect(malformedLog).to.not.be.undefined;
   });
 
+  it('routes BPUP packets with leading non-JSON bytes', () => {
+    const log = createMockLog();
+    const api = createMockApi() as any;
+    const config = {
+      include_dimmer: false,
+      fan_speed_values: false,
+      include_toggle_state: false,
+      bonds: [{ ip_address: '192.168.1.100', token: 'token' }],
+    } as any;
+
+    const platform = new BondPlatform(log as any, config, api);
+    const handlers: Record<string, (...args: any[]) => void> = {};
+    const fakeSocket = {
+      send: sinon.stub().callsFake((
+        _message: Buffer,
+        _offset: number,
+        _length: number,
+        _port: number,
+        _host: string,
+        callback: (error?: Error) => void,
+      ) => callback()),
+      on: sinon.stub().callsFake((event: string, callback: (...args: any[]) => void) => {
+        handlers[event] = callback;
+      }),
+    };
+
+    sinon.stub(dgram, 'createSocket').returns(fakeSocket as any);
+    sinon.stub(global, 'setInterval').returns(1 as any);
+    const bond = {
+      config: { ip_address: '192.168.1.100' },
+      receivedBPUPPacket: sinon.stub(),
+    };
+
+    (platform as any).setupBPUP(bond);
+    handlers.message(
+      Buffer.from(`\uFFFDjunk${JSON.stringify({ B: 'ZZEC17318', d: 0, v: 'v3.8.4' })}`),
+      { address: '192.168.1.10', port: '30007' },
+    );
+
+    expect((bond.receivedBPUPPacket as sinon.SinonStub).calledOnce).to.equal(true);
+    expect((bond.receivedBPUPPacket as sinon.SinonStub).firstCall.args[0]).to.deep.equal({
+      B: 'ZZEC17318',
+      d: 0,
+      v: 'v3.8.4',
+    });
+  });
+
   it('strips HTTP port from BPUP UDP host', () => {
     const log = createMockLog();
     const api = createMockApi() as any;
