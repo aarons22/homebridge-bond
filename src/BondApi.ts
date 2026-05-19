@@ -19,11 +19,15 @@ enum HTTPMethod {
 }
 
 const flakeIdGen = new FlakeId();
+const DEFAULT_MAX_CONCURRENT_REQUESTS = 5;
 
 export class BondApi {
   private bondToken: string;
   private uri: BondUri;
   private ms_between_actions?: number;
+  private maxConcurrentRequests: number;
+  private activeRequests = 0;
+  private pendingRequests: Array<() => void> = [];
   private queueNextRequest = false;
   private requestQueue: {device: Device, action: Action, body: unknown}[] = [];
 
@@ -39,10 +43,12 @@ export class BondApi {
     private readonly platform: BondPlatform,
     bondToken: string,
     ipAddress: string,
-    ms_between_actions?: number) {
+    ms_between_actions?: number,
+    max_concurrent_requests = DEFAULT_MAX_CONCURRENT_REQUESTS) {
     this.bondToken = bondToken;
     this.uri = new BondUri(ipAddress);
     this.ms_between_actions = ms_between_actions;
+    this.maxConcurrentRequests = max_concurrent_requests;
 
     axiosRetry(axios, {
       retries: 10,
@@ -283,6 +289,28 @@ export class BondApi {
 
   // Helpers
 
+  private acquireRequestSlot(): Promise<void> {
+    if (this.activeRequests < this.maxConcurrentRequests) {
+      this.activeRequests++;
+      return Promise.resolve();
+    }
+
+    return new Promise(resolve => {
+      this.pendingRequests.push(() => {
+        this.activeRequests++;
+        resolve();
+      });
+    });
+  }
+
+  private releaseRequestSlot(): void {
+    this.activeRequests--;
+    const next = this.pendingRequests.shift();
+    if (next) {
+      next();
+    }
+  }
+
   ping(): Promise<any> {
     const uuid = intformat(flakeIdGen.next(), 'hex', { prefix: '18', padstr: '0', size: 16 }); // avoid duplicate action
     const bondUuid = uuid.substring(0, 13) + uuid.substring(15); // remove '00' used for datacenter/worker in flakeIdGen
@@ -308,16 +336,17 @@ export class BondApi {
       this.platform.log.debug(`Request (${bondUuid}) [${method} ${uri}]`);
     }
 
-    return axios({
-      method,
-      url: uri,
-      headers: {
-        'BOND-Token': this.bondToken,
-        'Bond-UUID': bondUuid,
-      },
-      data: body,
-      timeout: 10000,
-    })
+    return this.acquireRequestSlot()
+      .then(() => axios({
+        method,
+        url: uri,
+        headers: {
+          'BOND-Token': this.bondToken,
+          'Bond-UUID': bondUuid,
+        },
+        data: body,
+        timeout: 10000,
+      }))
       .then(response => {
         this.platform.log.debug(`Response (${bondUuid}) [${method} ${uri}] - ${JSON.stringify(response.data)}`);
         return response.data;
@@ -337,6 +366,9 @@ export class BondApi {
           const message = (error as any).message ?? 'Unknown error';
           this.platform.log.error(`A request error occurred: [code] ${code} [message] ${message}`);
         }
+      })
+      .finally(() => {
+        this.releaseRequestSlot();
       });
   }
 }

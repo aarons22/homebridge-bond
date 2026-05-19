@@ -47,6 +47,16 @@ describe('BondConfig.isValid()', () => {
     expect(valid).to.equal(true);
   });
 
+  it('accepts a positive max_concurrent_requests value', () => {
+    const valid = BondConfig.isValid(platform, {
+      ip_address: '192.168.1.100',
+      token: 'abc123',
+      max_concurrent_requests: 3,
+    });
+
+    expect(valid).to.equal(true);
+  });
+
   it('rejects ip_address values containing a path', () => {
     const valid = BondConfig.isValid(platform, {
       ip_address: '192.168.1.100/v2/devices',
@@ -69,6 +79,26 @@ describe('BondConfig.isValid()', () => {
     const valid = BondConfig.isValid(platform, {
       ip_address: '192.168.1.100#section',
       token: 'abc123',
+    });
+
+    expect(valid).to.equal(false);
+  });
+
+  it('rejects max_concurrent_requests values below 1', () => {
+    const valid = BondConfig.isValid(platform, {
+      ip_address: '192.168.1.100',
+      token: 'abc123',
+      max_concurrent_requests: 0,
+    });
+
+    expect(valid).to.equal(false);
+  });
+
+  it('rejects non-integer max_concurrent_requests values', () => {
+    const valid = BondConfig.isValid(platform, {
+      ip_address: '192.168.1.100',
+      token: 'abc123',
+      max_concurrent_requests: 1.5,
     });
 
     expect(valid).to.equal(false);
