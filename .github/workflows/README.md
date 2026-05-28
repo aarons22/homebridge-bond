@@ -173,3 +173,4 @@ If you need a specific version (e.g., `3.3.0-beta.1`):
 - The version in package.json must be unique
 - You cannot republish the same version
 - Bump to a new version and try again
+- The release workflow checks the exact version with `npm view homebridge-bond@<version> version`, so prereleases published under non-`latest` tags like `beta` are detected correctly

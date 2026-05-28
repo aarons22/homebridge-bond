@@ -35,14 +35,20 @@ jobs:
           echo "Package name: $PACKAGE_NAME"
           echo "Current version: $CURRENT_VERSION"
           
-          # Get published version from npm
-          NPM_VERSION=$(npm view $PACKAGE_NAME version 2>/dev/null || echo "0.0.0")
-          echo "Published npm version: $NPM_VERSION"
+          # Check whether this exact version is already published.
+          # `npm view <package> version` only reads the `latest` dist-tag, so
+          # prereleases published under tags like `beta` would be missed.
+          NPM_VERSION=$(npm view "$PACKAGE_NAME@$CURRENT_VERSION" version 2>/dev/null || true)
+          if [ -n "$NPM_VERSION" ]; then
+            echo "Published npm version: $NPM_VERSION"
+          else
+            echo "Published npm version: not found"
+          fi
           
-          if [ "$CURRENT_VERSION" != "$NPM_VERSION" ]; then
+          if [ -z "$NPM_VERSION" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-            echo "✅ Version changed from $NPM_VERSION (npm) to $CURRENT_VERSION (package.json)"
+            echo "✅ Version $CURRENT_VERSION is not published on npm yet"
           else
             echo "changed=false" >> $GITHUB_OUTPUT
             echo "⏭️  Version unchanged - $CURRENT_VERSION is already published on npm"
