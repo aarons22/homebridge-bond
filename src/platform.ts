@@ -6,6 +6,24 @@ import { Device } from './interface/Device';
 import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
 import dgram from 'dgram';
 
+// BPUP (Bond Push UDP Protocol) tuning. The Bond acks every keep-alive datagram, so we expect
+// inbound traffic at least once per keep-alive interval. If the socket errors or the connection
+// goes silent past the stale threshold, the subscription has lapsed (e.g. a Wi-Fi/router change)
+// and we transparently re-establish it so state updates resume without a manual restart.
+const BPUP_PORT = 30007;
+const BPUP_KEEPALIVE_MS = 60 * 1000;
+const BPUP_WATCHDOG_INTERVAL_MS = 30 * 1000;
+const BPUP_STALE_THRESHOLD_MS = 150 * 1000;
+const BPUP_RECONNECT_BASE_MS = 2 * 1000;
+const BPUP_RECONNECT_MAX_MS = 60 * 1000;
+
+interface BPUPConnection {
+  socket: dgram.Socket;
+  keepAlive?: ReturnType<typeof setInterval>;
+  watchdog?: ReturnType<typeof setInterval>;
+  reconnectTimer?: ReturnType<typeof setTimeout>;
+}
+
 export class BondPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
@@ -13,6 +31,7 @@ export class BondPlatform implements DynamicPlatformPlugin {
 
   private accessories: PlatformAccessory[] = [];
   private bonds: Bond[] | undefined;
+  private bpupConnections: Map<string, BPUPConnection> = new Map();
 
   private redactConfig(config: PlatformConfig): PlatformConfig {
     const cast = config as BondPlatformConfig;
@@ -244,30 +263,67 @@ export class BondPlatform implements DynamicPlatformPlugin {
   }
 
   private setupBPUP(bond: Bond) {
-    const PORT = 30007;
+    this.connectBPUP(bond, BPUP_RECONNECT_BASE_MS);
+  }
+
+  // Establishes (or re-establishes) the BPUP subscription for a Bond. The socket auto-recovers
+  // on error or on a stale/silent connection so real-time state updates survive network changes.
+  private connectBPUP(bond: Bond, backoffMs: number) {
     const HOST = this.bpupHost(bond.config.ip_address);
+    const bondId = bond.version?.bondid ?? HOST;
+    const log = this.log;
 
     const message = Buffer.from('');
 
+    // Replace any existing connection for this Bond before creating a new one.
+    this.teardownBPUP(bondId);
+
     const client = dgram.createSocket('udp4');
-    
-    const log = this.log;
+    const connection: BPUPConnection = { socket: client };
+    this.bpupConnections.set(bondId, connection);
+
+    let lastActivity = Date.now();
+    let healthy = false;
+    let reconnectScheduled = false;
+
+    const scheduleReconnect = (reason: string) => {
+      if (reconnectScheduled) {
+        return;
+      }
+      reconnectScheduled = true;
+      // Once a connection has proven healthy, recover quickly; otherwise back off exponentially.
+      const delay = healthy ? BPUP_RECONNECT_BASE_MS : Math.min(backoffMs * 2, BPUP_RECONNECT_MAX_MS);
+      log.warn(`BPUP connection to Bond (${bondId}) lost (${reason}); reconnecting in ${Math.round(delay / 1000)}s.`);
+      this.teardownBPUP(bondId);
+      const reconnectTimer = setTimeout(() => this.connectBPUP(bond, delay), delay);
+      // Track the pending reconnect so a later teardown can cancel it.
+      this.bpupConnections.set(bondId, { socket: client, reconnectTimer });
+    };
 
     function send() {
-      client.send(message, 0, message.length, PORT, HOST, (err: any) => {
+      client.send(message, 0, message.length, BPUP_PORT, HOST, (err: any) => {
         if (err) {
           log.error(`Error sending UDP message: ${err}`);
           return;
         }
-        log.debug(`UDP message sent to ${HOST}:${PORT}`);
+        log.debug(`UDP message sent to ${HOST}:${BPUP_PORT}`);
       });
     }
-    send(); 
-    // From Bond API Docs: The client should continue to send the Keep-Alive datagram on 
+    send();
+    // From Bond API Docs: The client should continue to send the Keep-Alive datagram on
     // the same socket every 60 seconds to keep the connection active.
-    setInterval(send, 1000 * 60);
+    connection.keepAlive = setInterval(send, BPUP_KEEPALIVE_MS);
+    // Watchdog: the Bond acks every keep-alive, so a healthy socket receives traffic well within
+    // the stale threshold. If it goes silent the subscription has lapsed — reconnect to recover.
+    connection.watchdog = setInterval(() => {
+      if (Date.now() - lastActivity > BPUP_STALE_THRESHOLD_MS) {
+        scheduleReconnect('no packets received');
+      }
+    }, BPUP_WATCHDOG_INTERVAL_MS);
 
     client.on('message', (message: Buffer, remote: { address: string; port: string }) => {
+      lastActivity = Date.now();
+      healthy = true;
       const msg = message.toString().trim();
       const packet = this.parseBPUPPacket(msg);
       if (packet) {
@@ -278,9 +334,37 @@ export class BondPlatform implements DynamicPlatformPlugin {
       }
     });
 
-    client.on('close', () => {
-      this.log('Connection closed');
+    client.on('error', (err: Error) => {
+      log.error(`BPUP socket error for Bond (${bondId}): ${err}`);
+      scheduleReconnect('socket error');
     });
+
+    client.on('close', () => {
+      log.debug(`BPUP socket closed for Bond (${bondId}).`);
+    });
+  }
+
+  private teardownBPUP(bondId: string) {
+    const existing = this.bpupConnections.get(bondId);
+    if (!existing) {
+      return;
+    }
+    if (existing.keepAlive) {
+      clearInterval(existing.keepAlive);
+    }
+    if (existing.watchdog) {
+      clearInterval(existing.watchdog);
+    }
+    if (existing.reconnectTimer) {
+      clearTimeout(existing.reconnectTimer);
+    }
+    try {
+      existing.socket.removeAllListeners();
+      existing.socket.close();
+    } catch (_error) {
+      // Socket may already be closed; ignore.
+    }
+    this.bpupConnections.delete(bondId);
   }
 
   private bpupHost(ipAddress: string): string {
