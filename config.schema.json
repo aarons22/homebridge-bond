@@ -74,6 +74,13 @@
         "default": false,
         "required": false,
         "description": "Use fan speed values instead of percentages (i.e. Hey Siri set the Office Fan to 2)."
+      },
+      "include_shade_switches": {
+        "title": "Use Open/Close/Stop buttons for shades",
+        "type": "boolean",
+        "default": false,
+        "required": false,
+        "description": "Expose motorized shades as separate Open, Close, and Stop buttons instead of a position slider. Each button is only added when the shade actually reports that action (Stop requires the Hold action)."
       }
     }
   }

@@ -208,6 +208,42 @@ describe('MShasPreset', () => {
   });
 });
 
+describe('MShasOpen', () => {
+  it('has open', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Open, Action.Close] });
+    expect(Device.MShasOpen(device)).equal(true);
+  });
+
+  it('does not have open', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.ToggleOpen] });
+    expect(Device.MShasOpen(device)).equal(false);
+  });
+});
+
+describe('MShasClose', () => {
+  it('has close', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Open, Action.Close] });
+    expect(Device.MShasClose(device)).equal(true);
+  });
+
+  it('does not have close', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.ToggleOpen] });
+    expect(Device.MShasClose(device)).equal(false);
+  });
+});
+
+describe('MShasStop', () => {
+  it('has stop (Hold)', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Open, Action.Close, Action.Hold] });
+    expect(Device.MShasStop(device)).equal(true);
+  });
+
+  it('does not have stop', () => {
+    const device = DeviceFactory.createDevice({ actions: [Action.Open, Action.Close] });
+    expect(Device.MShasStop(device)).equal(false);
+  });
+});
+
 describe('LThasLightbulb', () => {
   it('has lightbulb', () => {
     const device = DeviceFactory.createDevice({ actions: [Action.Stop, Action.ToggleLight] });
