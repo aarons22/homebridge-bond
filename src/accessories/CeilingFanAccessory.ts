@@ -57,7 +57,7 @@ export class CeilingFanAccessory implements BondAccessory  {
     
     this.fanService = new FanService(platform, accessory);
 
-    if (device.properties.max_speed === undefined) {
+    if (device.properties?.max_speed === undefined) {
       if (Device.canIncreaseDecreaseSpeed(device)) {
         this.increaseSpeedService = new ButtonService(platform, accessory, `${accessory.displayName} Increase Speed`, 'IncreaseSpeed');
         this.decreaseSpeedService = new ButtonService(platform, accessory, `${accessory.displayName} Decrease Speed`, 'DecreaseSpeed');
