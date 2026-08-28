@@ -4,6 +4,10 @@ import { Device } from './interface/Device';
 import { Characteristic, PlatformAccessory, Service } from 'homebridge';
 import { Observer } from './Observer';
 
+// Timing constant for incremental brightness changes
+// Represents milliseconds per 1% brightness change
+const BRIGHTNESS_STEP_TIME_MS = 10;
+
 export class FanService {
   on: Characteristic
   rotationSpeed?: Characteristic
@@ -33,6 +37,9 @@ export class LightbulbService {
   on: Characteristic
   brightness?: Characteristic
   subType?: string
+  // Timeout handle for incremental dimming operations
+  // Note: Cleanup happens automatically when the Node.js process exits or restarts
+  private dimmerTimeout?: NodeJS.Timeout
 
   constructor(
     platform: BondPlatform,
@@ -52,7 +59,8 @@ export class LightbulbService {
     this.on = service.getCharacteristic(platform.Characteristic.On);
 
     const brightness = service.getCharacteristic(platform.Characteristic.Brightness);
-    if (Device.LThasBrightness(device)) {
+    // Add brightness if device is a Light type with brightness OR if it's any device with brightness control
+    if (Device.LThasBrightness(device) || Device.HasBrightnessControl(device)) {
       this.brightness = brightness;
     } else {
       // Fixing bug from 3.1.0 where brightness was added to lights unintentionally
@@ -110,21 +118,98 @@ export class LightbulbService {
       return;
     }
 
-    Observer.set(this.brightness, async (value) => {
-      if (value === 0) {
-        // Value of 0 is the same as turning the light off. 
-        // Ignore and return.
-        return;
-      }
+    // Check if device has absolute brightness control (SetBrightness)
+    if (Device.LThasAbsoluteBrightness(device)) {
+      // Handle absolute brightness
+      Observer.set(this.brightness, async (value) => {
+        if (value === 0) {
+          // Value of 0 is the same as turning the light off. 
+          // Ignore and return.
+          return;
+        }
 
-      await bond.api.setBrightness(device, value)
-        .then(() => {
-          platform.debug(accessory, `Set light brightness: ${value}`);
-        })
-        .catch((error: string) => {
-          platform.error(accessory, `Error setting light brightness: ${error}`);
-        });
-    });
+        await bond.api.setBrightness(device, value)
+          .then(() => {
+            platform.debug(accessory, `Set light brightness: ${value}`);
+          })
+          .catch((error: string) => {
+            platform.error(accessory, `Error setting light brightness: ${error}`);
+          });
+      });
+    } else if (Device.HasSeparateDimmers(device)) {
+      // Handle incremental brightness with directional control
+      Observer.set(this.brightness, async (value) => {
+        if (value === 0) {
+          // Value of 0 is the same as turning the light off. 
+          // Ignore and return.
+          return;
+        }
+
+        const currentBrightness = this.brightness!.value as number;
+        const targetBrightness = value as number;
+        
+        // If already at target, do nothing
+        if (currentBrightness === targetBrightness) {
+          return;
+        }
+
+        // Clear any existing timeout and stop any in-progress dimming
+        if (this.dimmerTimeout) {
+          clearTimeout(this.dimmerTimeout);
+          this.dimmerTimeout = undefined;
+          // Stop the previous dimming operation
+          await bond.api.stop(device).catch(() => {
+            // Ignore errors from stopping - the new operation will start anyway
+          });
+        }
+
+        // Determine direction
+        const increasing = targetBrightness > currentBrightness;
+        const delta = Math.abs(targetBrightness - currentBrightness);
+        
+        // Use directional dimmers
+        const promise = increasing ? 
+          bond.api.startIncreasingBrightness(device) : 
+          bond.api.startDecreasingBrightness(device);
+
+        await promise
+          .then(() => {
+            platform.debug(
+              accessory, 
+              `Started dimming light: current=${currentBrightness}, target=${targetBrightness}, increasing=${increasing}`,
+            );
+            
+            // Estimate time needed based on brightness change
+            // Timing: BRIGHTNESS_STEP_TIME_MS (default 10ms) per 1% brightness change
+            // If dimming is too fast/slow, adjust BRIGHTNESS_STEP_TIME_MS constant
+            const estimatedTime = delta * BRIGHTNESS_STEP_TIME_MS;
+            
+            // Stop dimming after estimated time
+            this.dimmerTimeout = setTimeout(async () => {
+              this.dimmerTimeout = undefined;
+              await bond.api.stop(device)
+                .then(() => {
+                  platform.debug(accessory, 'Stopped dimming light');
+                  // The actual state will be updated via BPUP
+                })
+                .catch((error: string) => {
+                  platform.error(accessory, `Error stopping dimmer: ${error}`);
+                });
+            }, estimatedTime);
+          })
+          .catch((error: string) => {
+            platform.error(accessory, `Error setting light brightness: ${error}`);
+          });
+      });
+    } else if (Device.HasDimmer(device)) {
+      // For toggle-based dimmers (StartDimmer), we can only display brightness
+      // Setting brightness is not reliable since we can't control direction
+      // Log this once during setup
+      platform.log.debug(
+        `Device ${device.name} uses toggle-based dimmer. Brightness is read-only. ` +
+        'Enable "include_dimmer" in config to add dimmer switch controls.',
+      );
+    }
   }
 }
 

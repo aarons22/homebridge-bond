@@ -81,7 +81,8 @@ export class CeilingFanAccessory implements BondAccessory  {
         this.removeService('Toggle Down Light State');
       } 
 
-      if (includeDimmer && Device.HasDimmer(device)) {
+      // Only create dimmer switches if brightness control is not already available
+      if (includeDimmer && Device.HasDimmer(device) && !Device.HasBrightnessControl(device)) {
         this.upLightDimmerService = new SwitchService(platform, accessory, `${accessory.displayName} Up Light Dimmer`, 'UpLight');
         this.downLightDimmerService = new SwitchService(platform, accessory, `${accessory.displayName} Down Light Dimmer`, 'DownLight');
       } else {
@@ -97,7 +98,11 @@ export class CeilingFanAccessory implements BondAccessory  {
         this.removeService('Toggle Light State');
       } 
 
-      if (includeDimmer && Device.HasDimmer(device)) {
+      // Only create dimmer switch if:
+      // 1. includeDimmer is enabled
+      // 2. Device has dimmer capability
+      // 3. LightbulbService does NOT have brightness characteristic (to avoid duplicate controls)
+      if (includeDimmer && Device.HasDimmer(device) && !Device.LThasBrightness(device)) {
         this.dimmerService = new SwitchService(platform, accessory, `${accessory.displayName} Dimmer`, 'Dimmer');
       } else {
         // Remove service if previously added
@@ -105,7 +110,8 @@ export class CeilingFanAccessory implements BondAccessory  {
       }
     }
 
-    if (includeDimmer && Device.HasSeparateDimmers(device)) {
+    // Only create separate increase/decrease brightness switches if brightness control is not already available
+    if (includeDimmer && Device.HasSeparateDimmers(device) && !Device.HasBrightnessControl(device)) {
       this.increaseBrightnessService = new SwitchService(platform, accessory, `${accessory.displayName} Increase Brightness`, 'IncreaseBrightness');
       this.decreaseBrightnessService = new SwitchService(platform, accessory, `${accessory.displayName} Decrease Brightness`, 'DecreaseBrightness');
     } else {
