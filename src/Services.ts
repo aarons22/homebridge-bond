@@ -172,6 +172,13 @@ export class ButtonService {
       service.subtype = subType;
     }
 
+    // Give the button its own name so accessories with more than one button
+    // (e.g. shade Open/Close/Stop) show distinct labels instead of all falling
+    // back to the accessory name. Modern iOS displays ConfiguredName; Name is
+    // set too for older clients.
+    service.setCharacteristic(platform.Characteristic.Name, name);
+    service.setCharacteristic(platform.Characteristic.ConfiguredName, name);
+
     this.on = service.getCharacteristic(platform.Characteristic.On);
     this.on.setValue(false);
     this.subType = subType;

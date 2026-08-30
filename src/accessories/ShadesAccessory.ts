@@ -5,12 +5,17 @@ import { Device } from '../interface/Device';
 import { Observer } from '../Observer';
 import { PlatformAccessory } from 'homebridge';
 import { ButtonService, WindowCoveringService } from '../Services';
-import { Action } from '../enum/Action';
 
 export class ShadesAccessory implements BondAccessory  {
   platform: BondPlatform
   accessory: PlatformAccessory
-  windowCoveringService: WindowCoveringService
+  // Slider mode (default)
+  windowCoveringService?: WindowCoveringService
+  // Switch mode (include_shade_switches)
+  openService?: ButtonService
+  closeService?: ButtonService
+  stopService?: ButtonService
+  // Optional extras (available in both modes)
   presetService?: ButtonService
   toggleStateService?: ButtonService
 
@@ -22,7 +27,26 @@ export class ShadesAccessory implements BondAccessory  {
     this.accessory = accessory;
     const device: Device = accessory.context.device;
 
-    this.windowCoveringService = new WindowCoveringService(platform, accessory);
+    // When enabled, expose each shade as discrete Open / Close / Stop buttons
+    // instead of a single position slider. See `include_shade_switches` in config.
+    const useSwitches = platform.config.include_shade_switches === true;
+
+    if (useSwitches) {
+      // Drop the slider if it was created under a previous config so we don't
+      // leave a stale WindowCovering tile behind on the accessory.
+      const windowCovering = accessory.getService(platform.Service.WindowCovering);
+      if (windowCovering) {
+        accessory.removeService(windowCovering);
+      }
+      this.setupSwitches(device);
+    } else {
+      // Drop any switches left over from a previous config.
+      this.removeSwitch('ShadeOpen');
+      this.removeSwitch('ShadeClose');
+      this.removeSwitch('ShadeStop');
+      this.windowCoveringService = new WindowCoveringService(platform, accessory);
+    }
+
     if (platform.config.include_toggle_state) {
       this.toggleStateService = new ButtonService(platform, accessory, 'Toggle State', 'ToggleState');
     } else {
@@ -37,7 +61,8 @@ export class ShadesAccessory implements BondAccessory  {
   }
 
   updateState(state: BondState) {
-    if (this.windowCoveringService) {
+    const windowCovering = this.windowCoveringService;
+    if (windowCovering) {
       // If position is available, use it, otherwise fall back to open state
       if (state.position !== undefined) {
         const device: Device = this.accessory.context.device;
@@ -46,24 +71,95 @@ export class ShadesAccessory implements BondAccessory  {
         // Other shades use 0=open, 100=closed (opposite of HomeKit), so inversion is needed
         const shouldInvert = !Device.MSisAwning(device);
         const homekitPosition = shouldInvert ? 100 - state.position : state.position;
-        this.windowCoveringService.currentPosition.updateValue(homekitPosition);
-        this.windowCoveringService.targetPosition.updateValue(homekitPosition);
+        windowCovering.currentPosition.updateValue(homekitPosition);
+        windowCovering.targetPosition.updateValue(homekitPosition);
       } else {
-        this.windowCoveringService.currentPosition.updateValue(state.open === 1 ? 100 : 0);
-        this.windowCoveringService.targetPosition.updateValue(state.open === 1 ? 100 : 0);
+        windowCovering.currentPosition.updateValue(state.open === 1 ? 100 : 0);
+        windowCovering.targetPosition.updateValue(state.open === 1 ? 100 : 0);
       }
     }
+    // Switch mode buttons are stateless (they reset themselves), so there's
+    // nothing to update here.
   }
 
   private observe(bond: Bond): void {
     const device: Device = this.accessory.context.device;
 
     this.observeWindowCovering(bond, device);
+    this.observeSwitches(bond, device);
     this.observePreset(bond, device);
     this.observeToggleState(bond, device);
   }
 
+  // Switch mode: one stateless button per action, controlled individually.
+  // Buttons are only added for the actions the shade actually reports.
+  private setupSwitches(device: Device): void {
+    if (Device.MShasOpen(device)) {
+      this.openService = new ButtonService(this.platform, this.accessory, 'Open', 'ShadeOpen');
+    } else {
+      this.removeSwitch('ShadeOpen');
+      this.platform.error(this.accessory, 'Shade does not support the Open action; Open button not added.');
+    }
+
+    if (Device.MShasClose(device)) {
+      this.closeService = new ButtonService(this.platform, this.accessory, 'Close', 'ShadeClose');
+    } else {
+      this.removeSwitch('ShadeClose');
+      this.platform.error(this.accessory, 'Shade does not support the Close action; Close button not added.');
+    }
+
+    // Bond names the shade "stop" action `Hold`.
+    if (Device.MShasStop(device)) {
+      this.stopService = new ButtonService(this.platform, this.accessory, 'Stop', 'ShadeStop');
+    } else {
+      this.removeSwitch('ShadeStop');
+    }
+  }
+
+  private observeSwitches(bond: Bond, device: Device) {
+    if (this.openService) {
+      Observer.set(this.openService.on, async (_) => {
+        await bond.api.open(device)
+          .then(() => {
+            this.platform.debug(this.accessory, `${device.name}: Opening shade`);
+          })
+          .catch((error: string) => {
+            this.platform.error(this.accessory, `Error opening shade: ${error}`);
+          });
+      }, { resetToFalse: true });
+    }
+
+    if (this.closeService) {
+      Observer.set(this.closeService.on, async (_) => {
+        await bond.api.close(device)
+          .then(() => {
+            this.platform.debug(this.accessory, `${device.name}: Closing shade`);
+          })
+          .catch((error: string) => {
+            this.platform.error(this.accessory, `Error closing shade: ${error}`);
+          });
+      }, { resetToFalse: true });
+    }
+
+    if (this.stopService) {
+      Observer.set(this.stopService.on, async (_) => {
+        await bond.api.hold(device)
+          .then(() => {
+            this.platform.debug(this.accessory, `${device.name}: Stopping shade`);
+          })
+          .catch((error: string) => {
+            this.platform.error(this.accessory, `Error stopping shade: ${error}`);
+          });
+      }, { resetToFalse: true });
+    }
+  }
+
   private observeWindowCovering(bond: Bond, device: Device) {
+    const windowCovering = this.windowCoveringService;
+    if (!windowCovering) {
+      return;
+    }
+
     if (!Device.MShasToggle(device)) {
       this.platform.error(this.accessory, 'ShadesAccessory does not have required ToggleOpen action.');
       return;
@@ -79,9 +175,9 @@ export class ShadesAccessory implements BondAccessory  {
       maxValue: 100,
       minStep: Device.MShasPosition(device) ? 1 : 100,
     };
-    this.windowCoveringService.targetPosition.setProps(props);
+    windowCovering.targetPosition.setProps(props);
 
-    Observer.set(this.windowCoveringService.targetPosition, async (value) => {
+    Observer.set(windowCovering.targetPosition, async (value) => {
       if (Device.MShasPosition(device)) {
         // Determine if we should invert position values based on device subtype
         // Awnings use 0=closed, 100=open (same as HomeKit), so no inversion needed
@@ -144,6 +240,13 @@ export class ShadesAccessory implements BondAccessory  {
 
   private removeService(serviceName: string) {
     const service = this.accessory.getService(serviceName);
+    if (service) {
+      this.accessory.removeService(service);
+    }
+  }
+
+  private removeSwitch(subType: string) {
+    const service = this.accessory.getServiceById(this.platform.Service.Switch, subType);
     if (service) {
       this.accessory.removeService(service);
     }

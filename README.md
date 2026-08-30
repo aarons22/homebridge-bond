@@ -90,6 +90,7 @@ NOTE: If you have a "Smart by BOND" fan/device, you will need to add a Bond in t
 | `include_dimmer`   | false   | If dimming is a valid action on a device, it will be included as additional switch on the accessory. When using this feature, turn the switch on to start dimming. When you reach the brightness level you would like, turn the switch off. |
 | `fan_speed_values` | false   | Use fan speed values instead of percentages (i.e. Hey Siri set the Office Fan to 2) |
 | `include_toggle_state` | false  | This will add a switch to single-action accessories to toggle the state (i.e. Shades, Fireplace, Generic, Lights). Fan speeds are not eligible for this option. |
+| `include_shade_switches` | false | Expose motorized shades as separate Open, Close, and Stop buttons instead of a position slider. Each button is only added when the shade actually reports that action (Stop requires the Bond `Hold` action). |
 
 ## Development
 
