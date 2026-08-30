@@ -232,4 +232,103 @@ describe('BondPlatform security hardening', () => {
     const udpError = errorCalls.find(args => args[0]?.includes('Error sending UDP message'));
     expect(udpError).to.not.be.undefined;
   });
+
+  it('reconnects the BPUP socket after a socket error', () => {
+    const log = createMockLog();
+    const api = createMockApi() as any;
+    const config = {
+      include_dimmer: false,
+      fan_speed_values: false,
+      include_toggle_state: false,
+      bonds: [{ ip_address: '192.168.1.100', token: 'token' }],
+    } as any;
+
+    const platform = new BondPlatform(log as any, config, api);
+    const handlers: Record<string, (...args: any[]) => void> = {};
+    const fakeSocket = {
+      send: sinon.stub().callsFake((
+        _message: Buffer,
+        _offset: number,
+        _length: number,
+        _port: number,
+        _host: string,
+        callback: (error?: Error) => void,
+      ) => callback()),
+      on: sinon.stub().callsFake((event: string, callback: (...args: any[]) => void) => {
+        handlers[event] = callback;
+      }),
+      removeAllListeners: sinon.stub(),
+      close: sinon.stub(),
+    };
+
+    const createSocket = sinon.stub(dgram, 'createSocket').returns(fakeSocket as any);
+    sinon.stub(global, 'setInterval').returns(1 as any);
+    const setTimeoutStub = sinon.stub(global, 'setTimeout').returns(2 as any);
+    const bond = {
+      version: { bondid: 'ZZBL12345' },
+      config: { ip_address: '192.168.1.100' },
+      receivedBPUPPacket: sinon.stub(),
+    };
+
+    (platform as any).setupBPUP(bond);
+    expect(createSocket.callCount).to.equal(1);
+
+    // Simulate a socket error (e.g. the network dropped out).
+    handlers.error(new Error('ENETUNREACH'));
+
+    const warned = (log.warn.args as string[][]).find(args => args[0]?.includes('reconnecting'));
+    expect(warned, 'should log a reconnect warning').to.not.be.undefined;
+    expect(fakeSocket.close.called, 'should close the failed socket').to.equal(true);
+    expect(setTimeoutStub.called, 'should schedule a reconnect').to.equal(true);
+
+    // Running the scheduled reconnect should establish a fresh socket.
+    const reconnect = setTimeoutStub.firstCall.args[0] as () => void;
+    reconnect();
+    expect(createSocket.callCount).to.equal(2);
+  });
+
+  it('reconnects when the BPUP connection goes stale', () => {
+    const clock = sinon.useFakeTimers();
+    const log = createMockLog();
+    const api = createMockApi() as any;
+    const config = {
+      include_dimmer: false,
+      fan_speed_values: false,
+      include_toggle_state: false,
+      bonds: [{ ip_address: '192.168.1.100', token: 'token' }],
+    } as any;
+
+    const platform = new BondPlatform(log as any, config, api);
+    const fakeSocket = {
+      send: sinon.stub().callsFake((
+        _message: Buffer,
+        _offset: number,
+        _length: number,
+        _port: number,
+        _host: string,
+        callback: (error?: Error) => void,
+      ) => callback()),
+      on: sinon.stub(),
+      removeAllListeners: sinon.stub(),
+      close: sinon.stub(),
+    };
+    const createSocket = sinon.stub(dgram, 'createSocket').returns(fakeSocket as any);
+    const bond = {
+      version: { bondid: 'ZZBL12345' },
+      config: { ip_address: '192.168.1.100' },
+      receivedBPUPPacket: sinon.stub(),
+    };
+
+    (platform as any).setupBPUP(bond);
+    expect(createSocket.callCount).to.equal(1);
+
+    // No inbound packets — advance past the stale threshold so the watchdog reconnects.
+    clock.tick(200 * 1000);
+
+    const warned = (log.warn.args as string[][]).find(args => args[0]?.includes('no packets received'));
+    expect(warned, 'should log a staleness reconnect warning').to.not.be.undefined;
+    expect(createSocket.callCount, 'should re-create the socket').to.be.greaterThan(1);
+
+    clock.restore();
+  });
 });
