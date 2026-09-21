@@ -208,6 +208,19 @@ export class BondApi {
     return this.action(device, Action.ToggleOpen);
   }
 
+  public open(device: Device): Promise<void> {
+    return this.action(device, Action.Open);
+  }
+
+  public close(device: Device): Promise<void> {
+    return this.action(device, Action.Close);
+  }
+
+  // Bond's shade "stop" action is named `Hold`.
+  public hold(device: Device): Promise<void> {
+    return this.action(device, Action.Hold);
+  }
+
   public preset(device: Device): Promise<void> {
     return this.action(device, Action.Preset);
   }

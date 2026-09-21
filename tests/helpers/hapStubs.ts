@@ -13,6 +13,8 @@ export const ServiceTokens = {
 
 export const CharacteristicTokens = {
   On: Symbol('On'),
+  Name: Symbol('Name'),
+  ConfiguredName: Symbol('ConfiguredName'),
   RotationSpeed: Symbol('RotationSpeed'),
   RotationDirection: Symbol('RotationDirection'),
   Brightness: Symbol('Brightness'),

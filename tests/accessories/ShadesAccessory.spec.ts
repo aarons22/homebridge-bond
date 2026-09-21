@@ -238,4 +238,63 @@ describe('ShadesAccessory', () => {
       sinon.assert.calledWith(bond.api.getState as sinon.SinonStub, device.id);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Switch mode (include_shade_switches)
+  // -------------------------------------------------------------------------
+
+  describe('switch mode (include_shade_switches)', () => {
+    const switchConfig = { include_shade_switches: true };
+
+    it('creates Open/Close/Stop switches for a capable shade', () => {
+      const { accessory } = buildShades(
+        [Action.Open, Action.Close, Action.Hold], undefined, switchConfig);
+      expect(accessory.getServiceById(ServiceTokens.Switch, 'ShadeOpen')).to.not.be.undefined;
+      expect(accessory.getServiceById(ServiceTokens.Switch, 'ShadeClose')).to.not.be.undefined;
+      expect(accessory.getServiceById(ServiceTokens.Switch, 'ShadeStop')).to.not.be.undefined;
+    });
+
+    it('does NOT create a window covering service in switch mode', () => {
+      const { accessory } = buildShades(
+        [Action.Open, Action.Close, Action.Hold], undefined, switchConfig);
+      expect(accessory.getService(ServiceTokens.WindowCovering)).to.be.undefined;
+    });
+
+    it('omits the Stop switch when the shade has no Hold action', () => {
+      const { accessory } = buildShades([Action.Open, Action.Close], undefined, switchConfig);
+      expect(accessory.getServiceById(ServiceTokens.Switch, 'ShadeOpen')).to.not.be.undefined;
+      expect(accessory.getServiceById(ServiceTokens.Switch, 'ShadeClose')).to.not.be.undefined;
+      expect(accessory.getServiceById(ServiceTokens.Switch, 'ShadeStop')).to.be.undefined;
+    });
+
+    it('calls api.open when the Open button is activated', async () => {
+      const { accessory, bond, device } = buildShades(
+        [Action.Open, Action.Close, Action.Hold], undefined, switchConfig);
+      const on = accessory.getServiceById(ServiceTokens.Switch, 'ShadeOpen')!
+        .getCharacteristic(CharacteristicTokens.On) as MockCharacteristic;
+      on.value = false;
+      await on.simulateSet(true);
+      sinon.assert.calledWith(bond.api.open as sinon.SinonStub, device);
+    });
+
+    it('calls api.close when the Close button is activated', async () => {
+      const { accessory, bond, device } = buildShades(
+        [Action.Open, Action.Close, Action.Hold], undefined, switchConfig);
+      const on = accessory.getServiceById(ServiceTokens.Switch, 'ShadeClose')!
+        .getCharacteristic(CharacteristicTokens.On) as MockCharacteristic;
+      on.value = false;
+      await on.simulateSet(true);
+      sinon.assert.calledWith(bond.api.close as sinon.SinonStub, device);
+    });
+
+    it('calls api.hold when the Stop button is activated', async () => {
+      const { accessory, bond, device } = buildShades(
+        [Action.Open, Action.Close, Action.Hold], undefined, switchConfig);
+      const on = accessory.getServiceById(ServiceTokens.Switch, 'ShadeStop')!
+        .getCharacteristic(CharacteristicTokens.On) as MockCharacteristic;
+      on.value = false;
+      await on.simulateSet(true);
+      sinon.assert.calledWith(bond.api.hold as sinon.SinonStub, device);
+    });
+  });
 });
